@@ -1,166 +1,166 @@
 {
-	"_version": "1.8.0",
-	"sap.app": {
-		"id": "task-runtime",
-		"type": "application",
-		"i18n": "i18n/i18n.properties",
-		"applicationVersion": {
-			"version": "0.0.1"
-		},
-		"title": "{{appTitle}}",
-		"description": "{{appDescription}}",
-		"resources": "resources.json",
-		"dataSources": {
-			"MainService": {
-				"uri": "/api/MainService/",
-				"type": "OData",
-				"settings": {
-					"odataVersion": "4.0"
-				}
-			}
-		}
-	},
-	"sap.ui5": {
-		"dependencies": {
-			"libs": {
-				"sap.fe.templates": {}
-			},
-			"minUI5Version": "1.122.1"
-		},
-		"contentDensities": {
-			"compact": true,
-			"cozy": true
-		},
-		"models": {
-			"i18n": {
-				"type": "sap.ui.model.resource.ResourceModel",
-				"settings": {
-					"bundleName": "task-runtime.i18n.i18n"
-				}
-			},
-			"": {
-				"dataSource": "MainService",
-				"preload": true,
-				"settings": {
-					"synchronizationMode": "None",
-					"operationMode": "Server",
-					"autoExpandSelect": true,
-					"earlyRequests": true,
-					"groupProperties": {
-						"default": {
-							"submit": "Auto"
-						}
-					}
-				}
-			},
-			"@i18n": {
-				"type": "sap.ui.model.resource.ResourceModel",
-				"uri": "i18n/i18n.properties"
-			}
-		},
-		"routing": {
-			"routes": [
-				{
-					"pattern": ":?query:",
-					"name": "Tasks",
-					"target": "Tasks"
-				},
-				{
-					"pattern": "Tasks({key}):?query:",
-					"name": "TasksObjectPage",
-					"target": "TasksObjectPage"
-				},
-				{
-					"pattern": "Tasks({key})/botInstances({key2}):?query:",
-					"name": "BotInstanceObjectPage",
-					"target": "BotInstanceObjectPage"
-				}
-			],
-			"targets": {
-				"Tasks": {
-					"type": "Component",
-					"id": "Tasks",
-					"name": "sap.fe.templates.ListReport",
-					"options": {
-						"settings": {
-							"entitySet": "Tasks",
-							"navigation": {
-								"Tasks": {
-									"detail": {
-										"route": "TasksObjectPage"
-									}
-								}
-							},
-							"initialLoad": "Enabled"
-						}
-					}
-				},
-				"TasksObjectPage": {
-					"type": "Component",
-					"id": "TasksObjectPage",
-					"name": "sap.fe.templates.ObjectPage",
-					"options": {
-						"settings": {
-							"contextPath": "/Tasks",
-							"navigation": {
-								"botInstances": {
-									"detail": {
-										"route": "BotInstanceObjectPage"
-									}
-								}
-							},
-							"content": {
-								"header": {
-									"anchorBarVisible": true
-								}
-							},
-							"editableHeaderContent": false,
-							"sectionLayout": "Page"
-						}
-					}
-				},
-				"BotInstanceObjectPage": {
-					"type": "Component",
-					"id": "BotInstanceObjectPage",
-					"name": "sap.fe.templates.ObjectPage",
-					"options": {
-						"settings": {
-							"contextPath": "/botInstances",
-							"navigation": {
-								"task": {
-									"detail": {
-										"route": "TasksObjectPage"
-									}
-								}
-							},
-							"content": {
-								"header": {
-									"anchorBarVisible": true
-								}
-							},
-							"editableHeaderContent": false,
-							"sectionLayout": "Page"
-						}
-					}
-				}
-			}
-		}
-	},
-	"sap.ui": {
-		"technology": "UI5",
-		"fullWidth": false,
-		"icons": {
-			"icon": "",
-			"favIcon": "",
-			"phone": "",
-			"phone@2": "",
-			"tablet": "",
-			"tablet@2": ""
-		},
-		"deviceTypes": {
-			"desktop": true,
-			"tablet": true,
-			"phone": true
-		}
-	}
+    "_version": "1.8.0",
+    "sap.app": {
+        "id": "task-runtime",
+        "type": "application",
+        "i18n": "i18n/i18n.properties",
+        "applicationVersion": {
+            "version": "0.0.1"
+        },
+        "title": "{{appTitle}}",
+        "description": "{{appDescription}}",
+        "resources": "resources.json",
+        "dataSources": {
+            "MainService": {
+                "uri": "/api/MainService/",
+                "type": "OData",
+                "settings": {
+                    "odataVersion": "4.0"
+                }
+            }
+        }
+    },
+    "sap.ui5": {
+        "dependencies": {
+            "libs": {
+                "sap.fe.templates": {}
+            },
+            "minUI5Version": "1.122.1"
+        },
+        "contentDensities": {
+            "compact": true,
+            "cozy": true
+        },
+        "models": {
+            "i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "settings": {
+                    "bundleName": "task-runtime.i18n.i18n"
+                }
+            },
+            "": {
+                "dataSource": "MainService",
+                "preload": true,
+                "settings": {
+                    "synchronizationMode": "None",
+                    "operationMode": "Server",
+                    "autoExpandSelect": true,
+                    "earlyRequests": true,
+                    "groupProperties": {
+                        "default": {
+                            "submit": "Auto"
+                        }
+                    }
+                }
+            },
+            "@i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "uri": "i18n/i18n.properties"
+            }
+        },
+        "routing": {
+            "routes": [
+                {
+                    "pattern": ":?query:",
+                    "name": "Tasks",
+                    "target": "Tasks"
+                },
+                {
+                    "pattern": "Tasks({key}):?query:",
+                    "name": "TasksObjectPage",
+                    "target": "TasksObjectPage"
+                },
+                {
+                    "pattern": "Tasks({key})/botInstances({key2}):?query:",
+                    "name": "BotInstanceObjectPage",
+                    "target": "BotInstanceObjectPage"
+                }
+            ],
+            "targets": {
+                "Tasks": {
+                    "type": "Component",
+                    "id": "Tasks",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": {
+                        "settings": {
+                            "entitySet": "Tasks",
+                            "navigation": {
+                                "Tasks": {
+                                    "detail":{
+                                        "route" : "TasksObjectPage"
+                                    }
+                                }
+                            },
+                            "initialLoad": "Enabled"
+                        }
+                    }
+                },
+                "TasksObjectPage": {
+                    "type": "Component",
+                    "id": "TasksObjectPage",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/Tasks",
+                            "navigation": {  
+                                "botInstances": {
+                                    "detail": {
+                                        "route": "BotInstanceObjectPage"
+                                    }
+                                }                 
+                            },
+                            "content": {
+                                "header": {
+                                    "anchorBarVisible": true
+                                }
+                            },
+                            "editableHeaderContent": false,
+                            "sectionLayout": "Page"
+                        }
+                    }
+                },
+                "BotInstanceObjectPage": {
+                    "type": "Component",
+                    "id": "BotInstanceObjectPage",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/botInstances",
+                            "navigation": {
+                                  "task": {
+                                    "detail": {
+                                    "route": "TasksObjectPage"
+                                    }
+                                }
+                            },
+                            "content": {
+                                "header": {
+                                    "anchorBarVisible": true
+                                }
+                            },
+                            "editableHeaderContent": false,
+                            "sectionLayout": "Page"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "fullWidth": false,
+        "icons": {
+            "icon": "",
+            "favIcon": "",
+            "phone": "",
+            "phone@2": "",
+            "tablet": "",
+            "tablet@2": ""
+        },
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": true
+        }
+    }
 }
