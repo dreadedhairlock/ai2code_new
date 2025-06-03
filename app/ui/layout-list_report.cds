@@ -36,28 +36,28 @@ annotate ConfigService.TaskTypes with @(UI: {
 });
 
 annotate ConfigService.PromptTexts with @(UI: {
-    SelectionFields     : [
+    SelectionFields: [
         name,
         lang
     ],
-    LineItem  : [
+    LineItem       : [
         {
-            $Type   : 'UI.DataField',
-            Value   : name,
-            Label   : '{i18n>PromptName}',
-            @UI.Importance : #High
+            $Type         : 'UI.DataField',
+            Value         : name,
+            Label         : '{i18n>PromptName}',
+            @UI.Importance: #High
         },
         {
-            $Type   : 'UI.DataField',
-            Value   : lang,
-            Label   : '{i18n>Language}',
-            @UI.Importance : #High
+            $Type         : 'UI.DataField',
+            Value         : lang,
+            Label         : '{i18n>Language}',
+            @UI.Importance: #High
         },
         {
-            $Type   : 'UI.DataField',
-            Value   : content,
-            Label   : '{i18n>Content}',
-            @UI.Importance : #High
+            $Type         : 'UI.DataField',
+            Value         : content,
+            Label         : '{i18n>Content}',
+            @UI.Importance: #High
         },
     ],
 
@@ -65,7 +65,7 @@ annotate ConfigService.PromptTexts with @(UI: {
 
 
 annotate ConfigService.BotTypes with @UI: {
- 
+
     SelectionFields: [
         sequence,
         name,
@@ -154,8 +154,11 @@ annotate ConfigService.ModelConfigs with @(UI: {
     ],
 });
 
-
 annotate MainService.Tasks with @(UI: {
+    // HeaderInfo: {
+    //     TypeName      : '{i18n>TaskRuntime}',
+    //     TypeNamePlural: '{i18n>TaskRuntimePlural}',
+    // },
     SelectionFields: [
         name,
         type.name,
@@ -164,19 +167,26 @@ annotate MainService.Tasks with @(UI: {
         {
             $Type         : 'UI.DataField',
             Value         : name,
-            Label         : '{i18n>TaskName}',
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
             Value         : description,
-            Label         : '{i18n>TaskDescription}',
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
             Value         : contextPath,
-            Label         : '{i18n>ContextPath}',
+            @UI.Importance: #High
+        },
+        {
+            $Type         : 'UI.DataField',
+            Value         : sequence,
+            @UI.Importance: #High
+        },
+        {
+            $Type         : 'UI.DataField',
+            Value         : isMain,
             @UI.Importance: #High
         },
         {
@@ -197,19 +207,16 @@ annotate MainService.BotInstances with @(UI: {
         {
             $Type         : 'UI.DataField',
             Value         : sequence,
-            Label         : '{i18n>Sequence}',
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
             Value         : result,
-            Label         : '{i18n>Result}',
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
             Value         : status_code,
-            Label         : '{i18n>Status}',
             @UI.Importance: #High
         },
     ],
@@ -224,25 +231,21 @@ annotate MainService.ContextNodes with @(UI: {
         {
             $Type         : 'UI.DataField',
             Value         : path,
-            Label         : '{i18n>Path}',
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
             Value         : type,
-            Label         : '{i18n>Type}',
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
             Value         : label,
-            Label         : '{i18n>Label}',
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
             Value         : value,
-            Label         : '{i18n>Value}',
             @UI.Importance: #High
         },
     ],
