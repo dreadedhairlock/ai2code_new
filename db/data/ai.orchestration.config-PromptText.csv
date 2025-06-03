@@ -1,0 +1,5 @@
+ID,botType_ID,lang,name,content,createdAt,createdBy,modifiedAt,modifiedBy
+89013918-91d9-4631-8b67-00f0033bd405,324829b2-d790-4e85-811c-24c4b43989db,01391,name-8901391,content-8901391,2002-07-17T17:00:00.000Z,createdBy.5ascv@example.com,2020-10-09T17:00:00.000Z,modifiedBy.5ascv@example.org
+8901392e-da2b-4252-9721-075caea853d4,324829b2-d790-4e85-811c-24c4b43989db,01392,name-8901392,content-8901392,2001-06-14T17:00:00.000Z,createdBy.5ascw@example.com,2005-02-27T17:00:00.000Z,modifiedBy.5ascw@example.net
+8901393f-eb3d-4363-a832-186caea964e5,3248281a-98e8-4c3d-8946-db23ee0e5f03,01393,name-8901393,content-8901393,2003-08-18T17:00:00.000Z,createdBy.5ascx@example.com,2021-03-15T17:00:00.000Z,modifiedBy.5ascx@example.org
+8901394g-fc4e-4474-b943-297dbfb075f6,3248281a-98e8-4c3d-8946-db23ee0e5f03,01394,name-8901394,content-8901394,2004-09-19T17:00:00.000Z,createdBy.5ascy@example.com,2022-04-16T17:00:00.000Z,modifiedBy.5ascy@example.net
