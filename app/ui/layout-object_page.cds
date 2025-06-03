@@ -198,13 +198,13 @@ annotate ConfigService.PromptTexts with @(UI: {
 });
 
 annotate MainService.Tasks with @(UI: {
-    HeaderInfo: {
-        TypeName       : '{i18n>TaskName}',
-        TypeNamePlural : '{i18n>TaskPlural}',
-        Title          : {Value: name},
-        TypeImageUrl   : 'sap-icon://activities'
+    HeaderInfo              : {
+        TypeName      : '{i18n>TaskName}',
+        TypeNamePlural: '{i18n>TaskPlural}',
+        Title         : {Value: name},
+        TypeImageUrl  : 'sap-icon://activities'
     },
-    Facets: [
+    Facets                  : [
 
         {
             $Type : 'UI.ReferenceFacet',
@@ -225,7 +225,7 @@ annotate MainService.Tasks with @(UI: {
             Target: 'contextNodes/@UI.LineItem'
         },
     ],
-    FieldGroup #TaskInfo: {
+    FieldGroup #TaskInfo    : {
         $Type: 'UI.FieldGroupType',
         Data : [
             {
@@ -291,13 +291,13 @@ annotate MainService.Tasks with @(UI: {
 });
 
 annotate MainService.BotInstances with @(UI: {
-    HeaderInfo: {
-        TypeName       : '{i18n>BotInstancesSingular}',
-        TypeNamePlural : '{i18n>BotInstancesPlural}',
-        Title          : {Value: result},
-        TypeImageUrl   : 'sap-icon://activities'
+    HeaderInfo              : {
+        TypeName      : '{i18n>BotInstancesSingular}',
+        TypeNamePlural: '{i18n>BotInstancesPlural}',
+        Title         : {Value: result},
+        TypeImageUrl  : 'sap-icon://activities'
     },
-    Facets: [
+    Facets                  : [
 
         {
             $Type : 'UI.ReferenceFacet',
@@ -313,7 +313,7 @@ annotate MainService.BotInstances with @(UI: {
         },
 
     ],
-    FieldGroup #Tasks: {
+    FieldGroup #Tasks       : {
         $Type: 'UI.FieldGroupType',
         Data : [
             {
