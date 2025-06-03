@@ -36,10 +36,6 @@ annotate ConfigService.TaskTypes with @(UI: {
 });
 
 annotate ConfigService.PromptTexts with @(UI: {
-    HeaderInfo: {
-        TypeName      : '{i18n>PromptSingle}',
-        TypeNamePlural: '{i18n>PromptPlural}',
-    },
     SelectionFields     : [
         name,
         lang
@@ -69,11 +65,7 @@ annotate ConfigService.PromptTexts with @(UI: {
 
 
 annotate ConfigService.BotTypes with @UI: {
-    HeaderInfo     : {
-        $Type         : 'UI.HeaderInfoType',
-        TypeName      : '{i18n>BotTypeSingular}',
-        TypeNamePlural: '{i18n>BotTypePlural}',
-    },
+ 
     SelectionFields: [
         sequence,
         name,
