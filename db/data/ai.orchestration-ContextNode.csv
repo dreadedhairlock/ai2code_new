@@ -1,0 +1,5 @@
+ID;createdAt;createdBy;modifiedAt;modifiedBy;task_ID;path;label;type;value
+ctx1;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous;task1;order.status;order_status;text;Your order is being processed
+ctx2;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous;task3;refund.eligibility;refund_eligibility;text;Checking refund eligibility
+ctx3;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous;task1;event.order.status;event_order_status;text;order_status_check
+ctx4;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous;task3;event.refund.process;event_refund_process;text;refund_check

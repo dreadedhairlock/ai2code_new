@@ -35,10 +35,10 @@ annotate ConfigService.TaskTypes with @(UI: {
 });
 
 annotate MainService.Tasks with @(UI:{
-    HeaderInfo: {
-        TypeName      : '{i18n>TaskRuntime}',
-        TypeNamePlural: '{i18n>TaskRuntimePlural}',
-    },
+    // HeaderInfo: {
+    //     TypeName      : '{i18n>TaskRuntime}',
+    //     TypeNamePlural: '{i18n>TaskRuntimePlural}',
+    // },
     SelectionFields     : [
         name,
         type.name,
@@ -57,6 +57,16 @@ annotate MainService.Tasks with @(UI:{
         {
             $Type   : 'UI.DataField',
             Value   : contextPath,
+            @UI.Importance : #High
+        },
+        {
+            $Type   : 'UI.DataField',
+            Value   : sequence,
+            @UI.Importance : #High
+        },
+        {
+            $Type   : 'UI.DataField',
+            Value   : isMain,
             @UI.Importance : #High
         },
         {

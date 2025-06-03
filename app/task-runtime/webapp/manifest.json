@@ -69,6 +69,11 @@
                     "pattern": "Tasks({key}):?query:",
                     "name": "TasksObjectPage",
                     "target": "TasksObjectPage"
+                },
+                {
+                    "pattern": "Tasks({key})/botInstances({key2}):?query:",
+                    "name": "BotInstanceObjectPage",
+                    "target": "BotInstanceObjectPage"
                 }
             ],
             "targets": {
@@ -80,7 +85,7 @@
                         "settings": {
                             "entitySet": "Tasks",
                             "navigation": {
-                                "TasksObjectPage": {
+                                "Tasks": {
                                     "detail":{
                                         "route" : "TasksObjectPage"
                                     }
@@ -97,7 +102,36 @@
                     "options": {
                         "settings": {
                             "contextPath": "/Tasks",
+                            "navigation": {  
+                                "botInstances": {
+                                    "detail": {
+                                        "route": "BotInstanceObjectPage"
+                                    }
+                                }                 
+                            },
+                            "content": {
+                                "header": {
+                                    "anchorBarVisible": true
+                                }
+                            },
+                            "editableHeaderContent": false,
+                            "sectionLayout": "Page"
+                        }
+                    }
+                },
+                "BotInstanceObjectPage": {
+                    "type": "Component",
+                    "id": "BotInstanceObjectPage",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/botInstances",
                             "navigation": {
+                                  "task": {
+                                    "detail": {
+                                    "route": "TasksObjectPage"
+                                    }
+                                }
                             },
                             "content": {
                                 "header": {
