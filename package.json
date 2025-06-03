@@ -17,8 +17,5 @@
         }
       }
     }
-  },
-  "dependencies": {
-    "ai2code-cds": "file:"
   }
 }

@@ -74,6 +74,14 @@
 					"pattern": "TaskTypes({key})/botTypes({key2}):?query:",
 					"name": "BotTypesObjectPage",
 					"target": "BotTypesObjectPage"
+<<<<<<< HEAD
+=======
+				},
+				{
+					"pattern": "TaskTypes({key})/botTypes({key2})/prompts({promptsKey}):?query:",
+					"name": "PromptsObjectPage",
+					"target": "PromptsObjectPage"
+>>>>>>> 1b83f6890442ac4c62ca21385ac55d5ffec7a73e
 				}
 			],
 			"targets": {
@@ -125,7 +133,29 @@
 					"name": "sap.fe.templates.ObjectPage",
 					"options": {
 						"settings": {
+<<<<<<< HEAD
 							"contextPath": "/BotTypes",
+=======
+							"contextPath": "TaskTypes/BotTypes",
+							"editableHeaderContent": false,
+							"navigation": {
+								"prompts": {
+									"detail": {
+										"route": "PromptsObjectPage"
+									}
+								}
+							}
+						}
+					}
+				},
+				"PromptsObjectPage": {
+					"type": "Component",
+					"id": "PromptsObjectPage",
+					"name": "sap.fe.templates.ObjectPage",
+					"options": {
+						"settings": {
+							"contextPath": "/TaskTypes/botTypes/prompts",
+>>>>>>> 1b83f6890442ac4c62ca21385ac55d5ffec7a73e
 							"editableHeaderContent": false,
 							"navigation": {}
 						}
