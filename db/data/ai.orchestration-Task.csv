@@ -1,3 +1,3 @@
-ID;createdAt;createdBy;modifiedAt;modifiedBy;botInstance_ID;type_ID;name;description;contextPath;sequence;isMain
-task1;2025-06-02T06:50:00.000Z;system;2025-06-02T06:50:00.000Z;system;bi1;tp1;Order Processing;Handle customer order status;datasource.children[3];1;true
-task3;2025-06-02T06:50:00.000Z;system;2025-06-02T06:50:00.000Z;system;bi2;tp2;Refund Handling;Process refund requests;datasource.children[5];1;true
+ID,botInstance_ID,name,description,contextPath,sequence,isMain,createdAt,createdBy,modifiedAt,modifiedBy
+32863381-c07e-4a3e-a519-34a18845c8b0,3861988c-e48d-445f-b4ae-1a1a68add4e6,name-3286338,description-3286338,contextPath-3286338,12,true,2004-07-07T17:00:00.000Z,createdBy.1yfr6@example.net,2012-08-11T17:00:00.000Z,modifiedBy.1yfr6@example.net
+3286339c-f226-4a4d-811d-5937ff1d78e3,3861988c-e48d-445f-b4ae-1a1a68add4e6,name-3286339,description-3286339,contextPath-3286339,46,false,2017-10-09T17:00:00.000Z,createdBy.1yfr7@example.com,2005-04-26T17:00:00.000Z,modifiedBy.1yfr7@example.net
