@@ -21,14 +21,14 @@ annotate ConfigService.TaskTypes with @(UI: {
         },
         {
             $Type         : 'UI.DataField',
-            Value         : isMain,
-            Label         : '{i18n>TaskIsMain}',
+            Value         : autoRun,
+            Label         : '{i18n>AutoRun}',
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
-            Value         : autoRun,
-            Label         : '{i18n>TaskAutoRun}',
+            Value         : isMain,
+            Label         : '{i18n>IsMain}',
             @UI.Importance: #High
         },
     ],

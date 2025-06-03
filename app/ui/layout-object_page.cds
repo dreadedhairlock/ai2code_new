@@ -5,27 +5,28 @@ annotate ConfigService.TaskTypes with @(UI: {
     HeaderInfo             : {
         TypeName      : '{i18n>TaskName}',
         TypeNamePlural: '{i18n>TaskPlural}',
-        Title         : {Value: name},
-        Description   : {Value: description},
+        Title         : {
+            $Type : 'UI.DataField',
+            Value : name
+        },
+        Description   : {
+            $Type : 'UI.DataField',
+            Value: description
+        },
         TypeImageUrl  : 'sap-icon://activity-items'
     },
-    Facets                 : [
+    Facets : [
         {
-            $Type : 'UI.CollectionFacet',
+            $Type : 'UI.ReferenceFacet',
             Label : '{i18n>GeneralInfo}',
             ID    : 'GeneralInfo',
-            Facets: [{
-                $Type : 'UI.ReferenceFacet',
-                Label : '{i18n>GeneralInfo}',
-                ID    : 'GeneralFields',
-                Target: '@UI.FieldGroup#GeneralInfo'
-            }]
+            Target: '@UI.FieldGroup#GeneralInfo',
         },
         {
             $Type : 'UI.ReferenceFacet',
             Label : '{i18n>BotTypes}',
             ID    : 'BotTypes',
-            Target: 'botTypes/@UI.LineItem'
+            Target: 'botTypes/@UI.LineItem',
         },
     ],
     FieldGroup #GeneralInfo: {
@@ -110,6 +111,28 @@ annotate ConfigService.BotTypes with @(UI: {
         ]
     },
 });
+
+annotate ConfigService.BotTypes with {
+    contextType @(
+        Common.Text : contextType.descr,
+        Common.ValueList : {
+            $Type : 'Common.ValueListType',
+            CollectionPath : 'ContextTypes',
+            Parameters : [
+                {
+                    $Type : 'Common.ValueListParameterInOut',
+                    LocalDataProperty : contextType_code,
+                    ValueListProperty : 'code',
+                },
+                {
+                    $Type : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'name',
+                },
+            ],
+        },
+        Common.ValueListWithFixedValues : false,
+    )
+};
 
 annotate ConfigService.PromptTexts with @(UI: {
     HeaderInfo             : {
