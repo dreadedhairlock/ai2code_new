@@ -41,16 +41,19 @@ annotate ConfigService.TaskTypes with @(UI: {
                 Value: description,
                 Label: '{i18n>TaskDescription}'
             },
-            {
-                $Type: 'UI.DataField',
-                Value: isMain,
-                Label: '{i18n>TaskIsMain}'
-            },
-            {
+                        {
                 $Type: 'UI.DataField',
                 Value: autoRun,
                 Label: '{i18n>TaskAutoRun}'
+            },
+                        {
+                $Type: 'UI.DataField',
+                Value: isMain,
+                Label: '{i18n>TaskIsMain}'
             }
+
+
+
         ]
     },
 
@@ -67,11 +70,11 @@ annotate ConfigService.BotTypes with @(UI: {
     Facets                 : [
         {
             $Type : 'UI.CollectionFacet',
-            Label : '{i18n>GeneralInfo}',
-            ID    : 'GeneralInfo',
+            Label : '{i18n>BotType}',
+            ID    : 'BotType',
             Facets: [{
                 $Type : 'UI.ReferenceFacet',
-                Label : '{i18n>GeneralInfo}',
+                Label : '{i18n>BotType}',
                 ID    : 'GeneralFields',
                 Target: '@UI.FieldGroup#GeneralInfo'
             }]
@@ -89,27 +92,69 @@ annotate ConfigService.BotTypes with @(UI: {
             {
                 $Type: 'UI.DataField',
                 Value: name,
-                Label: '{i18n>TaskName}'
+                Label: '{i18n>BotName}'
             },
             {
                 $Type: 'UI.DataField',
                 Value: description,
-                Label: '{i18n>TaskDescription}'
+                Label: '{i18n>BotDescription}'
             },
             {
                 $Type: 'UI.DataField',
-                Value: ragSource,
-                Label: '{i18n>TaskIsMain}'
+                Value: functionType_code,
+                Label: '{i18n>FunctionType}'
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: sequence,
+                Label: '{i18n>Sequence}'
             },
             {
                 $Type: 'UI.DataField',
                 Value: autoRun,
-                Label: '{i18n>TaskAutoRun}'
+                Label: '{i18n>BotAutoRun}'
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: executionCondition,
+                Label: '{i18n>executionCondition}'
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: ragSource,
+                Label: '{i18n>RAGSource}'
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: sequence,
+                Label: '{i18n>Sequence}'
             }
 
         ]
     },
 });
+
+annotate ConfigService.BotTypes with {
+    contextType @(
+        Common.Text : contextType.descr,
+        Common.ValueList : {
+            $Type : 'Common.ValueListType',
+            CollectionPath : 'ContextTypes',
+            Parameters : [
+                {
+                    $Type : 'Common.ValueListParameterInOut',
+                    LocalDataProperty : contextType_code,
+                    ValueListProperty : 'code',
+                },
+                {
+                    $Type : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'name',
+                },
+            ],
+        },
+        Common.ValueListWithFixedValues : false,
+    )
+};
 
 annotate ConfigService.PromptTexts with @(UI: {
     HeaderInfo             : {
