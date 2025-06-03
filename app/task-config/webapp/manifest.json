@@ -130,7 +130,7 @@
 					"name": "sap.fe.templates.ObjectPage",
 					"options": {
 						"settings": {
-							"contextPath": "TaskTypes/BotTypes",
+							"contextPath": "/TaskTypes/botTypes",
 							"editableHeaderContent": false,
 							"navigation": {
 								"prompts": {
