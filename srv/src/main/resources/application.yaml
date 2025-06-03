@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: "jdbc:sqlite:../db/ai2code-database.sqlite"
+    hikari:
+      max-lifetime: 0
+      maximum-pool-size: 1
+  config:
+    activate:
+      on-profile: default
+  sql:
+    init:
+      mode: always
+      platform: sqlite
+cds:
+  odata-v4:
+    endpoint:
+      path: /api
+    lazy-i18n:
+      enabled: true
