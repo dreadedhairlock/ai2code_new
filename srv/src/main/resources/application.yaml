@@ -10,7 +10,7 @@ spring:
       on-profile: default
   sql:
     init:
-      mode: always
+      mode: never
       platform: sqlite
 cds:
   odata-v4:
