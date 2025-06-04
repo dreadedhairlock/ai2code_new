@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: "jdbc:sqlite:../db/ai2code-database.sqlite"
+    url: jdbc:sqlite:../db/ai2code-database.sqlite
     hikari:
       max-lifetime: 0
       maximum-pool-size: 1
@@ -12,6 +12,7 @@ spring:
     init:
       mode: never
       platform: sqlite
+  web.resources.static-locations: file:./app/
 cds:
   odata-v4:
     endpoint:
