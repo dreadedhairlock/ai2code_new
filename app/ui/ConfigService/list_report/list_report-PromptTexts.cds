@@ -5,7 +5,7 @@ using from '../../../index';
 annotate ConfigService.PromptTexts with @(UI: {
     SelectionFields: [
         name,
-        lang
+        lang_code
     ],
     LineItem       : [
         {
@@ -16,7 +16,7 @@ annotate ConfigService.PromptTexts with @(UI: {
         },
         {
             $Type         : 'UI.DataField',
-            Value         : lang,
+            Value         : lang_code,
             Label         : '{i18n>Language}',
             @UI.Importance: #High
         },
