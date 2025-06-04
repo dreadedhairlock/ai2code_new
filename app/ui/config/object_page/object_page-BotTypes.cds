@@ -1,7 +1,6 @@
 using from '../../../../srv/index';
 using from '../../../index';
 
-
 annotate ConfigService.BotTypes with @(UI: {
     HeaderInfo             : {
         TypeName      : '{i18n>BotTypes}',
@@ -71,6 +70,37 @@ annotate ConfigService.BotTypes with @(UI: {
                 $Type: 'UI.DataField',
                 Value: sequence,
                 Label: '{i18n>Sequence}'
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: ragTopK,
+                Label: '{i18n>RAGTopK}'
+
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: outputContextPath,
+                Label: '{i18n>OutputContextPath}'
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: implementationClass,
+                Label: '{i18n>ImplementationClass}'
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: isRAGEnabled,
+                Label: '{i18n>RAGEnabled}'
+            },
+            // {
+            //     $Type: 'UI.DataField',
+            //     Value: model,
+            //     Label: '{i18n>model}'
+            // },
+            {
+                $Type: 'UI.DataField',
+                Value: ragClass,
+                Label: '{i18n>ragClass}'
             }
 
         ]
