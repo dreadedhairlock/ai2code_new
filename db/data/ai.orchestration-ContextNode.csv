@@ -1,3 +1,5 @@
-ID,task_ID,path,label,type,value,createdAt,createdBy,modifiedAt,modifiedBy
-7208816d-7a40-4e80-802e-8f4864415b08,27363543-e8e7-422e-81ae-dec318fbc12f,path-7208816,label-7208816,type-7208816,value-7208816,2009-05-11T17:00:00.000Z,createdBy.4aicw@example.org,2000-06-10T17:00:00.000Z,modifiedBy.4aicw@example.org
-7208817a-49c9-4e21-8699-155122521047,27363543-e8e7-422e-81ae-dec318fbc12f,path-7208817,label-7208817,type-7208817,value-7208817,2016-05-05T17:00:00.000Z,createdBy.4aicx@example.net,2002-04-17T17:00:00.000Z,modifiedBy.4aicx@example.net
+ID;createdAt;createdBy;modifiedAt;modifiedBy;task_ID;path;label;type;value
+ctx1;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous;task1;order.status;order_status;text;Your order is being processed
+ctx2;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous;task3;refund.eligibility;refund_eligibility;text;Checking refund eligibility
+ctx3;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous;task1;event.order.status;event_order_status;text;order_status_check
+ctx4;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous;task3;event.refund.process;event_refund_process;text;refund_check
