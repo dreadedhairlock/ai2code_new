@@ -1,7 +1,6 @@
 using {
   cuid,
   managed,
-  sap.common.Languages,
   sap.common.CodeList
 } from '@sap/cds/common';
 
@@ -52,7 +51,7 @@ entity ModelConfig : cuid, managed {
 /* Bot提示词模板，支持多语言多模板。 */
 entity PromptText : cuid, managed {
   botType : Association to BotType;
-  lang    : Association to Languages; // Association to enable value help
+  lang    : String(5);
   name    : String(100);
   content : LargeString;
 }
@@ -92,3 +91,4 @@ entity ContextType : CodeList {
       //image    = 'IMAGE';     // 图片(base64或URL)
       };
 }
+

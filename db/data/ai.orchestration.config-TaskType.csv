@@ -1,4 +1,2 @@
 ID,name,description,autoRun,isMain,createdAt,createdBy,modifiedAt,modifiedBy
-48148289-5767-44b9-9c86-1cee27570d8b,GenerateRAPBase,Generate RAP Basic Structure,true,true,2023-01-01T10:00:00.000Z,SYSTEM,2023-01-01T10:00:00.000Z,SYSTEM
-f2a45b78-9c12-4d67-b123-456789abcdef,CreateBehavior,Generate Behavior Implementation,true,false,2023-01-01T10:00:00.000Z,SYSTEM,2023-01-01T10:00:00.000Z,SYSTEM
-e3b56c89-8d23-4e78-c234-567890bcdef1,GenerateTests,Generate Unit Tests,false,false,2023-01-01T10:00:00.000Z,SYSTEM,2023-01-01T10:00:00.000Z,SYSTEM
+12559936-323a-4a30-9096-8974baee96d8,name-12559936,description-12559936,true,true,2018-08-10T17:00:00.000Z,createdBy.7h7b4@example.net,2022-01-28T17:00:00.000Z,modifiedBy.7h7b4@example.net
