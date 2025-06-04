@@ -30,7 +30,7 @@ annotate ConfigService.PromptTexts with @(UI: {
             },
             {
                 $Type: 'UI.DataField',
-                Value: lang,
+                Value: lang_code,
                 Label: '{i18n>Language}'
             },
             {
