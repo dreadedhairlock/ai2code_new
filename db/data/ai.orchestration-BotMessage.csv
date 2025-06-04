@@ -1,3 +1,7 @@
-ID,role,message,ragData,botInstance_ID,createdAt,createdBy,modifiedAt,modifiedBy
-18184689-e6f7-474a-9739-34c7ed61b2d8,role-18184689,message-18184689,ragData-18184689,3861988c-e48d-445f-b4ae-1a1a68add4e6,2014-10-11T17:00:00.000Z,createdBy.atre9@example.org,2003-10-22T17:00:00.000Z,modifiedBy.atre9@example.net
-18184690-9b62-4ba4-b2f3-fdcce5646582,role-18184690,message-18184690,ragData-18184690,3861988c-e48d-445f-b4ae-1a1a68add4e6,2001-12-22T17:00:00.000Z,createdBy.atrea@example.com,2004-04-07T17:00:00.000Z,modifiedBy.atrea@example.com
+ID;role;message;ragData;botInstance_ID;createdAt;createdBy;modifiedAt;modifiedBy
+msg1;user;What is the status of my order?;{};bi1;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
+msg2;assistant;Your order is being processed.;{"source":"order_db"};bi1;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
+msg3;system;Bot triggered by order tracking request.;{"event":"order_status_check"};bi1;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
+msg4;user;Can I get a refund?;{};bi2;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
+msg5;assistant;Please wait while I check your eligibility.;{"source":"refund_policy"};bi2;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
+msg6;system;Refund process initiated.;{"event":"refund_check"};bi2;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
