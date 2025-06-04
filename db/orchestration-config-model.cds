@@ -92,4 +92,3 @@ entity ContextType : CodeList {
       //image    = 'IMAGE';     // 图片(base64或URL)
       };
 }
-
