@@ -18,53 +18,19 @@ annotate MainService.BotInstances with @(UI: {
         },
         {
             $Type : 'UI.ReferenceFacet',
+            Label : '{i18n>BotMessages}',
+            ID    : 'BotMessages',
+            Target: 'messages/@UI.LineItem'
+        },
+        {
+            $Type : 'UI.ReferenceFacet',
             Label : '{i18n>BotInstancesPlural}',
             ID    : 'BotInstances',
             Target: '@UI.FieldGroup#BotInstances'
         },
 
     ],
-    FieldGroup #Tasks       : {
-        $Type: 'UI.FieldGroupType',
-        Data : [
-            {
-                $Type: 'UI.DataField',
-                Value: task.description,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: task.contextPath,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: task.sequence,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: task.isMain,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: task.name,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: task.description,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: task.contextPath,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: task.sequence,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: task.isMain,
-            },
-        ]
-    },
+
     FieldGroup #BotInstances: {
         $Type: 'UI.FieldGroupType',
         Data : [
