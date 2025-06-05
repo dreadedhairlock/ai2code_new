@@ -91,8 +91,8 @@
                             "entitySet": "Tasks",
                             "navigation": {
                                 "Tasks": {
-                                    "detail":{
-                                        "route" : "TasksObjectPage"
+                                    "detail": {
+                                        "route": "TasksObjectPage"
                                     }
                                 }
                             },
@@ -107,7 +107,7 @@
                     "options": {
                         "settings": {
                             "contextPath": "/Tasks",
-                            "navigation": {  
+                            "navigation": {
                                 "botInstances": {
                                     "detail": {
                                         "route": "BotInstanceObjectPage"
@@ -117,7 +117,7 @@
                                     "detail": {
                                         "route": "ContextNodeObjectPage"
                                     }
-                                }                 
+                                }
                             },
                             "content": {
                                 "header": {
@@ -135,11 +135,11 @@
                     "name": "sap.fe.templates.ObjectPage",
                     "options": {
                         "settings": {
-                            "contextPath": "/botInstances",
+                            "contextPath": "/BotInstances",
                             "navigation": {
-                                  "task": {
+                                "task": {
                                     "detail": {
-                                    "route": "TasksObjectPage"
+                                        "route": "TasksObjectPage"
                                     }
                                 }
                             },
@@ -160,8 +160,7 @@
                     "options": {
                         "settings": {
                             "contextPath": "/Tasks/contextNodes",
-                            "navigation": {
-                            },
+                            "navigation": {},
                             "content": {
                                 "header": {
                                     "anchorBarVisible": true
@@ -172,7 +171,8 @@
                         }
                     }
                 }
-            }
+            },
+            "config": {}
         }
     },
     "sap.ui": {
@@ -191,5 +191,6 @@
             "tablet": true,
             "phone": true
         }
-    }
+    },
+    "sap.fiori": {}
 }

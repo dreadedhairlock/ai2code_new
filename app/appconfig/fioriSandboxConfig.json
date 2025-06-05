@@ -16,6 +16,14 @@
             "applicationType": "URL",
             "url": "/task-runtime/webapp",
             "navigationMode": "embedded"
+        },
+        "manage-bots-runtime": {
+            "title": "Bot Instances Runtime",
+            "description": "Configure bots",
+            "additionalInformation": "SAPUI5.Component=bots-runtime",
+            "applicationType": "URL",
+            "url": "/bots-runtime/webapp",
+            "navigationMode": "embedded"
         }
     }
 }

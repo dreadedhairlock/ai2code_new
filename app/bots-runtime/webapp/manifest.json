@@ -1,0 +1,131 @@
+{
+    "_version": "1.8.0",
+    "sap.app": {
+        "id": "bots-runtime",
+        "type": "application",
+        "i18n": "i18n/i18n.properties",
+        "applicationVersion": {
+            "version": "0.0.1"
+        },
+        "title": "{{appTitle}}",
+        "description": "{{appDescription}}",
+        "resources": "resources.json",
+        "dataSources": {
+            "MainService": {
+                "uri": "/api/MainService/",
+                "type": "OData",
+                "settings": {
+                    "odataVersion": "4.0"
+                }
+            }
+        }
+    },
+    "sap.ui5": {
+        "dependencies": {
+            "libs": {
+                "sap.fe.templates": {}
+            },
+            "minUI5Version": "1.122.1"
+        },
+        "contentDensities": {
+            "compact": true,
+            "cozy": true
+        },
+        "models": {
+            "i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "settings": {
+                    "bundleName": "bots-runtime.i18n.i18n"
+                }
+            },
+            "": {
+                "dataSource": "MainService",
+                "preload": true,
+                "settings": {
+                    "synchronizationMode": "None",
+                    "operationMode": "Server",
+                    "autoExpandSelect": true,
+                    "earlyRequests": true,
+                    "groupProperties": {
+                        "default": {
+                            "submit": "Auto"
+                        }
+                    }
+                }
+            },
+            "@i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "uri": "i18n/i18n.properties"
+            }
+        },
+        "routing": {
+            "routes": [
+                {
+                    "pattern": ":?query:",
+                    "name": "BotInstances",
+                    "target": "BotInstances"
+                },
+                {
+                    "pattern": "BotInstances({key}):?query:",
+                    "name": "BotInstancesObjectPage",
+                    "target": "BotInstancesObjectPage"
+                }
+            ],
+            "targets": {
+                "BotInstances": {
+                    "type": "Component",
+                    "id": "BotInstances",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": {
+                        "settings": {
+                            "entitySet": "BotInstances",
+                            "navigation": {
+                                "BotInstances": {
+                                    "detail":{
+                                        "route" : "BotInstancesObjectPage"
+                                    }
+                                }
+                            },
+                            "initialLoad": "Enabled"
+                        }
+                    }
+                },
+                "BotInstancesObjectPage": {
+                    "type": "Component",
+                    "id": "BotInstancesObjectPage",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/BotInstances",
+                            "navigation": {},
+                            "content": {
+                                "header": {
+                                    "anchorBarVisible": true
+                                }
+                            },
+                            "editableHeaderContent": false,
+                            "sectionLayout": "Page"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "fullWidth": false,
+        "icons": {
+            "icon": "",
+            "favIcon": "",
+            "phone": "",
+            "phone@2": "",
+            "tablet": "",
+            "tablet@2": ""
+        },
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": true
+        }
+    }
+}
