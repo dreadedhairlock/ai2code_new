@@ -6,7 +6,10 @@ service ConfigService {
 
   //entity TaskBotSequences     as projection on cfg.TaskBotSequence;
   entity BotTypes            as projection on cfg.BotType;
+
+  @odata.draft.enabled
   entity ModelConfigs        as projection on cfg.ModelConfig;
+
   entity PromptTexts         as projection on cfg.PromptText;
   //entity FunctionCalls        as projection on cfg.FunctionCall;
   entity BotInstanceStatuses as projection on cfg.BotInstanceStatus;
