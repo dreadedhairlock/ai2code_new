@@ -74,6 +74,11 @@
                     "pattern": "Tasks({key})/botInstances({key2}):?query:",
                     "name": "BotInstanceObjectPage",
                     "target": "BotInstanceObjectPage"
+                },
+                {
+                    "pattern": "Tasks({key})/contextNodes({key2}):?query:",
+                    "name": "ContextNodeObjectPage",
+                    "target": "ContextNodeObjectPage"
                 }
             ],
             "targets": {
@@ -107,6 +112,11 @@
                                     "detail": {
                                         "route": "BotInstanceObjectPage"
                                     }
+                                },
+                                "contextNodes": {
+                                    "detail": {
+                                        "route": "ContextNodeObjectPage"
+                                    }
                                 }                 
                             },
                             "content": {
@@ -132,6 +142,25 @@
                                     "route": "TasksObjectPage"
                                     }
                                 }
+                            },
+                            "content": {
+                                "header": {
+                                    "anchorBarVisible": true
+                                }
+                            },
+                            "editableHeaderContent": false,
+                            "sectionLayout": "Page"
+                        }
+                    }
+                },
+                "ContextNodeObjectPage": {
+                    "type": "Component",
+                    "id": "ContextNodeObjectPage",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/Tasks/contextNodes",
+                            "navigation": {
                             },
                             "content": {
                                 "header": {
