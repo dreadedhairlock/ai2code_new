@@ -1,8 +1,11 @@
 <mvc:View
     controllerName="runtime.controller.runtime"
     xmlns="sap.m"
+    xmlns:u="sap.uxap"
     xmlns:core="sap.ui.core"
     xmlns:mvc="sap.ui.core.mvc"
+    xmlns:layout="sap.ui.layout"
+    xmlns:forms="sap.ui.layout.form"
 >
     <Page
         id="page"
@@ -15,55 +18,95 @@
             height="100%"
         >
             <VBox width="25%">
-                <Toolbar>
-                    <Title text="Context Tree" />
-                </Toolbar>
-                <List
-                    id="ContextNodesList"
-                    mode="SingleSelectMaster"
-                    items="{ path: '/ContextNodes' }"
-                    itemPress=".onContextNodesSelect"
-                    selectionChange=".onContextNodesSelect"
+                <VBox
+                    height="50%"
                 >
-                    <!-- Template for each author -->
-                    <StandardListItem title="{ID}}" />
-                </List>
+                    <Toolbar>
+                        <Title text="Context Tree" />
+                    </Toolbar>
+                    <ScrollContainer
+                        height="100%"
+                        vertical="true"
+                        horizontal="false"
+                    >
+                        <List
+                            id="ContextNodesList"
+                            mode="SingleSelectMaster"
+                            items="{ path: '/ContextNodes' }"
+                            itemPress=".onContextNodesSelect"
+                            selectionChange=".onContextNodesSelect"
+                            growing="true"
+                            growingThreshold="50"
+                        >
+                            <!-- Template for each context node -->
+                            <StandardListItem title="{ID}" />
+                        </List>
+                    </ScrollContainer>
+                </VBox>
 
-                <Toolbar>
-                    <Title text="Task Tree" />
-                </Toolbar>
-                <List
-                    id="MainTask"
-                    mode="SingleSelectMaster"
-                    items="{ path: '/BotInstances' }"
-                    itemPress=".onBotInstanceSelect"
-                    selectionChange=".onBotInstanceSelect"
+                <!-- Task Tree Section -->
+                <VBox
+                    height="50%"
                 >
-                    <!-- Template for each author -->
-                    <StandardListItem
-                        title="{ID}"
-                        type="Active"
-                    />
-                </List>
+                    <Toolbar>
+                        <Title text="Task Tree" />
+                    </Toolbar>
+                    <ScrollContainer
+                        height="100%"
+                        vertical="true"
+                        horizontal="false"
+                    >
+                        <List
+                            id="BotInstancesList"
+                            mode="SingleSelectMaster"
+                            items="{ path: '/BotInstances' }"
+                            itemPress=".onBotInstanceSelect"
+                            selectionChange=".onBotInstanceSelect"
+                            growing="true"
+                            growingThreshold="50"
+                        >
+                            <!-- Template for each bot instance -->
+                            <StandardListItem
+                                title="{ID}"
+                                type="Active"
+                            />
+                        </List>
+                    </ScrollContainer>
+                </VBox>
             </VBox>
 
             <VBox width="50%">
                 <Toolbar>
                     <Title text="Content" />
                 </Toolbar>
-                <Table
-                    id="ContextNodeTable"
-                    mode="SingleSelectMaster"
+                <forms:SimpleForm
+                    visible="false"
+                    editable="false"
+                    layout="ResponsiveGridLayout"
+                    id="ContextNodeForm"
                 >
-                    <columns>
-                        <Column width="25%">
-                            <Text text="Label" />
-                        </Column>
-                        <Column width="35%">
-                            <Text text="Type" />
-                        </Column>
-                    </columns>
-                </Table>
+                    <Label text="ID" />
+                    <Text text="{ID}" />
+
+                    <Label text="Label" />
+                    <Text text="{label}" />
+
+                    <Label text="Type" />
+                    <Text text="{type}" />
+                </forms:SimpleForm>
+
+                <forms:SimpleForm
+                    visible="false"
+                    editable="false"
+                    layout="ResponsiveGridLayout"
+                    id="BotInstanceForm"
+                >
+                    <Label text="ID" />
+                    <Text text="{ID}" />
+
+                    <Label text="Result" />
+                    <Text text="{result}" />
+                </forms:SimpleForm>
             </VBox>
 
             <VBox width="25%">
