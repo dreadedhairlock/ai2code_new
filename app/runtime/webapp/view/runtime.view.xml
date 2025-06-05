@@ -8,26 +8,65 @@
         id="page"
         title="{i18n>title}"
     >
-        
         <!-- Option 2: Alternative using HBox layout -->
-        
-        <HBox width="100%" height="100%">
-            <VBox width="25%" >
+
+        <HBox
+            width="100%"
+            height="100%"
+        >
+            <VBox width="25%">
                 <Toolbar>
                     <Title text="Context Tree" />
                 </Toolbar>
+                <List
+                    id="ContextNodesList"
+                    mode="SingleSelectMaster"
+                    items="{ path: '/ContextNodes' }"
+                    itemPress=".onContextNodesSelect"
+                    selectionChange=".onContextNodesSelect"
+                >
+                    <!-- Template for each author -->
+                    <StandardListItem title="{ID}}" />
+                </List>
+
                 <Toolbar>
                     <Title text="Task Tree" />
                 </Toolbar>
+                <List
+                    id="MainTask"
+                    mode="SingleSelectMaster"
+                    items="{ path: '/BotInstances' }"
+                    itemPress=".onBotInstanceSelect"
+                    selectionChange=".onBotInstanceSelect"
+                >
+                    <!-- Template for each author -->
+                    <StandardListItem
+                        title="{ID}"
+                        type="Active"
+                    />
+                </List>
             </VBox>
-            
-            <VBox width="50%" >
+
+            <VBox width="50%">
                 <Toolbar>
                     <Title text="Content" />
                 </Toolbar>
+                <Table
+                    id="ContextNodeTable"
+                    mode="SingleSelectMaster"
+                >
+                    <columns>
+                        <Column width="25%">
+                            <Text text="Label" />
+                        </Column>
+                        <Column width="35%">
+                            <Text text="Type" />
+                        </Column>
+                    </columns>
+                </Table>
             </VBox>
-            
-            <VBox width="25%" >
+
+            <VBox width="25%">
                 <Toolbar>
                     <Title text="Details" />
                 </Toolbar>
