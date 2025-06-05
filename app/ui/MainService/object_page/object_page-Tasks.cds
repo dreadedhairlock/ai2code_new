@@ -54,42 +54,6 @@ annotate MainService.Tasks with @(UI: {
             },
         ]
     },
-    FieldGroup #BotInstances: {
-        $Type: 'UI.FieldGroupType',
-        Data : [
-            {
-                $Type: 'UI.DataField',
-                Value: sequence,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: botInstances.result,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: botInstances.status_code,
-            },
-        ]
-    },
-    FieldGroup #ContextNodes: {
-        $Type: 'UI.FieldGroupType',
-        Data : [
-            {
-                $Type: 'UI.DataField',
-                Value: contextNodes.path,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: contextNodes.type,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: contextNodes.label,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: contextNodes.value,
-            },
-        ]
-    },
+
+
 });

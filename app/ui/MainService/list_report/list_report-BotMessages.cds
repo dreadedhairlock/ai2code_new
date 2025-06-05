@@ -1,26 +1,21 @@
 using from '../../../../srv/index';
 using from '../../../index';
 
-annotate MainService.ContextNodes with @(UI: {
+annotate MainService.BotMessages with @(UI: {
     LineItem  : [
         {
             $Type         : 'UI.DataField',
-            Value         : path,
+            Value         : role,
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
-            Value         : type,
+            Value         : message,
             @UI.Importance: #High
         },
         {
             $Type         : 'UI.DataField',
-            Value         : label,
-            @UI.Importance: #High
-        },
-        {
-            $Type         : 'UI.DataField',
-            Value         : value,
+            Value         : ragData,
             @UI.Importance: #High
         },
     ],

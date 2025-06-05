@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:../db/ai2code-database.sqlite
+    url: jdbc:sqlite:./db/ai2code-database.sqlite
     hikari:
       max-lifetime: 0
       maximum-pool-size: 1
