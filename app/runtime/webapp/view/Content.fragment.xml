@@ -1,0 +1,38 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:forms="sap.ui.layout.form"
+    xmlns:core="sap.ui.core"
+>
+    <Toolbar>
+        <Title text="Content" />
+    </Toolbar>
+
+    <forms:SimpleForm
+        visible="false"
+        editable="false"
+        layout="ResponsiveGridLayout"
+        id="ContextNodeForm"
+    >
+        <Label text="ID" />
+        <Text text="{ID}" />
+
+        <Label text="Label" />
+        <Text text="{label}" />
+
+        <Label text="Type" />
+        <Text text="{type}" />
+    </forms:SimpleForm>
+
+    <forms:SimpleForm
+        visible="false"
+        editable="false"
+        layout="ResponsiveGridLayout"
+        id="BotInstanceForm"
+    >
+        <Label text="ID" />
+        <Text text="{ID}" />
+
+        <Label text="Result" />
+        <Text text="{result}" />
+    </forms:SimpleForm>
+</core:FragmentDefinition>

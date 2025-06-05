@@ -1,0 +1,23 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    <VBox height="50%">
+        <Toolbar>
+            <Title text="Context Tree" />
+        </Toolbar>
+        <ScrollContainer height="100%" vertical="true" horizontal="false">
+            <List
+                id="ContextNodesList"
+                mode="SingleSelectMaster"
+                items="{ path: '/ContextNodes' }"
+                itemPress=".onContextNodesSelect"
+                selectionChange=".onContextNodesSelect"
+                growing="true"
+                growingThreshold="50"
+            >
+                <StandardListItem title="{ID}" />
+            </List>
+        </ScrollContainer>
+    </VBox>
+</core:FragmentDefinition>
