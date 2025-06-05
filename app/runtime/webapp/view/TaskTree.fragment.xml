@@ -8,11 +8,11 @@
         </Toolbar>
         <ScrollContainer height="100%" vertical="true" horizontal="false">
             <List
-                id="BotInstancesList"
+                id="TasksList"
                 mode="SingleSelectMaster"
-                items="{ path: '/BotInstances' }"
-                itemPress=".onBotInstanceSelect"
-                selectionChange=".onBotInstanceSelect"
+                items="{ path: '/Tasks' }"
+                itemPress=".onTasksSelect"
+                selectionChange=".onTasksSelect"
                 growing="true"
                 growingThreshold="50"
             >

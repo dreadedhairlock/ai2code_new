@@ -1,14 +1,12 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
-    "sap/ui/model/Filter",
-    "sap/ui/model/FilterOperator",
-], (Controller, Filter, FilterOperator) => {
+
+], (Controller) => {
     "use strict";
 
     return Controller.extend("runtime.controller.runtime", {
-        onInit() {
-        },
 
+        // ---------------------------------------Context Tree -------------------------------------
         // This is Detail page
         onContextNodesSelect: function () {
             // Get the reference to the author list control by its ID
@@ -50,48 +48,48 @@ sap.ui.define([
                 });
             }
         },
+        // ---------------------------------------Context Tree -------------------------------------
 
+
+
+
+        // -----------------------------------------Task Tree --------------------------------------
         // This is Detail page
-        onBotInstanceSelect: function () {
+        onTaskSelect: function () {
             // Get the reference to the author list control by its ID
-            const oList = this.byId("BotInstancesList");
 
-            // Get the currently selected item (author) from the list
-            const oBotInstanceSelected = oList.getSelectedItem();
-
-            // If no author is selected, exit the function
-            if (!oBotInstanceSelected) {
+            const oSelectedItem = oEvent.getParameter("listItem") || oEvent.getSource().getSelectedItem();
+            if (!oSelectedItem) {
                 return;
             }
 
-            // Retrieve the ID of the selected author from its binding context
-            const sBotInstanceId = oBotInstanceSelected.getBindingContext().getProperty("ID");
-            console.log(sBotInstanceId)
-            // Call a private function to bind and display books related to the selected author
-            this._bindBotInstance(sBotInstanceId);
-        },
-
-        _bindBotInstance: function (sBotInstanceId) {
-            // Get a reference to the books table control by its ID
-            const oForm = this.byId("BotInstanceForm");
-            const oOtherForm = this.byId("ContextNodeForm");
-
-            // If no author ID is provided, unbind the table and exit
-            if (!sBotInstanceId) {
-                oForm.setVisible(false);
-                oForm.unbindItems();
+            // Ambil binding context dari item yang dipilih
+            const oContext = oSelectedItem.getBindingContext();
+            if (!oContext) {
                 return;
-            } else {
-                oForm.setVisible(true);
-                oOtherForm.setVisible(false);
-                // Bind the table items to the /Books entity set, filtered by the selected author's ID
-                const sPath = "/BotInstances(" + sBotInstanceId + ")";
-
-                oForm.bindElement({
-                    path: sPath,
-                });
             }
+
+            // Ambil ID task dari context
+            const sTaskId = oContext.getProperty("ID");
+
+            // Ambil reference ke list BotInstance (misal id="BotInstancesList")
+            const oBotInstanceList = this.byId("BotInstancesList");
+
+            // Buat filter berdasarkan task ID (misal field foreign key: TaskID)
+            const oFilter = new sap.ui.model.Filter("TaskID", sap.ui.model.FilterOperator.EQ, sTaskId);
+
+            // Bind ulang items di BotInstanceList dengan filter
+            oBotInstanceList.bindItems({
+                path: "/BotInstances",
+                filters: [oFilter],
+                template: new sap.m.StandardListItem({
+                    title: "{InstanceName}", // sesuaikan dengan properti BotInstance
+                    type: "Active"
+                })
+            });
         },
 
+
+        // -----------------------------------------Task Tree --------------------------------------
     });
 });
