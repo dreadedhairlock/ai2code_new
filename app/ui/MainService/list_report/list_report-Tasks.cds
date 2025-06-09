@@ -9,6 +9,11 @@ annotate MainService.Tasks with @(UI: {
     LineItem       : [
         {
             $Type         : 'UI.DataField',
+            Value         : ID,
+            @UI.Importance: #High
+        },
+        {
+            $Type         : 'UI.DataField',
             Value         : name,
             @UI.Importance: #High
         },
