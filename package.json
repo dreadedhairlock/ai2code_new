@@ -18,6 +18,9 @@
       }
     }
   },
+    "sapux": [
+    "app/runtime"
+  ],
   "dependencies": {
     "ai2code-cds": "file:"
   }

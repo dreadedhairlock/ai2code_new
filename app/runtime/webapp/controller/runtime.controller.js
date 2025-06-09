@@ -5,7 +5,7 @@ sap.ui.define([
     "use strict";
 
     return Controller.extend("runtime.controller.runtime", {
-
+        
         // ---------------------------------------Context Tree -------------------------------------
         // This is Detail page
         onContextNodesSelect: function () {
@@ -52,41 +52,13 @@ sap.ui.define([
 
 
 
-
+        
         // -----------------------------------------Task Tree --------------------------------------
         // This is Detail page
         onTaskSelect: function () {
             // Get the reference to the author list control by its ID
-
-            const oSelectedItem = oEvent.getParameter("listItem") || oEvent.getSource().getSelectedItem();
-            if (!oSelectedItem) {
-                return;
-            }
-
-            // Ambil binding context dari item yang dipilih
-            const oContext = oSelectedItem.getBindingContext();
-            if (!oContext) {
-                return;
-            }
-
-            // Ambil ID task dari context
-            const sTaskId = oContext.getProperty("ID");
-
-            // Ambil reference ke list BotInstance (misal id="BotInstancesList")
-            const oBotInstanceList = this.byId("BotInstancesList");
-
-            // Buat filter berdasarkan task ID (misal field foreign key: TaskID)
-            const oFilter = new sap.ui.model.Filter("TaskID", sap.ui.model.FilterOperator.EQ, sTaskId);
-
-            // Bind ulang items di BotInstanceList dengan filter
-            oBotInstanceList.bindItems({
-                path: "/BotInstances",
-                filters: [oFilter],
-                template: new sap.m.StandardListItem({
-                    title: "{InstanceName}", // sesuaikan dengan properti BotInstance
-                    type: "Active"
-                })
-            });
+            const oList = this.byId("TasksList");
+    
         },
 
 
