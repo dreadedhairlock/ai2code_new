@@ -1,7 +1,7 @@
 {
     "_version": "1.8.0",
     "sap.app": {
-        "id": "task-runtime",
+        "id": "bots-runtime",
         "type": "application",
         "i18n": "i18n/i18n.properties",
         "applicationVersion": {
@@ -35,7 +35,7 @@
             "i18n": {
                 "type": "sap.ui.model.resource.ResourceModel",
                 "settings": {
-                    "bundleName": "task-runtime.i18n.i18n"
+                    "bundleName": "bots-runtime.i18n.i18n"
                 }
             },
             "": {
@@ -62,32 +62,27 @@
             "routes": [
                 {
                     "pattern": ":?query:",
-                    "name": "Tasks",
-                    "target": "Tasks"
+                    "name": "BotInstances",
+                    "target": "BotInstances"
                 },
                 {
-                    "pattern": "Tasks({key}):?query:",
-                    "name": "TasksObjectPage",
-                    "target": "TasksObjectPage"
-                },
-                {
-                    "pattern": "Tasks({key})/contextNodes({key2}):?query:",
-                    "name": "ContextNodeObjectPage",
-                    "target": "ContextNodeObjectPage"
+                    "pattern": "BotInstances({key}):?query:",
+                    "name": "BotInstancesObjectPage",
+                    "target": "BotInstancesObjectPage"
                 }
             ],
             "targets": {
-                "Tasks": {
+                "BotInstances": {
                     "type": "Component",
-                    "id": "Tasks",
+                    "id": "BotInstances",
                     "name": "sap.fe.templates.ListReport",
                     "options": {
                         "settings": {
-                            "entitySet": "Tasks",
+                            "entitySet": "BotInstances",
                             "navigation": {
-                                "Tasks": {
-                                    "detail": {
-                                        "route": "TasksObjectPage"
+                                "BotInstances": {
+                                    "detail":{
+                                        "route" : "BotInstancesObjectPage"
                                     }
                                 }
                             },
@@ -95,37 +90,13 @@
                         }
                     }
                 },
-                "TasksObjectPage": {
+                "BotInstancesObjectPage": {
                     "type": "Component",
-                    "id": "TasksObjectPage",
+                    "id": "BotInstancesObjectPage",
                     "name": "sap.fe.templates.ObjectPage",
                     "options": {
                         "settings": {
-                            "contextPath": "/Tasks",
-                            "navigation": {
-                                "contextNodes": {
-                                    "detail": {
-                                        "route": "ContextNodeObjectPage"
-                                    }
-                                }
-                            },
-                            "content": {
-                                "header": {
-                                    "anchorBarVisible": true
-                                }
-                            },
-                            "editableHeaderContent": false,
-                            "sectionLayout": "Page"
-                        }
-                    }
-                },
-                "ContextNodeObjectPage": {
-                    "type": "Component",
-                    "id": "ContextNodeObjectPage",
-                    "name": "sap.fe.templates.ObjectPage",
-                    "options": {
-                        "settings": {
-                            "contextPath": "/Tasks/contextNodes",
+                            "contextPath": "/BotInstances",
                             "navigation": {},
                             "content": {
                                 "header": {
@@ -137,8 +108,7 @@
                         }
                     }
                 }
-            },
-            "config": {}
+            }
         }
     },
     "sap.ui": {
