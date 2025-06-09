@@ -1,3 +1,3 @@
-ID;sequence;result;type_ID;status_code;task_ID;createdAt;createdBy;modifiedAt;modifiedBy
-bi1;1;Success;bt1;C;task1;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
-bi2;2;Failure;bt2;R;task3;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
+ID,sequence,result,type_ID,status_code,task_ID,createdAt,createdBy,modifiedAt,modifiedBy
+880e8400-e29b-41d4-a716-446655440500,1,"Success",550e8400-e29b-41d4-a716-446655440600,200,550e8400-e29b-41d4-a716-446655440100,2024-06-01T10:00:00Z,system,2024-06-01T10:10:00Z,system
+880e8400-e29b-41d4-a716-446655440501,2,"Pending",550e8400-e29b-41d4-a716-446655440601,102,550e8400-e29b-41d4-a716-446655440101,2024-06-01T11:00:00Z,system,2024-06-01T11:10:00Z,system

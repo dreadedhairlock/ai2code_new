@@ -6,18 +6,23 @@
         <Toolbar>
             <Title text="Task Tree" />
         </Toolbar>
-        <ScrollContainer height="100%" vertical="true" horizontal="false">
-            <List
+        <ScrollContainer
+            height="100%"
+            vertical="true"
+            horizontal="false"
+        >
+            <Tree
                 id="TasksList"
                 mode="SingleSelectMaster"
-                items="{ path: '/Tasks' }"
+                items="{ path: 'Nodes>/Nodes'}"
                 itemPress=".onTasksSelect"
                 selectionChange=".onTasksSelect"
-                growing="true"
-                growingThreshold="50"
             >
-                <StandardListItem title="{ID}" type="Active" />
-            </List>
+                <StandardTreeItem
+                    title="{Nodes>text}"
+                    type="Active"
+                />
+            </Tree>
         </ScrollContainer>
     </VBox>
 </core:FragmentDefinition>

@@ -1,5 +1,4 @@
 {
-
   "_version": "1.65.0",
   "sap.app": {
     "id": "task-runtime",
@@ -71,6 +70,10 @@
           "autoExpandSelect": true,
           "earlyRequests": true
         }
+      },
+      "Nodes": {
+        "type": "sap.ui.model.json.JSONModel",
+        "uri": "Nodes.json"
       }
     },
     "resources": {
@@ -96,9 +99,7 @@
         {
           "name": "Routeruntime",
           "pattern": ":?query:",
-          "target": [
-            "Targetruntime"
-          ]
+          "target": ["Targetruntime"]
         }
       ],
       "targets": {

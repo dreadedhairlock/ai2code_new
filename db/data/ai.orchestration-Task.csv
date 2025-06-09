@@ -1,3 +1,3 @@
-ID;createdAt;createdBy;modifiedAt;modifiedBy;botInstance_ID;type_ID;name;description;contextPath;sequence;isMain
-task1;2025-06-02T06:50:00.000Z;system;2025-06-02T06:50:00.000Z;system;bi1;tp1;Order Processing;Handle customer order status;datasource.children[3];1;true
-task3;2025-06-02T06:50:00.000Z;system;2025-06-02T06:50:00.000Z;system;bi2;tp2;Refund Handling;Process refund requests;datasource.children[5];1;true
+ID,name,description,contextPath,sequence,isMain,botInstance_ID,createdAt,createdBy,modifiedAt,modifiedBy
+550e8400-e29b-41d4-a716-446655440100,Document Classification,Classify PDF files,/documents/section1,1,true,880e8400-e29b-41d4-a716-446655440500,2024-06-01T10:00:00Z,system,2024-06-01T10:10:00Z,system
+550e8400-e29b-41d4-a716-446655440101,Text Extraction,Extract info from PDF,/documents/section2,2,false,880e8400-e29b-41d4-a716-446655440501,2024-06-01T11:00:00Z,system,2024-06-01T11:10:00Z,system
