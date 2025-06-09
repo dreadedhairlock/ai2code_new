@@ -25,17 +25,6 @@ annotate MainService.BotInstances with @(
             },
         ],
     },
-    // Enable external navigation from Tasks to BotInstances
-    Common: {
-        SemanticObject: 'BotsRuntime-manage',
-        SemanticObjectMapping: [
-            {
-                $Type: 'Common.SemanticObjectMappingType',
-                LocalProperty: 'ID',
-                SemanticObjectProperty: 'ID'
-            }
-        ]
-    }
 );
 
 annotate MainService.Tasks with {
@@ -44,6 +33,6 @@ annotate MainService.Tasks with {
 };
 
 annotate MainService.BotInstances with {
-    @Common.SemanticObject : 'BotsRuntime'
+    @Common.SemanticObject : 'BotInstances'
     ID
 };

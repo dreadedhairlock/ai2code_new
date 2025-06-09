@@ -17,5 +17,9 @@
         }
       }
     }
-  }
+  },
+  "sapux": [
+    "app/bots-runtime",
+    "app/task-runtime"
+  ]
 }

@@ -1,5 +1,5 @@
 {
-    "name": "TaskRuntime-manage",
+    "name": "tasksruntime",
     "version": "0.0.1",
     "description": "Manage the AI tasks in runtime",
     "keywords": [

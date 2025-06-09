@@ -1,5 +1,5 @@
 {
-    "name": "BotsRuntime-manage",
+    "name": "botsruntime",
     "version": "0.0.1",
     "description": "Manage the bot instances",
     "keywords": [

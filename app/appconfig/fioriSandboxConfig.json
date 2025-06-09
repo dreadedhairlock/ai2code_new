@@ -1,29 +1,90 @@
 {
-    "defaultRenderer": "fiori2",
-    "applications": {
-        "Tasks-manage": {
-            "title": "Tasks",
-            "description": "Manage all tasks",
-            "additionalInformation": "SAPUI5.Component=task-config",
-            "applicationType": "URL",
-            "url": "/task-config/webapp",
-            "navigationMode": "embedded"
+    "services": {
+        "LaunchPage": {
+            "adapter": {
+                "config": {
+                    "catalogs": [],
+                    "groups": [
+                        {
+                            "id": "ConfigService",
+                            "title": "Configuration Service",
+                            "isPreset": true,
+                            "isVisible": true,
+                            "isGroupLocked": false,
+                            "tiles": [
+                            ]
+                        },
+                        {
+                            "id": "MainService",
+                            "title": "Main Service",
+                            "isPreset": true,
+                            "isVisible": true,
+                            "isGroupLocked": false,
+                            "tiles": [
+                                {
+                                    "id": "tasksruntime",
+                                    "tileType": "sap.ushell.ui.tile.StaticTile",
+                                    "properties": {
+                                        "targetURL": "#TaskRuntime-manage",
+                                        "title": "Manage Tasks",
+                                        "description": "Manage tasks in runtime",
+                                        "icon": "sap-icon://activity-assigned-to-goal"
+                                    }
+                                },
+                                {
+                                    "id": "botsruntime",
+                                    "tileType": "sap.ushell.ui.tile.StaticTile",
+                                    "properties": {
+                                        "targetURL": "#BotInstances-display",
+                                        "title": "Display bot instances",
+                                        "description": "See bots",
+                                        "icon" : "sap-icon://ai"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
         },
-        "TaskRuntime-manage": {
-            "title": "Tasks Runtime",
-            "description": "Configure tasks",
-            "additionalInformation": "SAPUI5.Component=task-runtime",
-            "applicationType": "URL",
-            "url": "/task-runtime/webapp",
-            "navigationMode": "embedded"
+        "NavTargetResolution": {
+            "config": {
+                "enableClientSideTargetResolution": true
+            }
         },
-        "BotsRuntime-manage": {
-            "title": "Bot Instances Runtime",
-            "description": "Configure bots",
-            "additionalInformation": "SAPUI5.Component=bots-runtime",
-            "applicationType": "URL",
-            "url": "/bots-runtime/webapp",
-            "navigationMode": "embedded"
+        "ClientSideTargetResolution": {
+            "adapter": {
+                "config": {
+                    "inbounds": {
+                        "tasksruntime": {
+                            "semanticObject": "TaskRuntime",
+                            "action": "manage",
+                            "signature": {
+                                "parameters": {},
+                                "additionalParameters": "allowed"
+                            },
+                            "resolutionResult": {
+                                "applicationType": "SAPUI5",
+                                "additionalInformation": "SAPUI5.Component=task-runtime",
+                                "url": "/task-runtime/webapp"
+                            }
+                        },
+                        "botsruntime": {
+                            "semanticObject": "BotInstances",
+                            "action": "display",
+                            "signature": {
+                                "parameters": {},
+                                "additionalParameters": "allowed"
+                            },
+                            "resolutionResult": {
+                                "applicationType": "SAPUI5",
+                                "additionalInformation": "SAPUI5.Component=bots-runtime",
+                                "url": "/bots-runtime/webapp"
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
