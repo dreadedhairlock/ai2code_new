@@ -17,8 +17,8 @@
                                     "tileType": "sap.ushell.ui.tile.StaticTile",
                                     "properties": {
                                         "targetURL": "#TasksConfig-manage",
-                                        "title": "Manage Task Types",
-                                        "description": "Manage tasks in configuration",
+                                        "title": "Task Types",
+                                        "info": "Configure task types",
                                         "icon": "sap-icon://add-activity"
                                     }
                                 }
@@ -36,8 +36,8 @@
                                     "tileType": "sap.ushell.ui.tile.StaticTile",
                                     "properties": {
                                         "targetURL": "#TaskRuntime-manage",
-                                        "title": "Manage Tasks",
-                                        "description": "Manage tasks in runtime",
+                                        "title": "Tasks",
+                                        "info": "Manage all runtime tasks",
                                         "icon": "sap-icon://activity-assigned-to-goal"
                                     }
                                 },
@@ -46,8 +46,8 @@
                                     "tileType": "sap.ushell.ui.tile.StaticTile",
                                     "properties": {
                                         "targetURL": "#BotInstances-display",
-                                        "title": "Display bot instances",
-                                        "description": "See bots",
+                                        "title": "Bot instances",
+                                        "info": "Display all bot instances",
                                         "icon" : "sap-icon://ai"
                                     }
                                 }
@@ -71,7 +71,12 @@
                             "action": "manage",
                             "signature": {
                                 "parameters": {
-
+                                    "Tasks.ID": {
+                                        "renameTo": "ID"
+                                    },
+                                    "BotInstances.tasks.ID" : {
+                                        "renameTo" : "ID"
+                                    }
                                 },
                                 "additionalParameters": "allowed"
                             },
@@ -86,7 +91,12 @@
                             "action": "display",
                             "signature": {
                                 "parameters": {
-
+                                    "BotInstances.ID": {
+                                        "renameTo": "ID"
+                                    },
+                                    "Tasks.botInstances.ID" : {
+                                        "renameTo" : "ID"
+                                    }
                                 },
                                 "additionalParameters": "allowed"
                             },

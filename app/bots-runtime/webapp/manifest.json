@@ -18,7 +18,35 @@
                     "odataVersion": "4.0"
                 }
             }
-        }
+        },
+        "crossNavigation": {
+            "inbounds": {
+                "intent1": {
+                "signature": {
+                    "parameters": {
+                        "BotInstances.ID": {
+                            "renameTo": "ID"
+                        },
+                        "Tasks.botInstances.ID" : {
+                            "renameTo" : "ID"
+                        }
+                    },
+                    "additionalParameters": "ignored"
+                },
+                "semanticObject": "BotInstances",
+                "action": "display",
+                "title": "{{appTitle}}",
+                "info": "{{appInfo}}",
+                "subTitle": "{{appSubTitle}}",
+                "icon": "sap-icon://ai",
+                "indicatorDataSource": {
+                    "dataSource": "MainService",
+                    "path": "BotInstances/$count",
+                    "refresh": 1800
+                }
+                }
+            }
+            }
     },
     "sap.ui5": {
         "dependencies": {
