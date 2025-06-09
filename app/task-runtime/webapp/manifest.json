@@ -18,7 +18,35 @@
                     "odataVersion": "4.0"
                 }
             }
-        }
+        },
+        "crossNavigation": {
+            "inbounds": {
+                "intent1": {
+                "signature": {
+                    "parameters": {
+                        "Tasks.ID": {
+                            "renameTo": "ID"
+                        },
+                        "BotInstances.tasks.ID" : {
+                            "renameTo" : "ID"
+                        }
+                    },
+                    "additionalParameters": "ignored"
+                },
+                "semanticObject": "TaskRuntime",
+                "action": "manage",
+                "title": "{{appTitle}}",
+                "info": "{{appInfo}}",
+                "subTitle": "{{appSubTitle}}",
+                "icon": "sap-icon://activity-assigned-to-goal",
+                "indicatorDataSource": {
+                    "dataSource": "MainService",
+                    "path": "Tasks/$count",
+                    "refresh": 1800
+                }
+                }
+            }
+            }
     },
     "sap.ui5": {
         "dependencies": {
