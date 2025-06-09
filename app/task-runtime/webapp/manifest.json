@@ -71,11 +71,6 @@
                     "target": "TasksObjectPage"
                 },
                 {
-                    "pattern": "Tasks({key})/botInstances({key2}):?query:",
-                    "name": "BotInstanceObjectPage",
-                    "target": "BotInstanceObjectPage"
-                },
-                {
                     "pattern": "Tasks({key})/contextNodes({key2}):?query:",
                     "name": "ContextNodeObjectPage",
                     "target": "ContextNodeObjectPage"
@@ -108,38 +103,9 @@
                         "settings": {
                             "contextPath": "/Tasks",
                             "navigation": {
-                                "botInstances": {
-                                    "detail": {
-                                        "route": "BotInstanceObjectPage"
-                                    }
-                                },
                                 "contextNodes": {
                                     "detail": {
                                         "route": "ContextNodeObjectPage"
-                                    }
-                                }
-                            },
-                            "content": {
-                                "header": {
-                                    "anchorBarVisible": true
-                                }
-                            },
-                            "editableHeaderContent": false,
-                            "sectionLayout": "Page"
-                        }
-                    }
-                },
-                "BotInstanceObjectPage": {
-                    "type": "Component",
-                    "id": "BotInstanceObjectPage",
-                    "name": "sap.fe.templates.ObjectPage",
-                    "options": {
-                        "settings": {
-                            "contextPath": "/BotInstances",
-                            "navigation": {
-                                "task": {
-                                    "detail": {
-                                        "route": "TasksObjectPage"
                                     }
                                 }
                             },

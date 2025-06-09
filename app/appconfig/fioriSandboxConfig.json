@@ -12,6 +12,16 @@
                             "isVisible": true,
                             "isGroupLocked": false,
                             "tiles": [
+                                {
+                                    "id": "tasksconfig",
+                                    "tileType": "sap.ushell.ui.tile.StaticTile",
+                                    "properties": {
+                                        "targetURL": "#TasksConfig-manage",
+                                        "title": "Manage Task Types",
+                                        "description": "Manage tasks in configuration",
+                                        "icon": "sap-icon://add-activity"
+                                    }
+                                }
                             ]
                         },
                         {
@@ -60,7 +70,9 @@
                             "semanticObject": "TaskRuntime",
                             "action": "manage",
                             "signature": {
-                                "parameters": {},
+                                "parameters": {
+
+                                },
                                 "additionalParameters": "allowed"
                             },
                             "resolutionResult": {
@@ -73,13 +85,30 @@
                             "semanticObject": "BotInstances",
                             "action": "display",
                             "signature": {
-                                "parameters": {},
+                                "parameters": {
+
+                                },
                                 "additionalParameters": "allowed"
                             },
                             "resolutionResult": {
                                 "applicationType": "SAPUI5",
                                 "additionalInformation": "SAPUI5.Component=bots-runtime",
                                 "url": "/bots-runtime/webapp"
+                            }
+                        },
+                        "tasksconfig": {
+                            "semanticObject": "TasksConfig",
+                            "action": "manage",
+                            "signature": {
+                                "parameters": {
+
+                                },
+                                "additionalParameters": "allowed"
+                            },
+                            "resolutionResult": {
+                                "applicationType": "SAPUI5",
+                                "additionalInformation": "SAPUI5.Component=task-config",
+                                "url": "/task-config/webapp"
                             }
                         }
                     }
