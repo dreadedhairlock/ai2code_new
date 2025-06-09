@@ -18,7 +18,28 @@
 					"odataVersion": "4.0"
 				}
 			}
-		}
+		},
+        "crossNavigation": {
+            "inbounds": {
+                "intent1": {
+                "signature": {
+                    "parameters": {},
+                    "additionalParameters": "ignored"
+                },
+                "semanticObject": "TasksConfig",
+                "action": "manage",
+                "title": "{{appTitle}}",
+                "info": "{{appInfo}}",
+                "subTitle": "{{appSubTitle}}",
+                "icon": "sap-icon://add-activity",
+                "indicatorDataSource": {
+                    "dataSource": "ConfigService",
+                    "path": "TaskTypes/$count",
+                    "refresh": 1800
+                }
+                }
+            }
+            }
 	},
 	"sap.ui5": {
 		"dependencies": {
