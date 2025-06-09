@@ -19,7 +19,7 @@
     }
   },
     "sapux": [
-    "app/runtime"
+    "app/task-runtime"
   ],
   "dependencies": {
     "ai2code-cds": "file:"
