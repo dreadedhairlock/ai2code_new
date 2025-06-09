@@ -1,23 +1,26 @@
 <core:FragmentDefinition
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
+    xmlns:dnd="sap.ui.core.dnd"
 >
     <VBox height="50%">
         <Toolbar>
             <Title text="Task Tree" />
         </Toolbar>
-        <ScrollContainer height="100%" vertical="true" horizontal="false">
-            <List
-                id="TasksList"
+        <ScrollContainer
+            height="100%"
+            vertical="true"
+            horizontal="false"
+        >
+            <Tree
+                id="Tree"
                 mode="SingleSelectMaster"
-                items="{ path: '/Tasks' }"
-                itemPress=".onTasksSelect"
-                selectionChange=".onTasksSelect"
-                growing="true"
-                growingThreshold="50"
+                items="{path: 'tree>/'}"
+                itemPress=".onTaskSelect"
+                selectionChange=".onTaskSelect"
             >
-                <StandardListItem title="{ID}" type="Active" />
-            </List>
+                <StandardTreeItem title="{tree>ID}" />
+            </Tree>
         </ScrollContainer>
     </VBox>
 </core:FragmentDefinition>

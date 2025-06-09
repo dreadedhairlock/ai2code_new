@@ -1,0 +1,77 @@
+<mvc:View
+    controllerName="task-runtime.controller.TaskList"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    displayBlock="true"
+    height="100%">
+    <f:DynamicPage id="dynamicPageId">
+        <!-- DynamicPage Title -->
+        <f:title>
+            <f:DynamicPageTitle>
+                
+            </f:DynamicPageTitle>
+        </f:title>
+        <!-- DynamicPage Header -->
+        <f:header>
+            <f:DynamicPageHeader pinnable="true">
+                <f:content>
+                    <HBox >
+                        <SearchField width="20rem" search="onSearch"></SearchField>
+                    </HBox>
+                </f:content>
+            </f:DynamicPageHeader>
+        </f:header>
+        <f:content>
+            <VBox fitContainer="true">
+                <Table
+                    id="taskRunList"
+                    items="{
+                        path: '/Tasks',
+                        sorter: {
+                            path: 'name'
+                        }
+                    }">
+                    <headerToolbar>
+                        <OverflowToolbar>
+                            <Title text="Tasks({/Tasks/$count})" level="H2"/>
+                            <ToolbarSpacer/>
+                            <Button text="Create" press="onCreate"/>
+                        </OverflowToolbar>
+                    </headerToolbar>
+                    <columns>
+                        <Column>
+                            <Text text="Name" />
+                        </Column>
+                        <Column>
+                            <Text text="Description" />
+                        </Column>
+                        <Column>
+                            <Text text="Sequence" />
+                        </Column>
+                        <Column>
+                            <Text text="isMain" />
+                        </Column>
+
+                    </columns>
+                    <items>
+                        <ColumnListItem 
+                            press="onItemPress"
+                            vAlign="Middle" 
+                            type="Navigation">
+                            <cells>
+                                <Text text="{name}" wrapping="false" />
+                                <Text text="{description}" wrapping="false"/>
+                                <Text text="{sequence}" />
+                                <CheckBox selected="{isMain}"></CheckBox>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </f:content>
+        <!-- DynamicPage Footer -->
+        <f:footer>
+        </f:footer>
+    </f:DynamicPage>
+</mvc:View>

@@ -22,7 +22,8 @@
         "type": "OData",
         "settings": {
           "annotations": [],
-          "odataVersion": "4.0"
+          "odataVersion": "4.0",
+          "autoExpandSelect": true
         }
       }
     }
@@ -94,17 +95,32 @@
       },
       "routes": [
         {
-          "name": "Routeruntime",
+          "name": "RouteTaskList",
           "pattern": ":?query:",
           "target": [
-            "Targetruntime"
+            "TargetTaskList"
           ]
-        }
+        },
+        {
+          "name": "RouteTaskDetail",
+          "pattern": "Tasks({taskId}):?query:",
+          "target": [
+            "TargetTaskDetail"
+          ]
+        }        
       ],
       "targets": {
-        "Targetruntime": {
-          "id": "runtime",
-          "name": "runtime"
+        "TargetTaskList": {
+          "viewType": "XML",
+          "clearControlAggregation": false,
+          "viewId": "TaskList",
+          "viewName": "TaskList"
+        },
+       "TargetTaskDetail": {
+          "viewType": "XML",
+          "clearControlAggregation": false,
+          "viewId": "TaskDetail",
+          "viewName": "TaskDetail"
         }
       }
     },
