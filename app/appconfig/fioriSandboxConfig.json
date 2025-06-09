@@ -71,7 +71,12 @@
                             "action": "manage",
                             "signature": {
                                 "parameters": {
-
+                                    "Tasks.ID": {
+                                        "renameTo": "ID"
+                                    },
+                                    "BotInstances.tasks.ID" : {
+                                        "renameTo" : "ID"
+                                    }
                                 },
                                 "additionalParameters": "allowed"
                             },
@@ -86,7 +91,12 @@
                             "action": "display",
                             "signature": {
                                 "parameters": {
-
+                                    "BotInstances.ID": {
+                                        "renameTo": "ID"
+                                    },
+                                    "Tasks.botInstances.ID" : {
+                                        "renameTo" : "ID"
+                                    }
                                 },
                                 "additionalParameters": "allowed"
                             },
