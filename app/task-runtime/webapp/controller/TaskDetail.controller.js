@@ -3,7 +3,7 @@ sap.ui.define(
   (Controller, JSONModel) => {
     "use strict";
 
-    return Controller.extend("task-runtime.controller.runtime", {
+    return Controller.extend("task-runtime.controller.TaskDetail", {
       onInit: function () {
         const oModel = this.getOwnerComponent().getModel();
         oModel

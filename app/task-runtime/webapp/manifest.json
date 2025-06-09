@@ -97,15 +97,29 @@
       },
       "routes": [
         {
-          "name": "Routeruntime",
-          "pattern": ":?query:",
-          "target": ["Targetruntime"]
+          "name": "RouteTaskDetail",
+          "pattern": "Tasks({taskId}):?query:",
+          "target": ["TargetTaskDetail"]
+        },
+        {
+          "name": "RouteTaskList",
+          "pattern": "",
+          "target": ["TargetTaskList"]
         }
       ],
       "targets": {
-        "Targetruntime": {
-          "id": "runtime",
-          "name": "runtime"
+        "TargetTaskDetail": {
+          "viewType": "XML",
+          "clearControlAggregation": false,
+          "id": "TaskDetail",
+          "name": "TaskDetail"
+        },
+
+        "TargetTaskList": {
+          "viewType": "XML",
+          "clearControlAggregation": false,
+          "id": "TaskList",
+          "name": "TaskList"
         }
       }
     },
