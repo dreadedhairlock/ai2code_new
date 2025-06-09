@@ -41,7 +41,7 @@ sap.ui.define([
                 oForm.setVisible(true);
                 oOtherForm.setVisible(false);
                 // Bind the table items to the /Books entity set, filtered by the selected author's ID
-                const sPath = "/ContextNodes(" + sContextNodeId + ")";
+                const sPath = "/ContextNodes('" + sContextNodeId + "')";
 
                 oForm.bindElement({
                     path: sPath,
