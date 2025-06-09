@@ -1,7 +1,7 @@
 {
   "_version": "1.65.0",
   "sap.app": {
-    "id": "runtime",
+    "id": "task-runtime",
     "type": "application",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": {
@@ -59,7 +59,7 @@
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "settings": {
-          "bundleName": "runtime.i18n.i18n"
+          "bundleName": "task-runtime.i18n.i18n"
         }
       },
       "": {
@@ -87,9 +87,9 @@
         "transition": "slide",
         "type": "View",
         "viewType": "XML",
-        "path": "runtime.view",
+        "path": "task-runtime.view",
         "async": true,
-        "viewPath": "runtime.view"
+        "viewPath": "task-runtime.view"
       },
       "routes": [
         {
@@ -108,7 +108,7 @@
       }
     },
     "rootView": {
-      "viewName": "runtime.view.App",
+      "viewName": "task-runtime.view.App",
       "type": "XML",
       "id": "App",
       "async": true

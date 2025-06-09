@@ -1,10 +1,10 @@
 sap.ui.define([
     "sap/ui/core/UIComponent",
-    "runtime/model/models"
+    "task-runtime/model/models"
 ], (UIComponent, models) => {
     "use strict";
 
-    return UIComponent.extend("runtime.Component", {
+    return UIComponent.extend("task-runtime.Component", {
         metadata: {
             manifest: "json",
             interfaces: [

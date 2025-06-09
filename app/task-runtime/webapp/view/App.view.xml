@@ -1,4 +1,4 @@
-<mvc:View controllerName="runtime.controller.App"
+<mvc:View controllerName="task-runtime.controller.App"
     displayBlock="true"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m">

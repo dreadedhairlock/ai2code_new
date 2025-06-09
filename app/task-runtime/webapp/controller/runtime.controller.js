@@ -4,7 +4,7 @@ sap.ui.define([
 ], (Controller) => {
     "use strict";
 
-    return Controller.extend("runtime.controller.runtime", {
+    return Controller.extend("task-runtime.controller.runtime", {
         
         // ---------------------------------------Context Tree -------------------------------------
         // This is Detail page

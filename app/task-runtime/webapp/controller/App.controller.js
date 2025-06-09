@@ -3,7 +3,7 @@ sap.ui.define([
 ], (BaseController) => {
   "use strict";
 
-  return BaseController.extend("runtime.controller.App", {
+  return BaseController.extend("task-runtime.controller.App", {
       onInit() {
       }
   });
