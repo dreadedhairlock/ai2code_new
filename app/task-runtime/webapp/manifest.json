@@ -18,6 +18,15 @@
                     "odataVersion": "4.0"
                 }
             }
+        },
+        "crossNavigation": {
+            "inbounds": {
+                "TasksRuntime-manage" : {
+                    "semanticObject": "TasksRuntime",
+                    "action": "manage",
+                    "title" : ""
+                }
+            }
         }
     },
     "sap.ui5": {
@@ -191,6 +200,5 @@
             "tablet": true,
             "phone": true
         }
-    },
-    "sap.fiori": {}
+    }
 }
