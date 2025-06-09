@@ -3,8 +3,8 @@ using from '../../../index';
 
 annotate ConfigService.ModelConfigs with @(UI: {
     HeaderInfo             : {
-        TypeName      : '{i18n>ModelConfigName}}',
-        TypeNamePlural: '{i18n>ModelConfigPlural}}',
+        TypeName      : '{i18n>ModelConfigName}',
+        TypeNamePlural: '{i18n>ModelConfigPlural}',
         Title         : {Value: name},
         Description   : {Value: provider},
         TypeImageUrl  : 'sap-icon://activity-items'
