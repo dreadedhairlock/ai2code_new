@@ -43,10 +43,10 @@
                     "dataSource": "MainService",
                     "path": "Tasks/$count",
                     "refresh": 1800
-                }
+                    }
                 }
             }
-            }
+        }
     },
     "sap.ui5": {
         "dependencies": {
