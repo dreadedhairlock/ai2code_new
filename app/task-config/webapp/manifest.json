@@ -79,6 +79,11 @@
 					"pattern": "TaskTypes({key})/botTypes({key2})/prompts({promptsKey}):?query:",
 					"name": "PromptsObjectPage",
 					"target": "PromptsObjectPage"
+				},
+				{
+					"pattern": "TaskTypes({key})/botTypes({key2})/model:?query:",
+					"name": "ModelObjectPage",
+					"target": "ModelObjectPage"
 				}
 			],
 			"targets": {
@@ -137,6 +142,11 @@
 									"detail": {
 										"route": "PromptsObjectPage"
 									}
+								},
+								"model": {
+									"detail": {
+										"route": "ModelObjectPage"
+									}
 								}
 							}
 						}
@@ -154,16 +164,15 @@
 						}
 					}
 				},
-				"PromptTextsObjectPage": {
+				"ModelObjectPage": {
 					"type": "Component",
-					"id": "PromptTextsObjectPage",
+					"id": "ModelObjectPage",
 					"name": "sap.fe.templates.ObjectPage",
 					"options": {
 						"settings": {
-							"contextPath": "/TaskTypes/botTypes/prompts",
+							"contextPath": "/TaskTypes/botTypes/model",
 							"editableHeaderContent": false,
-							"navigation": {},
-							"sectionLayout": "Page"
+							"navigation": {}
 						}
 					}
 				}

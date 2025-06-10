@@ -1,21 +1,29 @@
 {
-    "defaultRenderer": "fiori2",
-    "applications": {
-        "manage-tasks": {
-            "title": "Tasks",
-            "description": "Manage all tasks",
-            "additionalInformation": "SAPUI5.Component=task-config",
-            "applicationType": "URL",
-            "url": "/task-config/webapp",
-            "navigationMode": "embedded"
-        },
-        "manage-tasks-runtime": {
-            "title": "Tasks Runtime",
-            "description": "Configure tasks",
-            "additionalInformation": "SAPUI5.Component=task-runtime",
-            "applicationType": "URL",
-            "url": "/task-runtime/webapp",
-            "navigationMode": "embedded"
-        }
-    }
+	"defaultRenderer": "fiori2",
+	"applications": {
+		"manage-tasks": {
+			"title": "Tasks",
+			"description": "Manage all tasks",
+			"additionalInformation": "SAPUI5.Component=task-config",
+			"applicationType": "URL",
+			"url": "/task-config/webapp",
+			"navigationMode": "embedded"
+		},
+		"manage-tasks-runtime": {
+			"title": "Tasks Runtime",
+			"description": "Configure tasks",
+			"additionalInformation": "SAPUI5.Component=task-runtime",
+			"applicationType": "URL",
+			"url": "/task-runtime/webapp",
+			"navigationMode": "embedded"
+		},
+		"manage-model-config": {
+			"title": "Model Configuration",
+			"description": "Configure model",
+			"additionalInformation": "SAPUI5.Component=model-config",
+			"applicationType": "URL",
+			"url": "/model-config/webapp",
+			"navigationMode": "embedded"
+		}
+	}
 }
