@@ -39,34 +39,7 @@
                     type="XML"
                 />
             </VBox>
-            <!-- Chat Bot -->             
-            <VBox width="50%" class="customRightColumn" height="100%">                 
-                <!-- Top Section -->                 
-                <Panel class="topPanel" expandable="false" expanded="true" height="50%">                     
-                    <VBox height="100%" class="topSection">                         
-                        <Title text="AI Chat" level="H4" class="aiChatTitle"/>
-                        <!-- Chat Messages Container - Only this scrolls -->
-                        <ScrollContainer id="chatMessagesContainer" width="100%" class="chatMessagesArea" vertical="true">
-                            <VBox id="chatMessagesBox" class="chatMessages">
-                                <!-- Chat messages will be added here dynamically -->
-                            </VBox>
-                        </ScrollContainer>                          
-                        <HBox class="chatInputBox" width="100%" alignItems="Center" renderType="Bare" fitContainer="true">                             
-                            <Input id="chatInput" class="chatInput" placeholder="Type your question here.." submit="onSubmitQuery" width="100%"/>                             
-                            <Button icon="sap-icon://paper-plane" type="Emphasized" press="onSubmitQuery" class="chatSendButton" />                         
-                        </HBox>                      
-                    </VBox>                 
-                </Panel>                  
-                <!-- Bottom Section -->                 
-                <Panel class="bottomPanel" expandable="false" expanded="true" height="50%">                     
-                    <VBox height="100%" class="bottomSection">                         
-                        <Title text="Code Result" level="H4" class="codeResultTitle"/>                         
-                        <ScrollContainer width="100%" height="100%" vertical="true">                             
-                            <Text text="Bottom Section Content" />                         
-                        </ScrollContainer>                     
-                    </VBox>                 
-                </Panel>             
-            </VBox>  
+             
         </HBox>
     </Page>
 </mvc:View>
