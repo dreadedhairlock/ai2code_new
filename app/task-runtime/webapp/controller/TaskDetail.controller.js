@@ -404,6 +404,13 @@ sap.ui.define(
                     oScrollContainer.scrollTo(0, oScrollContainer.getDomRef("scroll").scrollHeight);
                 }
             }, 100);
+                // Set the bottom section text if message is from AI
+              if (sType === "ai") {
+                  var oCodeResultText = this.byId("codeResultText");
+                  if (oCodeResultText) {
+                      oCodeResultText.setText(sMessage);
+                  }
+              }
         }
       // ---------------------------------------Chat Bot -------------------------------------
     }
