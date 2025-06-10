@@ -190,8 +190,6 @@ sap.ui.define(
           aSelectedIndices.push(oTree.indexOfItem(aSelectedItems[i]));
         }
 
-        oTree.expand(aSelectedIndices);
-
         var oTree = this.byId("tree");
         var oBinding = oTree.getBinding("items");
         var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
@@ -226,6 +224,7 @@ sap.ui.define(
                 oNewParent.nodes.push(...aData);
                 // Refresh tree
                 oTree.getBinding("items").refresh();
+                oTree.expand(aSelectedIndices);
               }.bind(this)
             );
         } else {
@@ -263,6 +262,7 @@ sap.ui.define(
                 // Refresh tree
 
                 oTree.getBinding("items").refresh();
+                oTree.expand(aSelectedIndices);
               }.bind(this)
             );
         }
@@ -270,143 +270,54 @@ sap.ui.define(
         // Refresh untuk update tampilan
       },
 
-      // onDragStart: function (oEvent) {
-      //     var oTree = this.byId("Tree");
-      //     var oBinding = oTree.getBinding("items");
-      //     var oDragSession = oEvent.getParameter("dragSession");
-      //     var oDraggedItem = oEvent.getParameter("target");
-      //     console.log(oDraggedItem)
-      //     var iDraggedItemIndex = oTree.indexOfItem(oDraggedItem);
-      //     console.log(iDraggedItemIndex)
-      //     var aSelectedIndices = oTree.getBinding("items").getSelectedIndices();
-      //     console.log(aSelectedIndices)
-      //     var aSelectedItems = oTree.getSelectedItems();
-      //     console.log(aSelectedItems)
-
-      //     var aDraggedItemContexts = [];
-
-      //     if (aSelectedItems.length > 0) {
-      //         // If items are selected, do not allow to start dragging from a item which is not selected.
-      //         if (aSelectedIndices.indexOf(iDraggedItemIndex) === -1) {
-      //             oEvent.preventDefault();
-      //         } else {
-      //             for (var i = 0; i < aSelectedItems.length; i++) {
-      //                 aDraggedItemContexts.push(oBinding.getContextByIndex(aSelectedIndices[i]));
-      //             }
-      //         }
-      //     } else {
-      //         aDraggedItemContexts.push(oBinding.getContextByIndex(iDraggedItemIndex));
-      //     }
-
-      //     oDragSession.setComplexData("hierarchymaintenance", {
-      //         draggedItemContexts: aDraggedItemContexts
-      //     });
-      // },
-
-      onDrop: function (oEvent) {
-        // var oTree = this.byId("Tree");
-        // var oBinding = oTree.getBinding("items");
-        // var oDragSession = oEvent.getParameter("dragSession");
-        // var oDroppedItem = oEvent.getParameter("droppedControl");
-        // var aDraggedItemContexts = oDragSession.getComplexData("hierarchymaintenance").draggedItemContexts;
-        // var iDroppedIndex = oTree.indexOfItem(oDroppedItem);
-        // var oNewParentContext = oBinding.getContextByIndex(iDroppedIndex);
-        // if (aDraggedItemContexts.length === 0 || !oNewParentContext) {
-        //     return;
-        // }
-        // var oModel = oTree.getBinding("items").getModel();
-        // var oNewParent = oNewParentContext.getProperty();
-        // // In the JSON data of this example the children of a node are inside an array with the name "categories".
-        // if (!oNewParent.categories) {
-        //     oNewParent.categories = []; // Initialize the children array.
-        // }
-        // for (var i = 0; i < aDraggedItemContexts.length; i++) {
-        //     if (oNewParentContext.getPath().indexOf(aDraggedItemContexts[i].getPath()) === 0) {
-        //         // Avoid moving a node into one of its child nodes.
-        //         continue;
-        //     }
-        //     // Copy the data to the new parent.
-        //     oNewParent.categories.push(aDraggedItemContexts[i].getProperty());
-        //     // Remove the data. The property is simply set to undefined to preserve the tree state (expand/collapse states of nodes).
-        //     // oModel.setProperty(aDraggedItemContexts[i].getPath(), undefined, aDraggedItemContexts[i], true);
-        // }
-        // // Refresh model to update bindings
-        // oModel.refresh(true);
-        // var oTree = this.byId("Tree");
-        // var oBinding = oTree.getBinding("items");
-        // var oDragSession = oEvent.getParameter("dragSession");
-        // var oDroppedItem = oEvent.getParameter("droppedControl");
-        // var aDraggedItemContexts = oDragSession.getComplexData("hierarchymaintenance").draggedItemContexts;
-        // var iDroppedIndex = oTree.indexOfItem(oDroppedItem);
-        // var oNewParentContext = oBinding.getContextByIndex(iDroppedIndex);
-        // if (aDraggedItemContexts.length === 0 || !oNewParentContext) {
-        //     return;
-        // }
-        // var oModel = oTree.getBinding("items").getModel();
-        // var oNewParent = oNewParentContext.getProperty();
-        // // Gunakan "nodes" sesuai struktur JSON Anda
-        // if (!oNewParent.nodes) {
-        //     oNewParent.nodes = [];
-        // }
-        // for (var i = 0; i < aDraggedItemContexts.length; i++) {
-        //     // Cegah drop ke descendant-nya sendiri
-        //     if (oNewParentContext.getPath().indexOf(aDraggedItemContexts[i].getPath()) === 0) {
-        //         continue;
-        //     }
-        //     // Buat node baru (bebas sesuai kebutuhan Anda)
-        //     var oNewNode = {
-        //         text: "New Node " + (i + 1) // Anda bisa custom di sini
-        //         // Tambahkan properti lain jika perlu
-        //     };
-        //     // Tambahkan ke parent yang di-drop
-        //     oNewParent.nodes.push(oNewNode);
-        // }
-        // oModel.refresh(true); // Refresh untuk update tampilan
-      },
-
       onEditContextPress: function () {},
 
       // -----------------------------------------Task Tree --------------------------------------
-    
+
       // ---------------------------------------Chat Bot -------------------------------------
-        onSubmitQuery: function() {
-            var oInput = this.byId("chatInput");
-            var sMessage = oInput.getValue().trim();
-            if (sMessage) {
-                // Add user message
-                this.addChatMessage(sMessage, "user");
-                // Clear input
-                oInput.setValue("");
-                // Simulate AI response (replace with your actual AI call)
-                setTimeout(() => {
-                    this.addChatMessage("AI received: " + sMessage, "ai");
-                }, 1000);
-            }
-        },
-        addChatMessage: function(sMessage, sType) {
-            var oChatBox = this.byId("chatMessagesBox");
-            var sTimestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            var oHTML = new sap.ui.core.HTML({
-                content: `
+      onSubmitQuery: function () {
+        var oInput = this.byId("chatInput");
+        var sMessage = oInput.getValue().trim();
+        if (sMessage) {
+          // Add user message
+          this.addChatMessage(sMessage, "user");
+          // Clear input
+          oInput.setValue("");
+          // Simulate AI response (replace with your actual AI call)
+          setTimeout(() => {
+            this.addChatMessage("AI received: " + sMessage, "ai");
+          }, 1000);
+        }
+      },
+      addChatMessage: function (sMessage, sType) {
+        var oChatBox = this.byId("chatMessagesBox");
+        var sTimestamp = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        var oHTML = new sap.ui.core.HTML({
+          content: `
                     <div class="chatBubbleContainer ${sType}">
                         <div class="chatBubble ${sType}">
                             <div>${sMessage}</div>
                             <div class="chatTimestamp">${sTimestamp}</div>
                         </div>
                     </div>
-                `
-            });
-            oChatBox.addItem(oHTML);
-            // Scroll to bottom
-            setTimeout(() => {
-                var oScrollContainer = this.byId("chatMessagesContainer");
-                if (oScrollContainer && oScrollContainer.getDomRef("scroll")) {
-                    oScrollContainer.scrollTo(0, oScrollContainer.getDomRef("scroll").scrollHeight);
-                }
-            }, 100);
-        }
+                `,
+        });
+        oChatBox.addItem(oHTML);
+        // Scroll to bottom
+        setTimeout(() => {
+          var oScrollContainer = this.byId("chatMessagesContainer");
+          if (oScrollContainer && oScrollContainer.getDomRef("scroll")) {
+            oScrollContainer.scrollTo(
+              0,
+              oScrollContainer.getDomRef("scroll").scrollHeight
+            );
+          }
+        }, 100);
+      },
       // ---------------------------------------Chat Bot -------------------------------------
-    }
-  );
+    });
   }
 );
