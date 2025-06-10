@@ -20,6 +20,7 @@ annotate MainService.ContextNodes with {
     value @Common.Label: '{i18n>Value}';
 };
 
-annotate MainService.createTaskWithBots with  @title       : '{i18n>CreateTaskWithBots}'  (name  @Common.Label: '{i18n>TaskName}',
-description                                   @Common.Label: '{i18n>Description}',
-typeId                                        @Common.Label: '{i18n>TypeID}' );
+annotate MainService.createTaskWithBots with  @title : '{i18n>CreateTaskWithBots}' (
+    name        @Common.Label: '{i18n>TaskName}',
+    description @Common.Label: '{i18n>Description}',
+    typeId      @Common.Label: '{i18n>TypeID}' );
