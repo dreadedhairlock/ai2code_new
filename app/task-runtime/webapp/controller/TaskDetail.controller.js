@@ -8,53 +8,61 @@ sap.ui.define(
         const oRouter = this.getOwnerComponent().getRouter();
         const oModel = this.getOwnerComponent().getModel();
 
-        // change router
         oRouter.attachRouteMatched(
-          function (oEvent) {
+          async function (oEvent) {
             const oArgs = oEvent.getParameter("arguments");
             if (oArgs && oArgs.taskId) {
+              // Bind the main element first
               this.getView().bindElement({
                 path: "/Tasks('" + oArgs.taskId + "')",
               });
 
-              //get model
-              oModel
-                .bindList("/Tasks('" + oArgs.taskId + "')/botInstances")
-                .requestContexts()
-                .then(
-                  function (aContexts) {
-                    var aData = aContexts.map(function (oContext) {
-                      var oObj = oContext.getObject();
-                      oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
-                      return oObj;
-                    });
-                    //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                    const oJSONModel = new JSONModel();
-                    oJSONModel.setData({ results: aData });
-                    console.log(aData);
-                    // Use the JSON model as needed
-                    this.getOwnerComponent().setModel(oJSONModel, "myJSON");
-                    const data = this.getOwnerComponent()
-                      .getModel("myJSON")
-                      .getData().results;
-                    this.getOwnerComponent().setModel(
-                      oJSONModel,
-                      "botInstances"
-                    );
-                  }.bind(this)
-                );
-              oModel
-                .bindList("/Tasks('" + oArgs.taskId + "')/contextNodes")
-                .requestContexts()
-                .then(
-                  function (aContexts) {
-                    const flatData = aContexts.map((ctx) => ctx.getObject());
-                    this.buildContextTree(flatData);
-                  }.bind(this)
-                );
+              try {
+                // Wait for all data to load before proceeding
+                await Promise.all([
+                  this.loadBotInstances(oArgs.taskId),
+                  this.loadContextNodes(oArgs.taskId),
+                ]);
+
+                // Data is now loaded, you could trigger a refresh here if needed
+              } catch (error) {
+                console.error("Failed to load data:", error);
+              }
             }
           }.bind(this)
         );
+      },
+
+      loadBotInstances: function (taskId) {
+        const oModel = this.getOwnerComponent().getModel();
+        return oModel
+          .bindList("/Tasks('" + taskId + "')/botInstances")
+          .requestContexts()
+          .then(
+            function (aContexts) {
+              var aData = aContexts.map(function (oContext) {
+                var oObj = oContext.getObject();
+                oObj.type = "bot";
+                return oObj;
+              });
+              const oJSONModel = new JSONModel();
+              oJSONModel.setData({ results: aData });
+              this.getOwnerComponent().setModel(oJSONModel, "botInstances");
+            }.bind(this)
+          );
+      },
+
+      loadContextNodes: function (taskId) {
+        const oModel = this.getOwnerComponent().getModel();
+        return oModel
+          .bindList("/Tasks('" + taskId + "')/contextNodes")
+          .requestContexts()
+          .then(
+            function (aContexts) {
+              const flatData = aContexts.map((ctx) => ctx.getObject());
+              this.buildContextTree(flatData);
+            }.bind(this)
+          );
       },
 
       buildContextTree: function (flatList) {
@@ -111,7 +119,7 @@ sap.ui.define(
 
               const sPath = "/ContextNodes('" + sUuid + "')";
 
-              oCNForm.setVisible(true).bindElement({ path: sPath });
+              oCNForm.bindElement({ path: sPath });
             }.bind(this)
           )
           .catch(function (oErr) {
@@ -355,6 +363,8 @@ sap.ui.define(
         // }
         // oModel.refresh(true); // Refresh untuk update tampilan
       },
+
+      onEditContextPress: function () {},
 
       // -----------------------------------------Task Tree --------------------------------------
     });

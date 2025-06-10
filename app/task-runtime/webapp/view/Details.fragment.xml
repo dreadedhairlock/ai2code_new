@@ -2,17 +2,7 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
 >
-    <VBox class="sapUiSmallMargin">
-        <Label text="Key" />
-        <Text text="{tree>key}" />
-
-        <Label text="Value" />
-        <Text text="{tree>value}" />
-
-        <Label text="Type" />
-        <Text text="{tree>type}" />
-
-        <Label text="Path" />
-        <Text text="{tree>path}" />
-    </VBox>
+    <Toolbar>
+        <Title text="Details" />
+    </Toolbar>
 </core:FragmentDefinition>
