@@ -1,11 +1,8 @@
 <mvc:View
     controllerName="task-runtime.controller.TaskDetail"
     xmlns="sap.m"
-    xmlns:u="sap.uxap"
     xmlns:core="sap.ui.core"
     xmlns:mvc="sap.ui.core.mvc"
-    xmlns:layout="sap.ui.layout"
-    xmlns:forms="sap.ui.layout.form"
 >
     <Page
         id="page"
@@ -33,12 +30,8 @@
                 />
             </VBox>
 
-            <VBox
-                width="25%"
-                id="detailContainer"
-            >
+            <VBox width="25%">
                 <core:Fragment
-                    id="detailsFragment"
                     fragmentName="task-runtime.view.Details"
                     type="XML"
                 />

@@ -16,11 +16,12 @@
                 items="{
           path: 'tree>/nodes'
         }"
+                itemPress="onTreeItemPress"
+                selectionChange="onTreeItemPress"
             >
                 <StandardTreeItem
                     title="{tree>label}"
                     type="Active"
-                    press="onTreeItemPress"
                 />
             </Tree>
         </ScrollContainer>
