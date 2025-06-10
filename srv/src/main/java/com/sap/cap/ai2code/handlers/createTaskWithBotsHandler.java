@@ -1,26 +1,19 @@
 package com.sap.cap.ai2code.handlers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.config.Task;
 import org.springframework.stereotype.Component;
 
 import com.sap.cds.Result;
 import com.sap.cds.ql.Insert;
-import com.sap.cds.ql.cqn.CqnAnalyzer;
 import com.sap.cds.ql.cqn.CqnInsert;
-import com.sap.cds.reflect.CdsModel;
 import com.sap.cds.services.handler.EventHandler;
-import com.sap.cds.services.handler.annotations.After;
 import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
 
-import cds.gen.mainservice.Tasks_;
-import cds.gen.mainservice.Tasks;
 import cds.gen.mainservice.CreateTaskWithBotsContext;
-import cds.gen.mainservice.MainService_;
-
-import java.util.UUID;
+import cds.gen.mainservice.Tasks;
+import cds.gen.mainservice.Tasks_;
 
 @Component
 @ServiceName("MainService")

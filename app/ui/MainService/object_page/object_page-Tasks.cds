@@ -3,7 +3,7 @@ using from '../../../index';
 
 annotate MainService.Tasks with @(UI: {
     HeaderInfo              : {
-        TypeName      : '{i18n>TaskName}',
+        TypeName      : '{i18n>TaskSingle}',
         TypeNamePlural: '{i18n>TaskPlural}',
         Title         : {Value: name},
         TypeImageUrl  : 'sap-icon://activities'
