@@ -6,19 +6,24 @@
         <Toolbar>
             <Title text="Context Tree"  />
         </Toolbar>
-        <ScrollContainer height="100%" vertical="true" horizontal="false">
-            <List
-                id="ContextNodesList"
-                mode="SingleSelectMaster"
-                items="{ path: 'contextNodes' }"
-                
-                itemPress=".onContextNodesSelect"
-                selectionChange=".onContextNodesSelect"
-                growing="true"
-                growingThreshold="50"
+        <ScrollContainer
+            height="100%"
+            vertical="true"
+            horizontal="false"
+        >
+            <Tree
+                id="docTree"
+                items="{
+          path: 'tree>/nodes'
+        }"
+                itemPress="onTreeItemPress"
+                selectionChange="onTreeItemPress"
             >
-                <StandardListItem title="{ID}" />
-            </List>
+                <StandardTreeItem
+                    title="{tree>label}"
+                    type="Active"
+                />
+            </Tree>
         </ScrollContainer>
     </VBox>
 </core:FragmentDefinition>

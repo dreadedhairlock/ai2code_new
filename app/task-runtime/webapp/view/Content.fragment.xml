@@ -5,13 +5,21 @@
 >
     <Toolbar>
         <Title text="Content" />
+        <ToolbarSpacer />
+        <!-- your new button -->
+        <Button
+            text="Edit"
+            icon="sap-icon://edit"
+            press=".onEditContextPress"
+            tooltip="Edit"
+        />
     </Toolbar>
 
-    <!-- <forms:SimpleForm
-        visible="false"
+    <forms:SimpleForm
         editable="false"
         layout="ResponsiveGridLayout"
         id="ContextNodeForm"
+        bindingContexts=""
     >
         <Label text="ID" />
         <Text text="{ID}" />
@@ -21,6 +29,12 @@
 
         <Label text="Type" />
         <Text text="{type}" />
-    </forms:SimpleForm> -->
+
+        <Label text="Value" />
+        <Text text="{value}" />
+
+        <Label text="Path" />
+        <Text text="{path}" />
+    </forms:SimpleForm>
 
 </core:FragmentDefinition>

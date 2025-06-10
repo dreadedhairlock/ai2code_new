@@ -1,4 +1,4 @@
-ID,name,description,autoRun,isMain,createdAt,createdBy,modifiedAt,modifiedBy
-48148289-5767-44b9-9c86-1cee27570d8b,GenerateRAPBase,Generate RAP Basic Structure,true,true,2023-01-01T10:00:00.000Z,SYSTEM,2023-01-01T10:00:00.000Z,SYSTEM
-f2a45b78-9c12-4d67-b123-456789abcdef,CreateBehavior,Generate Behavior Implementation,true,false,2023-01-01T10:00:00.000Z,SYSTEM,2023-01-01T10:00:00.000Z,SYSTEM
-e3b56c89-8d23-4e78-c234-567890bcdef1,GenerateTests,Generate Unit Tests,false,false,2023-01-01T10:00:00.000Z,SYSTEM,2023-01-01T10:00:00.000Z,SYSTEM
+ID,name,description,createdAt
+550e8400-e29b-41d4-a716-446655440000,Classification,Classify input documents,2024-06-01T10:00:00Z
+550e8400-e29b-41d4-a716-446655440001,Extraction,Extract entities from text,2024-06-01T10:10:00Z
+550e8400-e29b-41d4-a716-446655440002,Translation,Translate text from English to German,2024-06-01T10:20:00Z

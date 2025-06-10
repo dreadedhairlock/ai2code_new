@@ -36,6 +36,7 @@
                     type="XML"
                 />
             </VBox>
+             
         </HBox>
     </Page>
 </mvc:View>

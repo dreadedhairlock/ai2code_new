@@ -1,5 +1,4 @@
 {
-
   "_version": "1.65.0",
   "sap.app": {
     "id": "task-runtime",
@@ -72,6 +71,10 @@
           "autoExpandSelect": true,
           "earlyRequests": true
         }
+      },
+      "Nodes": {
+        "type": "sap.ui.model.json.JSONModel",
+        "uri": "Nodes.json"
       }
     },
     "resources": {
@@ -95,32 +98,29 @@
       },
       "routes": [
         {
-          "name": "RouteTaskList",
-          "pattern": ":?query:",
-          "target": [
-            "TargetTaskList"
-          ]
-        },
-        {
           "name": "RouteTaskDetail",
           "pattern": "Tasks({taskId}):?query:",
-          "target": [
-            "TargetTaskDetail"
-          ]
-        }        
+          "target": ["TargetTaskDetail"]
+        },
+        {
+          "name": "RouteTaskList",
+          "pattern": "",
+          "target": ["TargetTaskList"]
+        }
       ],
       "targets": {
+        "TargetTaskDetail": {
+          "viewType": "XML",
+          "clearControlAggregation": false,
+          "id": "TaskDetail",
+          "name": "TaskDetail"
+        },
+
         "TargetTaskList": {
           "viewType": "XML",
           "clearControlAggregation": false,
-          "viewId": "TaskList",
-          "viewName": "TaskList"
-        },
-       "TargetTaskDetail": {
-          "viewType": "XML",
-          "clearControlAggregation": false,
-          "viewId": "TaskDetail",
-          "viewName": "TaskDetail"
+          "id": "TaskList",
+          "name": "TaskList"
         }
       }
     },

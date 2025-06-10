@@ -1,8 +1,6 @@
-name;descr;code
-Chinese;Chinese;zh
-Spanish;Spanish;es
-English;English;en
-French;French;fr
-German;German;de
-Italian;Italian;it
-Russian;Russian;ru
+code,name,descr
+EN,English,English
+ZH,Chinese,Chinese
+DE,German,German
+JA,Japanese,Japanese
+ID,Indonesian,Indonesian
