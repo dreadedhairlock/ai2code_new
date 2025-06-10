@@ -1,0 +1,29 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    <VBox height="50%">
+        <Toolbar>
+            <Title text="Context Tree" />
+        </Toolbar>
+        <ScrollContainer
+            height="100%"
+            vertical="true"
+            horizontal="false"
+        >
+            <Tree
+                id="docTree"
+                items="{
+          path: 'tree>/nodes'
+        }"
+                itemPress="onTreeItemPress"
+                selectionChange="onTreeItemPress"
+            >
+                <StandardTreeItem
+                    title="{tree>label}"
+                    type="Active"
+                />
+            </Tree>
+        </ScrollContainer>
+    </VBox>
+</core:FragmentDefinition>

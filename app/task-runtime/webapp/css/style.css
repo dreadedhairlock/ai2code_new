@@ -1,0 +1,130 @@
+.customRightColumn {
+  height: 100vh;
+}
+/*PANELS*/
+.topPanel {
+    border-bottom: 1px solid #dcdcdc;
+}
+.bottomPanel {
+    border-top: 1px solid #dcdcdc;
+}
+/*BOX*/
+.topSection, .bottomSection {
+  padding: 1rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+.bottomSection {
+  overflow-y: auto;
+}
+.aiChatTitle, .codeResultTitle{
+  text-align: center;
+  width: 100%;
+  display: block;
+  padding-bottom: 0.5rem;
+}
+/*CHAT MESSAGES AREA*/
+.chatMessagesArea {
+  flex: 1;
+  margin-bottom: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+  height: calc(100% - 120px); /* Adjust based on title and input height */
+  max-height: 300px; /* Set a maximum height */
+}
+.chatMessages {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+/* Chat Bubble Styles */
+.chatBubbleContainer {
+  display: flex;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+.chatBubbleContainer.user {
+  justify-content: flex-end;
+}
+.chatBubbleContainer.ai {
+  justify-content: flex-start;
+}
+.chatBubble {
+  max-width: 80%;
+  padding: 0.75rem 1rem;
+  border-radius: 18px;
+  word-wrap: break-word;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.chatBubble.user {
+  background-color: #007bff;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.chatBubble.ai {
+  background-color: #f1f1f1;
+  color: #333;
+  border-bottom-left-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+.chatBubble.user::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -8px;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+  border-top-color: #007bff;
+  border-right: 0;
+  margin-bottom: -8px;
+}
+.chatBubble.ai::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+  border-top-color: #f1f1f1;
+  border-left: 0;
+  margin-bottom: -8px;
+}
+.chatTimestamp {
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 0.25rem;
+  text-align: right;
+}
+.chatBubbleContainer.ai .chatTimestamp {
+  text-align: left;
+}
+/*AI CHAT INPUT*/
+.chatInputBox {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  box-sizing: border-box;
+}
+.chatInput {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+}
+.chatSendButton {
+  flex-shrink: 0;
+  width: auto;
+  min-width: 44px;
+}
