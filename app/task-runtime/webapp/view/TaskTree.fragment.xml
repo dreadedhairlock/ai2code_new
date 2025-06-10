@@ -20,7 +20,7 @@
                 selectionChange=".onTaskSelect"
             >
                 <StandardTreeItem
-                    title="{botInstances>type}: {botInstances>ID}"
+                    title="{botInstances>type} : {botInstances>ID}"
                 />
             </Tree>
         </ScrollContainer>
