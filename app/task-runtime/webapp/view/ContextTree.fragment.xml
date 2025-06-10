@@ -14,14 +14,15 @@
             <Tree
                 id="docTree"
                 items="{
-          path: 'tree>/nodes',
-          parameters: {
-            arrayNames: ['children']
-          }
+          path: 'tree>/nodes'
         }"
+                itemPress="onTreeItemPress"
+                selectionChange="onTreeItemPress"
             >
-                <!-- each node rendered as a StandardTreeItem -->
-                <StandardTreeItem title="{tree>key}" />
+                <StandardTreeItem
+                    title="{tree>label}"
+                    type="Active"
+                />
             </Tree>
         </ScrollContainer>
     </VBox>

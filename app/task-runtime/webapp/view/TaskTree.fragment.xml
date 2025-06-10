@@ -12,15 +12,15 @@
             horizontal="false"
         >
             <Tree
-                id="TasksList"
+                id="tree"
                 mode="SingleSelectMaster"
-                items="{ path: 'Nodes>/Nodes'}"
-                itemPress=".onTasksSelect"
-                selectionChange=".onTasksSelect"
+                growing="true"
+                items="{path: 'botInstances>/'}"
+                itemPress=".onTaskSelect"
+                selectionChange=".onTaskSelect"
             >
                 <StandardTreeItem
-                    title="{Nodes>text}"
-                    type="Active"
+                    title="{botInstances>type} : {botInstances>ID}"
                 />
             </Tree>
         </ScrollContainer>

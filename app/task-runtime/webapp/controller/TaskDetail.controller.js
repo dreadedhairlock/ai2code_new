@@ -5,98 +5,126 @@ sap.ui.define(
 
     return Controller.extend("task-runtime.controller.TaskDetail", {
       onInit: function () {
+        const oRouter = this.getOwnerComponent().getRouter();
         const oModel = this.getOwnerComponent().getModel();
-        oModel
-          .bindList("/ContextNodes")
+
+        oRouter.attachRouteMatched(
+          async function (oEvent) {
+            const oArgs = oEvent.getParameter("arguments");
+            if (oArgs && oArgs.taskId) {
+              // Bind the main element first
+              this.getView().bindElement({
+                path: "/Tasks('" + oArgs.taskId + "')",
+              });
+
+              try {
+                // Wait for all data to load before proceeding
+                await Promise.all([
+                  this.loadBotInstances(oArgs.taskId),
+                  this.loadContextNodes(oArgs.taskId),
+                ]);
+
+                // Data is now loaded, you could trigger a refresh here if needed
+              } catch (error) {
+                console.error("Failed to load data:", error);
+              }
+            }
+          }.bind(this)
+        );
+      },
+
+      loadBotInstances: function (taskId) {
+        const oModel = this.getOwnerComponent().getModel();
+        return oModel
+          .bindList("/Tasks('" + taskId + "')/botInstances")
           .requestContexts()
           .then(
             function (aContexts) {
               var aData = aContexts.map(function (oContext) {
-                return oContext.getObject(); // Returns JS object
+                var oObj = oContext.getObject();
+                oObj.type = "bot";
+                return oObj;
               });
-
-              //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
               const oJSONModel = new JSONModel();
               oJSONModel.setData({ results: aData });
-
-              // Use the JSON model as needed
-              this.getOwnerComponent().setModel(oJSONModel, "myJSON");
-              const data = this.getOwnerComponent()
-                .getModel("myJSON")
-                .getData().results;
-              this.buildContextTree(data);
-
-              //   const aTree = this._groupByPath(aData);
-              //   const oTreeModel = new JSONModel({ nodes: aTree });
-              //   this.getOwnerComponent().setModel(oTreeModel, "tree");
+              this.getOwnerComponent().setModel(oJSONModel, "botInstances");
             }.bind(this)
           );
       },
 
-      buildContextTree: function (flatData) {
-        // Result tree
-        const treeData = {};
-
-        flatData.forEach((item) => {
-          const pathSegments = item.path.split("/").filter(Boolean); // e.g. ["documents", "section1"]
-          let current = treeData;
-
-          // Build hierarchy
-          pathSegments.forEach((segment) => {
-            if (!current[segment]) {
-              current[segment] = {};
-            }
-            current = current[segment];
-          });
-
-          // Assign label-value pair
-          current[item.label] = item.value;
-        });
-
-        console.log(treeData);
-
-        const aTree = this.prepareTreeArray(treeData);
-        const oTreeModel = new JSONModel({ nodes: aTree });
-        this.getOwnerComponent().setModel(oTreeModel, "tree");
+      loadContextNodes: function (taskId) {
+        const oModel = this.getOwnerComponent().getModel();
+        return oModel
+          .bindList("/Tasks('" + taskId + "')/contextNodes")
+          .requestContexts()
+          .then(
+            function (aContexts) {
+              const flatData = aContexts.map((ctx) => ctx.getObject());
+              this.buildContextTree(flatData);
+            }.bind(this)
+          );
       },
 
-      prepareTreeArray: function (oObj) {
-        return Object.keys(oObj).map((key) => {
-          const node = { key: key, children: [] };
-          const val = oObj[key];
-          if (val !== null && typeof val === "object") {
-            // object → recurse
-            node.children = this.prepareTreeArray(val);
-          } else {
-            // primitive → treat as leaf with a value
-            node.value = val;
+      buildContextTree: function (flatList) {
+        // group items by their section path
+        const sectionMap = {};
+        flatList.forEach((item) => {
+          if (!sectionMap[item.path]) {
+            sectionMap[item.path] = {
+              path: item.path,
+              label: item.path.split("/").pop(), // "section1"
+              children: [],
+            };
           }
-          return node;
-        });
-      },
-
-      _groupByPath: function (flatData) {
-        const map = {};
-        flatData.forEach((item) => {
-          // strip leading slash
-          const pathKey = item.path.replace(/^\/+/, "");
-          if (!map[pathKey]) {
-            map[pathKey] = { key: pathKey, children: [] };
-          }
-          // push each label/value as a leaf node
-          map[pathKey].children.push({
-            key: item.label,
+          sectionMap[item.path].children.push({
+            ID: item.ID,
+            label: item.label,
             value: item.value,
             children: [],
           });
         });
-        // return array of all grouped nodes
-        return Object.values(map);
+
+        const roots = Object.values(sectionMap);
+        const oTreeModel = new JSONModel({ nodes: roots });
+        this.getOwnerComponent().setModel(oTreeModel, "tree");
       },
 
-      _onLoadContextNodes: function (oData) {
-        // oData.results is a flat array of ContextNode objects
-        var aFlat = oData.results;
+      getParentPath: function (path) {
+        const lastDot = path.lastIndexOf("/");
+        if (lastDot > 0) return path.substring(0, lastDot);
+        return null;
+      },
+
+      onTreeItemPress: function (oEvent) {
+        // 1) get the pressed item context
+        const oItem = oEvent.getParameter("listItem");
+        const oTreeCtx = oItem.getBindingContext("tree");
+        const sUuid = oTreeCtx.getProperty("ID");
+        if (!sUuid) {
+          MessageBox.warning("No ID on this node");
+          return;
+        }
+
+        // 2) assemble your read path and fetch full entity
+        const sReadPath = `/ContextNodes('${sUuid}')`;
+        const oOData = this.getOwnerComponent().getModel(); // your V4 model
+        oOData
+          .bindContext(sReadPath)
+          .requestObject()
+          .then(
+            function () {
+              // this.byId("ContextNodeForm").setVisible(true);
+
+              const oCNForm = this.byId("ContextNodeForm");
+
+              const sPath = "/ContextNodes('" + sUuid + "')";
+
+              oCNForm.bindElement({ path: sPath });
+            }.bind(this)
+          )
+          .catch(function (oErr) {
+            MessageBox.error("Failed to load details: " + oErr.message);
+          });
       },
 
       // ---------------------------------------Context Tree -------------------------------------
@@ -136,7 +164,7 @@ sap.ui.define(
           oForm.setVisible(true);
           oOtherForm.setVisible(false);
           // Bind the table items to the /Books entity set, filtered by the selected author's ID
-          const sPath = "/ContextNodes('" + sContextNodeId + "')";
+          const sPath = "/contextNodes('" + sContextNodeId + "')";
 
           oForm.bindElement({
             path: sPath,
@@ -147,10 +175,196 @@ sap.ui.define(
 
       // -----------------------------------------Task Tree --------------------------------------
       // This is Detail page
-      onTaskSelect: function () {
+      onTaskSelect: function (oEvent) {
         // Get the reference to the author list control by its ID
-        const oList = this.byId("TasksList");
+        var oSelectedItem = oEvent.getParameter("listItem"); // atau "item"
+        var oContext = oSelectedItem.getBindingContext("botInstances");
+        var sID = oContext.getProperty("ID");
+        var sType = oContext.getProperty("type");
+
+        var oTree = this.byId("tree"),
+          aSelectedItems = oTree.getSelectedItems(),
+          aSelectedIndices = [];
+
+        for (var i = 0; i < aSelectedItems.length; i++) {
+          aSelectedIndices.push(oTree.indexOfItem(aSelectedItems[i]));
+        }
+
+        oTree.expand(aSelectedIndices);
+
+        var oTree = this.byId("tree");
+        var oBinding = oTree.getBinding("items");
+        var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
+        var oNewParentContext = oBinding.getContextByIndex(iItemIndex);
+
+        if (!oNewParentContext) {
+          return;
+        }
+
+        var oNewParent = oNewParentContext.getProperty();
+
+        // Gunakan "nodes" sesuai struktur JSON Anda
+        if (!oNewParent.nodes) {
+          oNewParent.nodes = [];
+        }
+
+        if (sType == "bot") {
+          const oModel = this.getOwnerComponent().getModel();
+          oModel
+            .bindList("/BotInstances('" + sID + "')/tasks")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                var aData = aContexts.map(function (oContext) {
+                  var oObj = oContext.getObject();
+                  oObj.type = "task"; // add type tree 'bot'
+                  return oObj;
+                });
+                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                const oJSONModel = new JSONModel();
+                oJSONModel.setData({ results: aData });
+                oNewParent.nodes.push(...aData);
+                // Refresh tree
+                oTree.getBinding("items").refresh();
+              }.bind(this)
+            );
+        } else {
+          const oModel = this.getOwnerComponent().getModel();
+          oModel
+            .bindList("/Tasks('" + sID + "')/botInstances")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                var aData = aContexts.map(function (oContext) {
+                  var oObj = oContext.getObject();
+                  oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
+                  return oObj;
+                });
+                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                const oJSONModel = new JSONModel();
+                oJSONModel.setData({ results: aData });
+                var isDuplicate = oNewParent.nodes.some(function (
+                  existingItem
+                ) {
+                  return existingItem.ID === newItem.ID;
+                });
+
+                aData.forEach(function (newItem) {
+                  var isDuplicate = oNewParent.nodes.some(function (
+                    existingItem
+                  ) {
+                    return existingItem.ID === newItem.ID;
+                  });
+
+                  if (!isDuplicate) {
+                    oNewParent.nodes.push(newItem);
+                  }
+                });
+                // Refresh tree
+
+                oTree.getBinding("items").refresh();
+              }.bind(this)
+            );
+        }
+
+        // Refresh untuk update tampilan
       },
+
+      // onDragStart: function (oEvent) {
+      //     var oTree = this.byId("Tree");
+      //     var oBinding = oTree.getBinding("items");
+      //     var oDragSession = oEvent.getParameter("dragSession");
+      //     var oDraggedItem = oEvent.getParameter("target");
+      //     console.log(oDraggedItem)
+      //     var iDraggedItemIndex = oTree.indexOfItem(oDraggedItem);
+      //     console.log(iDraggedItemIndex)
+      //     var aSelectedIndices = oTree.getBinding("items").getSelectedIndices();
+      //     console.log(aSelectedIndices)
+      //     var aSelectedItems = oTree.getSelectedItems();
+      //     console.log(aSelectedItems)
+
+      //     var aDraggedItemContexts = [];
+
+      //     if (aSelectedItems.length > 0) {
+      //         // If items are selected, do not allow to start dragging from a item which is not selected.
+      //         if (aSelectedIndices.indexOf(iDraggedItemIndex) === -1) {
+      //             oEvent.preventDefault();
+      //         } else {
+      //             for (var i = 0; i < aSelectedItems.length; i++) {
+      //                 aDraggedItemContexts.push(oBinding.getContextByIndex(aSelectedIndices[i]));
+      //             }
+      //         }
+      //     } else {
+      //         aDraggedItemContexts.push(oBinding.getContextByIndex(iDraggedItemIndex));
+      //     }
+
+      //     oDragSession.setComplexData("hierarchymaintenance", {
+      //         draggedItemContexts: aDraggedItemContexts
+      //     });
+      // },
+
+      onDrop: function (oEvent) {
+        // var oTree = this.byId("Tree");
+        // var oBinding = oTree.getBinding("items");
+        // var oDragSession = oEvent.getParameter("dragSession");
+        // var oDroppedItem = oEvent.getParameter("droppedControl");
+        // var aDraggedItemContexts = oDragSession.getComplexData("hierarchymaintenance").draggedItemContexts;
+        // var iDroppedIndex = oTree.indexOfItem(oDroppedItem);
+        // var oNewParentContext = oBinding.getContextByIndex(iDroppedIndex);
+        // if (aDraggedItemContexts.length === 0 || !oNewParentContext) {
+        //     return;
+        // }
+        // var oModel = oTree.getBinding("items").getModel();
+        // var oNewParent = oNewParentContext.getProperty();
+        // // In the JSON data of this example the children of a node are inside an array with the name "categories".
+        // if (!oNewParent.categories) {
+        //     oNewParent.categories = []; // Initialize the children array.
+        // }
+        // for (var i = 0; i < aDraggedItemContexts.length; i++) {
+        //     if (oNewParentContext.getPath().indexOf(aDraggedItemContexts[i].getPath()) === 0) {
+        //         // Avoid moving a node into one of its child nodes.
+        //         continue;
+        //     }
+        //     // Copy the data to the new parent.
+        //     oNewParent.categories.push(aDraggedItemContexts[i].getProperty());
+        //     // Remove the data. The property is simply set to undefined to preserve the tree state (expand/collapse states of nodes).
+        //     // oModel.setProperty(aDraggedItemContexts[i].getPath(), undefined, aDraggedItemContexts[i], true);
+        // }
+        // // Refresh model to update bindings
+        // oModel.refresh(true);
+        // var oTree = this.byId("Tree");
+        // var oBinding = oTree.getBinding("items");
+        // var oDragSession = oEvent.getParameter("dragSession");
+        // var oDroppedItem = oEvent.getParameter("droppedControl");
+        // var aDraggedItemContexts = oDragSession.getComplexData("hierarchymaintenance").draggedItemContexts;
+        // var iDroppedIndex = oTree.indexOfItem(oDroppedItem);
+        // var oNewParentContext = oBinding.getContextByIndex(iDroppedIndex);
+        // if (aDraggedItemContexts.length === 0 || !oNewParentContext) {
+        //     return;
+        // }
+        // var oModel = oTree.getBinding("items").getModel();
+        // var oNewParent = oNewParentContext.getProperty();
+        // // Gunakan "nodes" sesuai struktur JSON Anda
+        // if (!oNewParent.nodes) {
+        //     oNewParent.nodes = [];
+        // }
+        // for (var i = 0; i < aDraggedItemContexts.length; i++) {
+        //     // Cegah drop ke descendant-nya sendiri
+        //     if (oNewParentContext.getPath().indexOf(aDraggedItemContexts[i].getPath()) === 0) {
+        //         continue;
+        //     }
+        //     // Buat node baru (bebas sesuai kebutuhan Anda)
+        //     var oNewNode = {
+        //         text: "New Node " + (i + 1) // Anda bisa custom di sini
+        //         // Tambahkan properti lain jika perlu
+        //     };
+        //     // Tambahkan ke parent yang di-drop
+        //     oNewParent.nodes.push(oNewNode);
+        // }
+        // oModel.refresh(true); // Refresh untuk update tampilan
+      },
+
+      onEditContextPress: function () {},
 
       // -----------------------------------------Task Tree --------------------------------------
     
