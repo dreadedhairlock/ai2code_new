@@ -1,7 +1,6 @@
 <core:FragmentDefinition
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
-    xmlns:dnd="sap.ui.core.dnd"
 >
     <VBox height="50%">
         <Toolbar>
@@ -13,13 +12,16 @@
             horizontal="false"
         >
             <Tree
-                id="Tree"
+                id="tree"
                 mode="SingleSelectMaster"
-                items="{path: 'tree>/'}"
+                growing="true"
+                items="{path: 'botInstances>/'}"
                 itemPress=".onTaskSelect"
                 selectionChange=".onTaskSelect"
             >
-                <StandardTreeItem title="{tree>ID}" />
+                <StandardTreeItem
+                    title="{botInstances>type}: {botInstances>ID}"
+                />
             </Tree>
         </ScrollContainer>
     </VBox>

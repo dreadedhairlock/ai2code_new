@@ -1,5 +1,5 @@
 <mvc:View
-    controllerName="task-runtime.controller.runtime"
+    controllerName="task-runtime.controller.TaskDetail"
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
     xmlns:mvc="sap.ui.core.mvc"

@@ -5,20 +5,49 @@ sap.ui.define([
 ], (Controller, JSONModel) => {
     "use strict";
 
-    return Controller.extend("task-runtime.controller.runtime", {
-        onInit: function (evt) {
-            // set explored app's demo model on this sample
-            var oModel = new JSONModel("./Tree.json");
-            //             this.getView().setModel(oModel);
-            // // 
-            //             var oTree = this.byId("Tree");
+    return Controller.extend("task-runtime.controller.TaskDetail", {
+        onInit: function () {
+            const oRouter = this.getOwnerComponent().getRouter();
+            const oModel = this.getOwnerComponent().getModel();
 
-            // oTree.setMode("MultiSelect");
-            var uri = "/odata/v4/MainService/Tasks?$format=json";
-            var oModel = new sap.ui.model.json.JSONModel();
-            oModel.loadData(uri);
-            console.log(oModel);
-            this.getView().setModel(oModel, "tree");
+            // change router
+            oRouter.attachRouteMatched(
+                function (oEvent) {
+                    const oArgs = oEvent.getParameter("arguments");
+                    if (oArgs && oArgs.taskId) {
+                        this.getView().bindElement({
+                            path: "/Tasks('" + oArgs.taskId + "')",
+                        });
+
+                        //get model
+                        oModel
+                            .bindList("/Tasks('" + oArgs.taskId + "')/botInstances")
+                            .requestContexts()
+                            .then(
+                                function (aContexts) {
+                                    var aData = aContexts.map(function (oContext) {
+
+                                        var oObj = oContext.getObject();
+                                        oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
+                                        return oObj;
+                                    });
+                                    //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                                    const oJSONModel = new JSONModel();
+                                    oJSONModel.setData({ results: aData });
+                                    console.log(aData)
+                                    // Use the JSON model as needed
+                                    this.getOwnerComponent().setModel(oJSONModel, "myJSON");
+                                    const data = this.getOwnerComponent()
+                                        .getModel("myJSON")
+                                        .getData().results;
+                                    this.getOwnerComponent().setModel(oJSONModel, "botInstances");
+                                }.bind(this)
+                            );
+                    }
+
+                }.bind(this)
+            );
+
 
         },
 
@@ -58,7 +87,7 @@ sap.ui.define([
                 oForm.setVisible(true);
                 oOtherForm.setVisible(false);
                 // Bind the table items to the /Books entity set, filtered by the selected author's ID
-                const sPath = "/ContextNodes('" + sContextNodeId + "')";
+                const sPath = "/contextNodes('" + sContextNodeId + "')";
 
                 oForm.bindElement({
                     path: sPath,
@@ -74,8 +103,12 @@ sap.ui.define([
         // This is Detail page
         onTaskSelect: function (oEvent) {
             // Get the reference to the author list control by its ID
-            console.log("clicked")
-            var oTree = this.byId("Tree"),
+            var oSelectedItem = oEvent.getParameter("listItem"); // atau "item"
+            var oContext = oSelectedItem.getBindingContext("botInstances");
+            var sID = oContext.getProperty("ID");
+            var sType = oContext.getProperty("type")
+
+            var oTree = this.byId("tree"),
                 aSelectedItems = oTree.getSelectedItems(),
                 aSelectedIndices = [];
 
@@ -85,16 +118,15 @@ sap.ui.define([
 
             oTree.expand(aSelectedIndices);
 
-            var oTree = this.byId("Tree");
+            var oTree = this.byId("tree");
             var oBinding = oTree.getBinding("items");
-            var iDroppedIndex = oTree.indexOfItem(aSelectedItems[0]);
-            var oNewParentContext = oBinding.getContextByIndex(iDroppedIndex);
+            var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
+            var oNewParentContext = oBinding.getContextByIndex(iItemIndex);
 
             if (!oNewParentContext) {
                 return;
             }
 
-            var oModel = oTree.getBinding("items").getModel();
             var oNewParent = oNewParentContext.getProperty();
 
             // Gunakan "nodes" sesuai struktur JSON Anda
@@ -103,17 +135,67 @@ sap.ui.define([
             }
 
 
-            // Buat node baru (bebas sesuai kebutuhan Anda)
-            var oNewNode = {
-                text: "New Node " + (i + 1) // Anda bisa custom di sini
-                // Tambahkan properti lain jika perlu
-            };
+            if (sType == 'bot') {
+                const oModel = this.getOwnerComponent().getModel();
+                oModel
+                    .bindList("/BotInstances('" + sID + "')/tasks")
+                    .requestContexts()
+                    .then(
+                        function (aContexts) {
+                            var aData = aContexts.map(function (oContext) {
 
-            // Tambahkan ke parent yang di-drop
-            oNewParent.nodes.push(oNewNode);
+                                var oObj = oContext.getObject();
+                                oObj.type = "task"; // add type tree 'bot'
+                                return oObj;
+                            });
+                            //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                            const oJSONModel = new JSONModel();
+                            oJSONModel.setData({ results: aData });
+                            oNewParent.nodes.push(...aData);
+                            // Refresh tree
+                            oTree.getBinding("items").refresh();
 
+                        }.bind(this)
+                    );
+            }
+            else {
+                const oModel = this.getOwnerComponent().getModel();
+                oModel
+                    .bindList("/Tasks('" + sID + "')/botInstances")
+                    .requestContexts()
+                    .then(
+                        function (aContexts) {
+                            var aData = aContexts.map(function (oContext) {
 
-            oModel.refresh(true); // Refresh untuk update tampilan
+                                var oObj = oContext.getObject();
+                                oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
+                                return oObj;
+                            });
+                            //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                            const oJSONModel = new JSONModel();
+                            oJSONModel.setData({ results: aData });
+                            var isDuplicate = oNewParent.nodes.some(function (existingItem) {
+                                return existingItem.ID === newItem.ID;
+                            });
+
+                            aData.forEach(function (newItem) {
+                                var isDuplicate = oNewParent.nodes.some(function (existingItem) {
+                                    return existingItem.ID === newItem.ID;
+                                });
+
+                                if (!isDuplicate) {
+                                    oNewParent.nodes.push(newItem);
+                                }
+                            });
+                            // Refresh tree
+
+                            oTree.getBinding("items").refresh();
+
+                        }.bind(this)
+                    );
+            }
+
+            // Refresh untuk update tampilan
         },
 
         // onDragStart: function (oEvent) {

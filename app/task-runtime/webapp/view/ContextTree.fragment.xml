@@ -4,13 +4,14 @@
 >
     <VBox height="50%">
         <Toolbar>
-            <Title text="Context Tree" />
+            <Title text="Context Tree"  />
         </Toolbar>
         <ScrollContainer height="100%" vertical="true" horizontal="false">
             <List
                 id="ContextNodesList"
                 mode="SingleSelectMaster"
-                items="{ path: '/ContextNodes' }"
+                items="{ path: 'contextNodes' }"
+                
                 itemPress=".onContextNodesSelect"
                 selectionChange=".onContextNodesSelect"
                 growing="true"

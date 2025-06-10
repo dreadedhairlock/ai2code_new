@@ -7,7 +7,7 @@
         <Title text="Content" />
     </Toolbar>
 
-    <forms:SimpleForm
+    <!-- <forms:SimpleForm
         visible="false"
         editable="false"
         layout="ResponsiveGridLayout"
@@ -21,18 +21,6 @@
 
         <Label text="Type" />
         <Text text="{type}" />
-    </forms:SimpleForm>
+    </forms:SimpleForm> -->
 
-    <forms:SimpleForm
-        visible="false"
-        editable="false"
-        layout="ResponsiveGridLayout"
-        id="BotInstanceForm"
-    >
-        <Label text="ID" />
-        <Text text="{ID}" />
-
-        <Label text="Result" />
-        <Text text="{result}" />
-    </forms:SimpleForm>
 </core:FragmentDefinition>
