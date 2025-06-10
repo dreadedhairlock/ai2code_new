@@ -379,7 +379,7 @@ sap.ui.define(
                 oInput.setValue("");
                 // Simulate AI response (replace with your actual AI call)
                 setTimeout(() => {
-                    this.addChatMessage(sMessage + " hehehe", "ai");
+                    this.addChatMessage("AI received: " + sMessage, "ai");
                 }, 1000);
             }
         },

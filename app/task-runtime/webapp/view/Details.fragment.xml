@@ -8,7 +8,7 @@
     </Toolbar>
     
     <!-- Use Flexible Box Layout for better control -->
-    <l:VerticalLayout width="100%" height="100%">
+    <l:VerticalLayout width="90%" height="100%">
         
         <!-- Chat Section - Fixed Height -->
         <l:VerticalLayout width="100%" height="50%" class="topSection">
