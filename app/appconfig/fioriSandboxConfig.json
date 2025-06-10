@@ -1,4 +1,5 @@
-{
+{   "defaultRenderer": "fiori2",
+    "applications" : {},
     "services": {
         "LaunchPage": {
             "adapter": {
@@ -78,7 +79,7 @@
                                         "renameTo" : "ID"
                                     }
                                 },
-                                "additionalParameters": "allowed"
+                                "additionalParameters": "ignored"
                             },
                             "resolutionResult": {
                                 "applicationType": "SAPUI5",
@@ -98,7 +99,7 @@
                                         "renameTo" : "ID"
                                     }
                                 },
-                                "additionalParameters": "allowed"
+                                "additionalParameters": "ignored"
                             },
                             "resolutionResult": {
                                 "applicationType": "SAPUI5",
@@ -113,7 +114,7 @@
                                 "parameters": {
 
                                 },
-                                "additionalParameters": "allowed"
+                                "additionalParameters": "ignored"
                             },
                             "resolutionResult": {
                                 "applicationType": "SAPUI5",
