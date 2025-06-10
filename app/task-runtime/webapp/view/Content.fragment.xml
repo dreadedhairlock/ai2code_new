@@ -12,6 +12,7 @@
         editable="false"
         layout="ResponsiveGridLayout"
         id="ContextNodeForm"
+        bindingContexts=""
     >
         <Label text="ID" />
         <Text text="{ID}" />
@@ -21,6 +22,12 @@
 
         <Label text="Type" />
         <Text text="{type}" />
+
+        <Label text="Value" />
+        <Text text="{value}" />
+
+        <Label text="Path" />
+        <Text text="{path}" />
     </forms:SimpleForm>
 
     <forms:SimpleForm

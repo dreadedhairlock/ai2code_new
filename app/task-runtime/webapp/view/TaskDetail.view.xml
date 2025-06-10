@@ -33,8 +33,12 @@
                 />
             </VBox>
 
-            <VBox width="25%">
+            <VBox
+                width="25%"
+                id="detailContainer"
+            >
                 <core:Fragment
+                    id="detailsFragment"
                     fragmentName="task-runtime.view.Details"
                     type="XML"
                 />

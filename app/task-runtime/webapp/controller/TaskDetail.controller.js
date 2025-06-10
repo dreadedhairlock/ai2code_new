@@ -1,102 +1,87 @@
 sap.ui.define(
-  ["sap/ui/core/mvc/Controller", "sap/ui/model/json/JSONModel"],
-  (Controller, JSONModel) => {
+  [
+    "sap/ui/core/mvc/Controller",
+    "sap/ui/model/json/JSONModel",
+    "sap/m/MessageBox",
+  ],
+  (Controller, JSONModel, MessageBox) => {
     "use strict";
 
     return Controller.extend("task-runtime.controller.TaskDetail", {
       onInit: function () {
         const oModel = this.getOwnerComponent().getModel();
+
         oModel
           .bindList("/ContextNodes")
           .requestContexts()
           .then(
             function (aContexts) {
-              var aData = aContexts.map(function (oContext) {
-                return oContext.getObject(); // Returns JS object
-              });
-
-              //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-              const oJSONModel = new JSONModel();
-              oJSONModel.setData({ results: aData });
-
-              // Use the JSON model as needed
-              this.getOwnerComponent().setModel(oJSONModel, "myJSON");
-              const data = this.getOwnerComponent()
-                .getModel("myJSON")
-                .getData().results;
-              this.buildContextTree(data);
-
-              //   const aTree = this._groupByPath(aData);
-              //   const oTreeModel = new JSONModel({ nodes: aTree });
-              //   this.getOwnerComponent().setModel(oTreeModel, "tree");
+              const flatData = aContexts.map((ctx) => ctx.getObject());
+              this.buildContextTree(flatData);
             }.bind(this)
           );
       },
 
-      buildContextTree: function (flatData) {
-        // Result tree
-        const treeData = {};
-
-        flatData.forEach((item) => {
-          const pathSegments = item.path.split("/").filter(Boolean); // e.g. ["documents", "section1"]
-          let current = treeData;
-
-          // Build hierarchy
-          pathSegments.forEach((segment) => {
-            if (!current[segment]) {
-              current[segment] = {};
-            }
-            current = current[segment];
-          });
-
-          // Assign label-value pair
-          current[item.label] = item.value;
-        });
-
-        console.log(treeData);
-
-        const aTree = this.prepareTreeArray(treeData);
-        const oTreeModel = new JSONModel({ nodes: aTree });
-        this.getOwnerComponent().setModel(oTreeModel, "tree");
-      },
-
-      prepareTreeArray: function (oObj) {
-        return Object.keys(oObj).map((key) => {
-          const node = { key: key, children: [] };
-          const val = oObj[key];
-          if (val !== null && typeof val === "object") {
-            // object → recurse
-            node.children = this.prepareTreeArray(val);
-          } else {
-            // primitive → treat as leaf with a value
-            node.value = val;
+      buildContextTree: function (flatList) {
+        // group items by their section path
+        const sectionMap = {};
+        flatList.forEach((item) => {
+          if (!sectionMap[item.path]) {
+            sectionMap[item.path] = {
+              path: item.path,
+              label: item.path.split("/").pop(), // "section1"
+              children: [],
+            };
           }
-          return node;
-        });
-      },
-
-      _groupByPath: function (flatData) {
-        const map = {};
-        flatData.forEach((item) => {
-          // strip leading slash
-          const pathKey = item.path.replace(/^\/+/, "");
-          if (!map[pathKey]) {
-            map[pathKey] = { key: pathKey, children: [] };
-          }
-          // push each label/value as a leaf node
-          map[pathKey].children.push({
-            key: item.label,
+          sectionMap[item.path].children.push({
+            ID: item.ID,
+            label: item.label,
             value: item.value,
             children: [],
           });
         });
-        // return array of all grouped nodes
-        return Object.values(map);
+
+        const roots = Object.values(sectionMap);
+        const oTreeModel = new JSONModel({ nodes: roots });
+        this.getOwnerComponent().setModel(oTreeModel, "tree");
       },
 
-      _onLoadContextNodes: function (oData) {
-        // oData.results is a flat array of ContextNode objects
-        var aFlat = oData.results;
+      getParentPath: function (path) {
+        const lastDot = path.lastIndexOf("/");
+        if (lastDot > 0) return path.substring(0, lastDot);
+        return null;
+      },
+
+      onTreeItemPress: function (oEvent) {
+        // 1) get the pressed item context
+        const oItem = oEvent.getSource();
+        const oTreeCtx = oItem.getBindingContext("tree");
+        const sUuid = oTreeCtx.getProperty("ID");
+        if (!sUuid) {
+          MessageBox.warning("No ID on this node");
+          return;
+        }
+
+        // 2) assemble your read path and fetch full entity
+        const sReadPath = `/ContextNodes('${sUuid}')`;
+        const oOData = this.getOwnerComponent().getModel(); // your V4 model
+        oOData
+          .bindContext(sReadPath)
+          .requestObject()
+          .then(
+            function () {
+              // this.byId("ContextNodeForm").setVisible(true);
+
+              const oCNForm = this.byId("ContextNodeForm");
+
+              const sPath = "/ContextNodes('" + sUuid + "')";
+
+              oCNForm.setVisible(true).bindElement({ path: sPath });
+            }.bind(this)
+          )
+          .catch(function (oErr) {
+            MessageBox.error("Failed to load details: " + oErr.message);
+          });
       },
 
       // ---------------------------------------Context Tree -------------------------------------
@@ -143,6 +128,7 @@ sap.ui.define(
           });
         }
       },
+
       // ---------------------------------------Context Tree -------------------------------------
 
       // -----------------------------------------Task Tree --------------------------------------
