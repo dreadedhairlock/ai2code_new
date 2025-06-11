@@ -10,7 +10,7 @@
         <Button
             text="Edit"
             icon="sap-icon://edit"
-            press=".onEditContextPress"
+            press=".onEditCNContent"
             tooltip="Edit"
         />
     </Toolbar>

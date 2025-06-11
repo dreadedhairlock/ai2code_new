@@ -11,6 +11,7 @@ sap.ui.define(
     "sap/m/ButtonType",
     "sap/ui/core/Element",
     "sap/m/MessageToast",
+    "sap/m/MessageBox",
   ],
   (
     Controller,
@@ -23,7 +24,8 @@ sap.ui.define(
     Button,
     ButtonType,
     Element,
-    MessageToast
+    MessageToast,
+    MessageBox
   ) => {
     "use strict";
 
@@ -42,7 +44,6 @@ sap.ui.define(
       onCNItemPress: function (oEvent) {
         // 1) get the pressed item context
         const oItem = oEvent.getParameter("listItem");
-
         const oTreeCtx = oItem.getBindingContext("contextNodes");
         const sUuid = oTreeCtx.getProperty("ID");
 
@@ -68,7 +69,7 @@ sap.ui.define(
       },
 
       // ---------------------------------------Context Tree -------------------------------------
-      onCreate: function () {
+      onCreateCNData: function () {
         if (!this.oSubmitDialog) {
           this.oSubmitDialog = new Dialog({
             type: DialogType.Message,
@@ -181,6 +182,44 @@ sap.ui.define(
         // Enable/disable the dialog’s Begin button
         this.oSubmitDialog.getBeginButton().setEnabled(bAllFilled);
       },
+
+      onDeleteCNData: async function () {
+        const oTree = this.byId("docTree");
+        const oSelected = oTree.getSelectedItem();
+
+        if (!oSelected) {
+          MessageToast.show("Please select a context node to delete!");
+          return;
+        }
+
+        const oJsonCtx = oSelected.getBindingContext("contextNodes");
+        const sID = oJsonCtx.getProperty("ID");
+
+        // Langsung gunakan path, seperti program awal tapi dengan await requestObject
+        const oODataModel = this.getOwnerComponent().getModel();
+        const sPath = "/ContextNodes('" + sID + "')";
+
+        try {
+          const oContext = oODataModel.bindContext(sPath);
+
+          // KUNCI: Request object dulu untuk memastikan context valid
+          await oContext.requestObject();
+          const oBoundContext = oContext.getBoundContext();
+
+          if (oBoundContext) {
+            await oBoundContext.delete();
+            MessageToast.show("Context node deleted successfully.");
+            await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+          } else {
+            MessageToast.show("Could not find context with ID: " + sID);
+          }
+        } catch (oError) {
+          console.error("Delete error:", oError);
+          MessageToast.show("Error: " + (oError.message || oError));
+        }
+      },
+
+      onEditCNContent: function () {},
       // ---------------------------------------Context Tree -------------------------------------
 
       // -----------------------------------------Task Tree --------------------------------------
@@ -254,8 +293,8 @@ sap.ui.define(
                 oTree.expand(aSelectedIndices);
               }.bind(this)
             );
-        // If it's not a bot, then it must be a task
-        // If it is a task, only display the bot instances of the task when isMain is false
+          // If it's not a bot, then it must be a task
+          // If it is a task, only display the bot instances of the task when isMain is false
         } else if (oContext.getProperty("isMain") == false) {
           const oModel = this.getOwnerComponent().getModel();
           oModel
@@ -298,8 +337,6 @@ sap.ui.define(
 
         // Refresh untuk update tampilan
       },
-
-      onEditContextPress: function () {},
 
       // -----------------------------------------Task Tree --------------------------------------
 
