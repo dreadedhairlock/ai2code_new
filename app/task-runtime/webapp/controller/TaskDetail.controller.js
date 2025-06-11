@@ -1,177 +1,372 @@
 sap.ui.define(
-  ["sap/ui/core/mvc/Controller", "sap/ui/model/json/JSONModel"],
-  (Controller, JSONModel) => {
+  [
+    "sap/ui/core/mvc/Controller",
+    "sap/ui/model/json/JSONModel",
+    "sap/m/Dialog",
+    "sap/m/DialogType",
+    "sap/ui/layout/form/SimpleForm",
+    "sap/m/Label",
+    "sap/m/TextArea",
+    "sap/m/Input",
+    "sap/m/Button",
+    "sap/m/ButtonType",
+    "sap/ui/core/Element",
+    "sap/m/MessageToast",
+    "sap/m/MessageBox",
+  ],
+  (
+    Controller,
+    JSONModel,
+    Dialog,
+    DialogType,
+    SimpleForm,
+    Label,
+    TextArea,
+    Input,
+    Button,
+    ButtonType,
+    Element,
+    MessageToast,
+    MessageBox
+  ) => {
     "use strict";
 
     return Controller.extend("task-runtime.controller.TaskDetail", {
       onInit: function () {
         const oRouter = this.getOwnerComponent().getRouter();
         const oModel = this.getOwnerComponent().getModel();
-
         oRouter.attachRouteMatched(
-          async function (oEvent) {
-            const oArgs = oEvent.getParameter("arguments");
-            if (oArgs && oArgs.taskId) {
-              // Bind the main element first
-              this.getView().bindElement({
-                path: "/Tasks('" + oArgs.taskId + "')",
-              });
-
-              try {
-                // Wait for all data to load before proceeding
-                await Promise.all([
-                  this.loadBotInstances(oArgs.taskId),
-                  this.loadContextNodes(oArgs.taskId),
-                ]);
-
-                // Data is now loaded, you could trigger a refresh here if needed
-              } catch (error) {
-                console.error("Failed to load data:", error);
-              }
-            }
+          function (oEvent) {
+            this._sTaskId = oEvent.getParameter("arguments").taskId;
+            oModel.refresh();
           }.bind(this)
         );
       },
 
-      loadBotInstances: function (taskId) {
-        const oModel = this.getOwnerComponent().getModel();
-        return oModel
-          .bindList("/Tasks('" + taskId + "')/botInstances")
-          .requestContexts()
+      onCNItemPress: function (oEvent) {
+        // 1) get the pressed item context
+        const oItem = oEvent.getParameter("listItem");
+        const oTreeCtx = oItem.getBindingContext("contextNodes");
+        const sUuid = oTreeCtx.getProperty("ID");
+
+        if (!sUuid) {
+          return;
+        }
+
+        // 2) assemble your read path and fetch full entity
+        const sReadPath = `/ContextNodes('${sUuid}')`;
+        const oOData = this.getOwnerComponent().getModel();
+        oOData
+          .bindContext(sReadPath)
+          .requestObject()
           .then(
-            function (aContexts) {
-              var aData = aContexts.map(function (oContext) {
-                var oObj = oContext.getObject();
-                oObj.type = "bot";
-                return oObj;
-              });
-              const oJSONModel = new JSONModel();
-              oJSONModel.setData({ results: aData });
-              this.getOwnerComponent().setModel(oJSONModel, "botInstances");
-            }.bind(this)
-          );
-      },
-
-      loadContextNodes: function (taskId) {
-        const oModel = this.getOwnerComponent().getModel();
-        return oModel
-          .bindList("/Tasks('" + taskId + "')/contextNodes")
-          .requestContexts()
-          .then(
-            function (aContexts) {
-              const flatData = aContexts.map((ctx) => ctx.getObject());
-              this.buildContextTree(flatData);
-            }.bind(this)
-          );
-      },
-
-      buildContextTree: function (flatList) {
-        // group items by their section path
-        const sectionMap = {};
-        flatList.forEach((item) => {
-          if (!sectionMap[item.path]) {
-            sectionMap[item.path] = {
-              path: item.path,
-              label: item.path.split("/").pop(), // "section1"
-              children: [],
-            };
-          }
-          sectionMap[item.path].children.push({
-            ID: item.ID,
-            label: item.label,
-            value: item.value,
-            children: [],
-          });
-        });
-
-        const roots = Object.values(sectionMap);
-        const oTreeModel = new JSONModel({ nodes: roots });
-        this.getOwnerComponent().setModel(oTreeModel, "tree");
-      },
-
-      getParentPath: function (path) {
-        const lastDot = path.lastIndexOf("/");
-        if (lastDot > 0) return path.substring(0, lastDot);
-        return null;
-      },
-
-        onTreeItemPress: function (oEvent) {
-          // 1) get the pressed item context
-          const oItem = oEvent.getParameter("listItem");
-          const oTreeCtx = oItem.getBindingContext("tree");
-          const sUuid = oTreeCtx.getProperty("ID");
-          if (!sUuid) {
-            MessageBox.warning("No ID on this node");
-            return;
-          }
-
-          // 2) assemble your read path and fetch full entity
-          const sReadPath = `/ContextNodes('${sUuid}')`;
-          const oOData = this.getOwnerComponent().getModel(); // your V4 model
-          oOData
-            .bindContext(sReadPath)
-            .requestObject()
-            .then(
-              function () {
-                // this.byId("ContextNodeForm").setVisible(true);
-
-                const oCNForm = this.byId("ContextNodeForm");
+            function () {
+              const oCNForm = this.byId("ContextNodeForm");
 
                 const sPath = "/ContextNodes('" + sUuid + "')";
 
-                oCNForm.bindElement({ path: sPath });
-              }.bind(this)
-            )
-            .catch(function (oErr) {
-              MessageBox.error("Failed to load details: " + oErr.message);
-            });
-        },
+              oCNForm.bindElement({ path: sPath });
+            }.bind(this)
+          );
+      },
 
-        // ---------------------------------------Context Tree -------------------------------------
-        // This is Detail page
-        onContextNodesSelect: function () {
-          // Get the reference to the author list control by its ID
-          const oList = this.byId("ContextNodesList");
+      // ---------------------------------------Context Tree -------------------------------------
+      onCreateCNData: function () {
+        const oCNForm = this._createCNFormForCreate();
 
-          // Get the currently selected item (author) from the list
-          const oContextNodeSelected = oList.getSelectedItem();
+        this.oCreateDialog = new Dialog({
+          title: "Add New Context Node",
+          content: [oCNForm],
+          beginButton: new Button({
+            text: "Create",
+            enabled: false,
+            press: this._createContextNodes.bind(this),
+          }),
+          endButton: new Button({
+            text: "Cancel",
+            press: function () {
+              this.oCreateDialog.close();
+            }.bind(this),
+          }),
+          afterClose: function () {
+            this.oCreateDialog.destroy();
+            this.oCreateDialog = null;
+          }.bind(this),
+        });
 
-          // If no author is selected, exit the function
-          if (!oContextNodeSelected) {
+        this.getView().addDependent(this.oCreateDialog);
+        this.oCreateDialog.open();
+      },
+
+      _clearCNInputs: function () {
+        const aInputIds = ["CNPath", "CNLabel", "CNType", "CNValue"];
+        aInputIds.forEach((id) => {
+          const oInput = sap.ui.getCore().byId(id);
+          if (oInput) {
+            oInput.setValue("");
+          }
+        });
+      },
+
+      _createContextNodes: async function () {
+        const sPath = Element.getElementById("CNPathCreate").getValue();
+        const sLabel = Element.getElementById("CNLabelCreate").getValue();
+        const sType = Element.getElementById("CNTypeCreate").getValue();
+        const sValue = Element.getElementById("CNValueCreate").getValue();
+
+        const oNewContextNodes = {
+          task_ID: this._sTaskId,
+          path: sPath,
+          label: sLabel,
+          type: sType,
+          value: sValue,
+        };
+
+        const oModel = this.getOwnerComponent().getModel();
+        const oBinding = oModel.bindList("/ContextNodes");
+        await oBinding.create(oNewContextNodes).created();
+        MessageToast.show("Context Nodes created");
+
+        await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+        this.oCreateDialog.close();
+      },
+
+      _updateContextNodes: async function (sContextNodeId) {
+        const sPath = Element.getElementById("CNPathEdit").getValue();
+        const sLabel = Element.getElementById("CNLabelEdit").getValue();
+        const sType = Element.getElementById("CNTypeEdit").getValue();
+        const sValue = Element.getElementById("CNValueEdit").getValue();
+
+        try {
+          const oModel = this.getOwnerComponent().getModel();
+          const sEntityPath = "/ContextNodes('" + sContextNodeId + "')";
+
+          // Bind ke specific context untuk update
+          const oContext = oModel.bindContext(sEntityPath);
+          await oContext.requestObject(); // Load existing data
+          const oBoundContext = oContext.getBoundContext();
+
+          if (!oBoundContext) {
+            MessageToast.show("Context node not found!");
             return;
           }
 
-          // Retrieve the ID of the selected author from its binding context
-          const sContextNodeId = oContextNodeSelected
-            .getBindingContext()
-            .getProperty("ID");
-          console.log(sContextNodeId);
-          // Call a private function to bind and display books related to the selected author
-          this._bindContextNode(sContextNodeId);
-        },
+          // Update properties
+          oBoundContext.setProperty("path", sPath);
+          oBoundContext.setProperty("label", sLabel);
+          oBoundContext.setProperty("type", sType);
+          oBoundContext.setProperty("value", sValue);
 
-        _bindContextNode: function (sContextNodeId) {
-          // Get a reference to the books table control by its ID
-          const oForm = this.byId("ContextNodeForm");
-          const oOtherForm = this.byId("BotInstanceForm");
+          MessageToast.show("Context Node updated successfully!");
 
-          // If no author ID is provided, unbind the table and exit
-          if (!sContextNodeId) {
-            oForm.setVisible(false);
-            oForm.unbindItems();
-            return;
-          } else {
-            oForm.setVisible(true);
-            oOtherForm.setVisible(false);
-            // Bind the table items to the /Books entity set, filtered by the selected author's ID
-            const sPath = "/contextNodes('" + sContextNodeId + "')";
+          // Close dialog dan refresh data
+          this.oEditDialog.close();
 
-            oForm.bindElement({
-              path: sPath,
-            });
+          await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+
+          this._refreshCNContent();
+        } catch (oError) {
+          console.error("Update error:", oError);
+          MessageToast.show(
+            "Error updating context node: " + (oError.message || oError)
+          );
+        }
+      },
+
+      _createCNFormForCreate: function () {
+        return new SimpleForm({
+          content: [
+            new Label({ text: "Task ID" }),
+            new Input("CNTaskIdCreate", {
+              value: this._sTaskId,
+              editable: false,
+            }),
+
+            new Label({ text: "Path" }),
+            new Input("CNPathCreate", {
+              placeholder: "Enter path",
+              required: true,
+              liveChange: this._validateCNCreateForm.bind(this),
+            }),
+
+            new Label({ text: "Label" }),
+            new Input("CNLabelCreate", {
+              placeholder: "Enter label",
+              required: true,
+              liveChange: this._validateCNCreateForm.bind(this),
+            }),
+
+            new Label({ text: "Type" }),
+            new Input("CNTypeCreate", {
+              placeholder: "Enter type",
+              required: true,
+              liveChange: this._validateCNCreateForm.bind(this),
+            }),
+
+            new Label({ text: "Value" }),
+            new Input("CNValueCreate", {
+              placeholder: "Enter value",
+              required: true,
+              liveChange: this._validateCNCreateForm.bind(this),
+            }),
+          ],
+        });
+      },
+
+      _createCNFormForEdit: function (oEditData) {
+        return new SimpleForm({
+          content: [
+            new Label({ text: "Task ID" }),
+            new Input("CNTaskIdEdit", {
+              value: this._sTaskId,
+              editable: false,
+            }),
+
+            new Label({ text: "Path" }),
+            new Input("CNPathEdit", {
+              value: oEditData.path,
+              placeholder: "Enter path",
+            }),
+
+            new Label({ text: "Label" }),
+            new Input("CNLabelEdit", {
+              value: oEditData.label,
+              placeholder: "Enter label",
+            }),
+
+            new Label({ text: "Type" }),
+            new Input("CNTypeEdit", {
+              value: oEditData.type,
+              placeholder: "Enter type",
+            }),
+
+            new Label({ text: "Value" }),
+            new Input("CNValueEdit", {
+              value: oEditData.value,
+              placeholder: "Enter value",
+            }),
+          ],
+        });
+      },
+
+      _validateCNCreateForm: function () {
+        const aFieldIds = [
+          "CNPathCreate",
+          "CNLabelCreate",
+          "CNTypeCreate",
+          "CNValueCreate",
+        ];
+        const bAllFilled = aFieldIds.every((sId) => {
+          const oInput = sap.ui.getCore().byId(sId);
+          return oInput && oInput.getValue().trim().length > 0;
+        });
+        this.oCreateDialog.getBeginButton().setEnabled(bAllFilled);
+      },
+
+      onDeleteCNData: function () {
+        const oTree = this.byId("docTree");
+        const oSelected = oTree.getSelectedItem();
+
+        if (!oSelected) {
+          MessageToast.show("Please select a context node to delete!");
+          return;
+        }
+
+        const oJsonCtx = oSelected.getBindingContext("contextNodes");
+        const sID = oJsonCtx.getProperty("ID");
+        const sPath = "/ContextNodes('" + sID + "')";
+
+        // Tampilkan konfirmasi sebelum delete
+        MessageBox.confirm(
+          "Are you sure you want to delete this context node?",
+          {
+            title: "Confirm Deletion",
+            icon: MessageBox.Icon.WARNING,
+            actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+            emphasizedAction: MessageBox.Action.CANCEL,
+            onClose: async (sAction) => {
+              if (sAction === MessageBox.Action.OK) {
+                try {
+                  const oODataModel = this.getOwnerComponent().getModel();
+                  const oContext = oODataModel.bindContext(sPath);
+
+                  // Pastikan context valid
+                  await oContext.requestObject();
+                  const oBoundContext = oContext.getBoundContext();
+
+                  if (oBoundContext) {
+                    await oBoundContext.delete();
+                    MessageToast.show("Context node deleted successfully.");
+                    // Reload ulang tree/list
+                    await this.getOwnerComponent()._loadContextNodes(
+                      this._sTaskId
+                    );
+                  } else {
+                    MessageToast.show("Could not find context with ID: " + sID);
+                  }
+                } catch (oError) {
+                  console.error("Delete error:", oError);
+                  MessageToast.show("Error: " + (oError.message || oError));
+                }
+              }
+              // Jika Cancel, tidak ada yang terjadi
+            },
           }
-        },
-        // ---------------------------------------Context Tree -------------------------------------
+        );
+      },
+
+      onEditCNData: function () {
+        const oTree = this.byId("docTree");
+        const oSelected = oTree.getSelectedItem();
+
+        if (!oSelected) {
+          MessageToast.show("Please select a context node to edit!");
+          return;
+        }
+
+        const oJsonCtx = oSelected.getBindingContext("contextNodes");
+        const oEditData = {
+          ID: oJsonCtx.getProperty("ID"),
+          path: oJsonCtx.getProperty("path"),
+          label: oJsonCtx.getProperty("label"),
+          type: oJsonCtx.getProperty("type"),
+          value: oJsonCtx.getProperty("value"),
+        };
+
+        const oCNForm = this._createCNFormForEdit(oEditData);
+
+        this.oEditDialog = new Dialog({
+          title: "Edit Context Node",
+          content: [oCNForm],
+          beginButton: new Button({
+            text: "Update",
+            enabled: true, // Sudah terisi
+            press: this._updateContextNodes.bind(this, oEditData.ID),
+          }),
+          endButton: new Button({
+            text: "Cancel",
+            press: function () {
+              this.oEditDialog.close();
+            }.bind(this),
+          }),
+          afterClose: function () {
+            this.oEditDialog.destroy();
+            this.oEditDialog = null;
+          }.bind(this),
+        });
+
+        this.getView().addDependent(this.oEditDialog);
+        this.oEditDialog.open();
+      },
+
+      _refreshCNContent: function () {
+        const oForm = this.byId("ContextNodeForm");
+        const oElementBinding = oForm.getElementBinding();
+        if (oElementBinding) {
+          oElementBinding.refresh();
+        }
+      },
+      // ---------------------------------------Context Tree -------------------------------------
 
         // -----------------------------------------Task Tree --------------------------------------
         // This is Detail page
@@ -201,52 +396,61 @@ sap.ui.define(
 
           var oNewParent = oNewParentContext.getProperty();
 
-          // Gunakan "nodes" sesuai struktur JSON Anda
-          if (!oNewParent.nodes) {
-            oNewParent.nodes = [];
-          }
+        // Gunakan "nodes" sesuai struktur JSON Anda
+        if (!oNewParent.nodes) {
+          oNewParent.nodes = [];
+        }
+        // Check if the selected node item is a botIsntances
+        if (sType == "bot") {
+          const oModel = this.getOwnerComponent().getModel();
+          oModel
+            .bindList("/BotInstances('" + sID + "')/tasks")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                var aData = aContexts.map(function (oContext) {
+                  var oObj = oContext.getObject();
+                  oObj.type = "task"; // add type tree 'bot'
+                  return oObj;
+                });
+                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                const oJSONModel = new JSONModel();
+                oJSONModel.setData({ results: aData });
 
-          if (sType == "bot") {
-            const oModel = this.getOwnerComponent().getModel();
-            oModel
-              .bindList("/BotInstances('" + sID + "')/tasks")
-              .requestContexts()
-              .then(
-                function (aContexts) {
-                  var aData = aContexts.map(function (oContext) {
-                    var oObj = oContext.getObject();
-                    oObj.type = "task"; // add type tree 'bot'
-                    return oObj;
-                  });
-                  //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                  const oJSONModel = new JSONModel();
-                  oJSONModel.setData({ results: aData });
-                  oNewParent.nodes.push(...aData);
-                  // Refresh tree
-                  oTree.getBinding("items").refresh();
-                  oTree.expand(aSelectedIndices);
-                }.bind(this)
-              );
-          } else {
-            const oModel = this.getOwnerComponent().getModel();
-            oModel
-              .bindList("/Tasks('" + sID + "')/botInstances")
-              .requestContexts()
-              .then(
-                function (aContexts) {
-                  var aData = aContexts.map(function (oContext) {
-                    var oObj = oContext.getObject();
-                    oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
-                    return oObj;
-                  });
-                  //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                  const oJSONModel = new JSONModel();
-                  oJSONModel.setData({ results: aData });
+                aData.forEach(function (newItem) {
                   var isDuplicate = oNewParent.nodes.some(function (
                     existingItem
                   ) {
                     return existingItem.ID === newItem.ID;
                   });
+
+                  if (!isDuplicate) {
+                    oNewParent.nodes.push(newItem);
+                  }
+                });
+                // Refresh tree
+
+                oTree.getBinding("items").refresh();
+                oTree.expand(aSelectedIndices);
+              }.bind(this)
+            );
+          // If it's not a bot, then it must be a task
+          // If it is a task, only display the bot instances of the task when isMain is false
+        } else if (oContext.getProperty("isMain") == false) {
+          const oModel = this.getOwnerComponent().getModel();
+          oModel
+            .bindList("/Tasks('" + sID + "')/botInstances")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                var aData = aContexts.map(function (oContext) {
+                  var oObj = oContext.getObject();
+                  oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
+                  return oObj;
+                });
+                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                const oJSONModel = new JSONModel();
+                oJSONModel.setData({ results: aData });
 
                   aData.forEach(function (newItem) {
                     var isDuplicate = oNewParent.nodes.some(function (
@@ -267,12 +471,165 @@ sap.ui.define(
               );
           }
 
-          // Refresh untuk update tampilan
-        },
+        // Refresh untuk update tampilan
+      },
 
-        onEditContextPress: function () { },
+      // -----------------------------------------Task Tree --------------------------------------
 
-        // -----------------------------------------Task Tree --------------------------------------
+      onCreateSubTask: function () {
+        if (!this.oSubmitDialogTaskTree) {
+          this.oSubmitDialogTaskTree = new Dialog({
+            type: DialogType.Message,
+            title: "Create Subtask",
+            content: [this._createTaskForm()],
+            beginButton: new Button({
+              type: ButtonType.Emphasized,
+              text: "Create",
+              enabled: false,
+              press: function () {
+                this._createTask();
+                this.oSubmitDialogTaskTree.close();
+              }.bind(this),
+            }),
+            endButton: new Button({
+              text: "Cancel",
+              press: function () {
+                this.oSubmitDialogTaskTree.close();
+              }.bind(this),
+            }),
+          });
+        }
+
+        this.oSubmitDialogTaskTree.open();
+      },
+
+      onItemPress: function (oEvent) {
+        // Handle item press event
+        const oItem = oEvent.getSource();
+        const oContext = oItem.getBindingContext();
+        if (oContext) {
+          this._navToTaskRunDetail(oContext.getProperty("ID"));
+        } else {
+          MessageToast.show("No context available for the selected item.");
+        }
+      },
+
+      _navToTaskRunDetail: function (sTaskId) {
+        this.getOwnerComponent().getRouter().navTo("RouteTaskDetail", {
+          taskId: sTaskId,
+        });
+      },
+
+      _createSelectTaskTypeDialog: function () {
+        return this.oSelectTypeDialog
+          ? this.oSelectTypeDialog
+          : new SelectDialog({
+              noDataText: "No task types found",
+              title: "Select Task Type",
+              items: {
+                path: "/TaskTypes",
+                template: new sap.m.StandardListItem({
+                  title: "{name}",
+                  description: "{description}",
+                  highlightText: "{ID}", // ID placeholder
+                }),
+              },
+              confirm: function (oEvent) {
+                const oSelectedItem = oEvent.getParameter("selectedItem");
+                if (oSelectedItem) {
+                  Element.getElementById("taskTypeId").setValue(
+                    oSelectedItem.getHighlightText()
+                  );
+                }
+              }.bind(this),
+            });
+      },
+
+      _createTaskForm: function () {
+        return new SimpleForm({
+          content: [
+            new Label({ text: "Task name" }),
+            new Input("taskName", {
+              placeholder: "Enter task name",
+              required: true,
+              liveChange: function (oEvent) {
+                var sText = oEvent.getParameter("value");
+                this.oSubmitDialogTaskTree
+                  .getBeginButton()
+                  .setEnabled(sText.length > 0);
+              }.bind(this),
+            }),
+            
+            new Label({ text: "Description" }),
+            new TextArea("taskDescription", {
+              placeholder: "Enter task description",
+              rows: 3,
+            }),
+
+            new Label({ text: "Type id" }),
+            new Input("taskTypeId", {
+              showValueHelp: true,
+              valueHelpOnly: true,
+              valueHelpRequest: function () {
+                this.oSelectTypeDialog = this._createSelectTaskTypeDialog();
+                this.oSelectTypeDialog.setModel(
+                  this.getOwnerComponent().getModel()
+                );
+                this.oSelectTypeDialog.open();
+              }.bind(this),
+            }),
+          ],
+        });
+      },
+
+      _createTask: function () {
+        const sTaskName = Element.getElementById("taskName").getValue();
+        const sTaskDescription =
+          Element.getElementById("taskDescription").getValue();
+        const sTaskTypeId = Element.getElementById("taskTypeId").getValue();
+        const oNewTask = {
+          name: sTaskName,
+          description: sTaskDescription,
+          type_ID: sTaskTypeId == "" ? null : sTaskTypeId,
+        };
+        const oModel = this.getOwnerComponent().getModel();
+        const sPath = "/createTaskWithBots(...)";
+        const oContextBinding = oModel.bindContext(sPath);
+        oContextBinding.setParameter("name", oNewTask.name);
+        oContextBinding.setParameter("description", oNewTask.description);
+        oContextBinding.setParameter("typeId", oNewTask.type_ID);
+        oContextBinding
+          .invoke()
+          .then(
+            function (oContext) {
+              MessageToast.show("Task created successfully");
+              this._navToTaskRunDetail(
+                oContextBinding.getBoundContext().getProperty("ID")
+              );
+              oModel.refresh();
+            }.bind(this)
+          )
+          .catch(
+            function (oError) {
+              MessageToast.show("Error creating task: " + oError.message);
+            }.bind(this)
+          );
+          
+      },
+
+      onEditSubTask: function () {
+        const oTree = this.byId("tree");
+        const oSelected = oTree.getSelectedItem();
+
+        if (!oSelected || oSelected.getProperty("type") == "bot") {
+          MessageToast.show("Please select a task to edit!");
+          return;
+        }
+      },
+
+      onDeleteSubTask: function () {
+
+      },
 
         // ---------------------------------------Chat Bot -------------------------------------
 
