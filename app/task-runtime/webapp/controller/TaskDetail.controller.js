@@ -7,103 +7,19 @@ sap.ui.define(
       onInit: function () {
         const oRouter = this.getOwnerComponent().getRouter();
         const oModel = this.getOwnerComponent().getModel();
-
         oRouter.attachRouteMatched(
-          async function (oEvent) {
-            const oArgs = oEvent.getParameter("arguments");
-            if (oArgs && oArgs.taskId) {
-              // Bind the main element first
-              this.getView().bindElement({
-                path: "/Tasks('" + oArgs.taskId + "')",
-              });
-
-              try {
-                // Wait for all data to load before proceeding
-                await Promise.all([
-                  this.loadBotInstances(oArgs.taskId),
-                  this.loadContextNodes(oArgs.taskId),
-                ]);
-
-                // Data is now loaded, you could trigger a refresh here if needed
-              } catch (error) {
-                console.error("Failed to load data:", error);
-              }
-            }
+          function (oEvent) {
+            oModel.refresh();
           }.bind(this)
         );
       },
 
-      loadBotInstances: function (taskId) {
-        const oModel = this.getOwnerComponent().getModel();
-        return oModel
-          .bindList("/Tasks('" + taskId + "')/botInstances")
-          .requestContexts()
-          .then(
-            function (aContexts) {
-              var aData = aContexts.map(function (oContext) {
-                var oObj = oContext.getObject();
-                oObj.type = "bot";
-                return oObj;
-              });
-              const oJSONModel = new JSONModel();
-              oJSONModel.setData({ results: aData });
-              this.getOwnerComponent().setModel(oJSONModel, "botInstances");
-            }.bind(this)
-          );
-      },
-
-      loadContextNodes: function (taskId) {
-        const oModel = this.getOwnerComponent().getModel();
-        return oModel
-          .bindList("/Tasks('" + taskId + "')/contextNodes")
-          .requestContexts()
-          .then(
-            function (aContexts) {
-              const flatData = aContexts.map((ctx) => ctx.getObject());
-              this.buildContextTree(flatData);
-            }.bind(this)
-          );
-      },
-
-      buildContextTree: function (flatList) {
-        // group items by their section path
-        const sectionMap = {};
-        flatList.forEach((item) => {
-          if (!sectionMap[item.path]) {
-            sectionMap[item.path] = {
-              path: item.path,
-              label: item.path.split("/").pop(), // "section1"
-              children: [],
-            };
-          }
-          sectionMap[item.path].children.push({
-            ID: item.ID,
-            label: item.label,
-            value: item.value,
-            children: [],
-          });
-        });
-
-        const roots = Object.values(sectionMap);
-        const oTreeModel = new JSONModel({ nodes: roots });
-        this.getOwnerComponent().setModel(oTreeModel, "tree");
-      },
-
-      getParentPath: function (path) {
-        const lastDot = path.lastIndexOf("/");
-        if (lastDot > 0) return path.substring(0, lastDot);
-        return null;
-      },
-
-      onTreeItemPress: function (oEvent) {
+      onCNItemPress: function (oEvent) {
         // 1) get the pressed item context
         const oItem = oEvent.getParameter("listItem");
-        const oTreeCtx = oItem.getBindingContext("tree");
+
+        const oTreeCtx = oItem.getBindingContext("contextNodes");
         const sUuid = oTreeCtx.getProperty("ID");
-        if (!sUuid) {
-          MessageBox.warning("No ID on this node");
-          return;
-        }
 
         // 2) assemble your read path and fetch full entity
         const sReadPath = `/ContextNodes('${sUuid}')`;
@@ -128,49 +44,7 @@ sap.ui.define(
       },
 
       // ---------------------------------------Context Tree -------------------------------------
-      // This is Detail page
-      onContextNodesSelect: function () {
-        // Get the reference to the author list control by its ID
-        const oList = this.byId("ContextNodesList");
 
-        // Get the currently selected item (author) from the list
-        const oContextNodeSelected = oList.getSelectedItem();
-
-        // If no author is selected, exit the function
-        if (!oContextNodeSelected) {
-          return;
-        }
-
-        // Retrieve the ID of the selected author from its binding context
-        const sContextNodeId = oContextNodeSelected
-          .getBindingContext()
-          .getProperty("ID");
-        console.log(sContextNodeId);
-        // Call a private function to bind and display books related to the selected author
-        this._bindContextNode(sContextNodeId);
-      },
-
-      _bindContextNode: function (sContextNodeId) {
-        // Get a reference to the books table control by its ID
-        const oForm = this.byId("ContextNodeForm");
-        const oOtherForm = this.byId("BotInstanceForm");
-
-        // If no author ID is provided, unbind the table and exit
-        if (!sContextNodeId) {
-          oForm.setVisible(false);
-          oForm.unbindItems();
-          return;
-        } else {
-          oForm.setVisible(true);
-          oOtherForm.setVisible(false);
-          // Bind the table items to the /Books entity set, filtered by the selected author's ID
-          const sPath = "/contextNodes('" + sContextNodeId + "')";
-
-          oForm.bindElement({
-            path: sPath,
-          });
-        }
-      },
       // ---------------------------------------Context Tree -------------------------------------
 
       // -----------------------------------------Task Tree --------------------------------------
