@@ -13,7 +13,7 @@ service MainService {
             };
             action executeAsync() returns Boolean; //用于自动运行, web socket
             
-            action chatCompletion(content: LargeString) returns LargeString;
+            action chatCompletion(content: LargeString) returns BotMessages;
         }
 
     entity BotMessages  as projection on db.BotMessage
