@@ -402,7 +402,6 @@ sap.ui.define(
       },
 
       _createTask: function () {
-        /*
         const sTaskName = Element.getElementById("taskName").getValue();
         const sTaskDescription =
           Element.getElementById("taskDescription").getValue();
@@ -434,11 +433,17 @@ sap.ui.define(
               MessageToast.show("Error creating task: " + oError.message);
             }.bind(this)
           );
-          */
+          
       },
 
       onEditSubTask: function () {
+        const oTree = this.byId("tree");
+        const oSelected = oTree.getSelectedItem();
 
+        if (!oSelected || oSelected.getProperty("type") == "bot") {
+          MessageToast.show("Please select a task to edit!");
+          return;
+        }
       },
 
       onDeleteSubTask: function () {
