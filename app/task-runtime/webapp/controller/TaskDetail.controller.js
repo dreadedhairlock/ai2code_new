@@ -66,40 +66,35 @@ sap.ui.define(
               oCNForm.bindElement({ path: sPath });
             }.bind(this)
           );
+        this.getOwnerComponent()._loadContextNodes(this._sTaskId);
       },
 
       // ---------------------------------------Context Tree -------------------------------------
       onCreateCNData: function () {
-        if (!this.oSubmitDialog) {
-          this.oSubmitDialog = new Dialog({
-            type: DialogType.Message,
-            title: "Create",
-            content: [this._createCNForm()],
-            beginButton: new Button({
-              type: ButtonType.Emphasized,
-              text: "Create",
-              enabled: false,
-              press: function () {
-                this._createContextNodes();
-                this.oSubmitDialog.close();
-              }.bind(this),
-            }),
-            endButton: new Button({
-              text: "Cancel",
-              press: function () {
-                this.oSubmitDialog.close();
-              }.bind(this),
-            }),
-          });
+        const oCNForm = this._createCNFormForCreate();
 
-          this.oSubmitDialog.attachAfterClose(
-            function () {
-              this._clearCNInputs();
-            }.bind(this)
-          );
-        }
+        this.oCreateDialog = new Dialog({
+          title: "Add New Context Node",
+          content: [oCNForm],
+          beginButton: new Button({
+            text: "Create",
+            enabled: false,
+            press: this._createContextNodes.bind(this),
+          }),
+          endButton: new Button({
+            text: "Cancel",
+            press: function () {
+              this.oCreateDialog.close();
+            }.bind(this),
+          }),
+          afterClose: function () {
+            this.oCreateDialog.destroy();
+            this.oCreateDialog = null;
+          }.bind(this),
+        });
 
-        this.oSubmitDialog.open();
+        this.getView().addDependent(this.oCreateDialog);
+        this.oCreateDialog.open();
       },
 
       _clearCNInputs: function () {
@@ -113,10 +108,10 @@ sap.ui.define(
       },
 
       _createContextNodes: async function () {
-        const sPath = Element.getElementById("CNPath").getValue();
-        const sLabel = Element.getElementById("CNLabel").getValue();
-        const sType = Element.getElementById("CNType").getValue();
-        const sValue = Element.getElementById("CNValue").getValue();
+        const sPath = Element.getElementById("CNPathCreate").getValue();
+        const sLabel = Element.getElementById("CNLabelCreate").getValue();
+        const sType = Element.getElementById("CNTypeCreate").getValue();
+        const sValue = Element.getElementById("CNValueCreate").getValue();
 
         const oNewContextNodes = {
           task_ID: this._sTaskId,
@@ -132,55 +127,139 @@ sap.ui.define(
         MessageToast.show("Context Nodes created");
 
         await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+        this.oCreateDialog.close();
       },
 
-      _createCNForm: function () {
+      _updateContextNodes: async function (sContextNodeId) {
+        const sPath = Element.getElementById("CNPathEdit").getValue();
+        const sLabel = Element.getElementById("CNLabelEdit").getValue();
+        const sType = Element.getElementById("CNTypeEdit").getValue();
+        const sValue = Element.getElementById("CNValueEdit").getValue();
+
+        try {
+          const oModel = this.getOwnerComponent().getModel();
+          const sEntityPath = "/ContextNodes('" + sContextNodeId + "')";
+
+          // Bind ke specific context untuk update
+          const oContext = oModel.bindContext(sEntityPath);
+          await oContext.requestObject(); // Load existing data
+          const oBoundContext = oContext.getBoundContext();
+
+          if (!oBoundContext) {
+            MessageToast.show("Context node not found!");
+            return;
+          }
+
+          // Update properties
+          oBoundContext.setProperty("path", sPath);
+          oBoundContext.setProperty("label", sLabel);
+          oBoundContext.setProperty("type", sType);
+          oBoundContext.setProperty("value", sValue);
+
+          MessageToast.show("Context Node updated successfully!");
+
+          // Close dialog dan refresh data
+          this.oEditDialog.close();
+
+          await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+
+          this._refreshCNContent();
+        } catch (oError) {
+          console.error("Update error:", oError);
+          MessageToast.show(
+            "Error updating context node: " + (oError.message || oError)
+          );
+        }
+      },
+
+      _createCNFormForCreate: function () {
         return new SimpleForm({
           content: [
             new Label({ text: "Task ID" }),
-            new Input("CNTaskId", {
+            new Input("CNTaskIdCreate", {
               value: this._sTaskId,
               editable: false,
             }),
 
             new Label({ text: "Path" }),
-            new Input("CNPath", {
+            new Input("CNPathCreate", {
               placeholder: "Enter path",
               required: true,
-              liveChange: this._validateCNForm.bind(this),
+              liveChange: this._validateCNCreateForm.bind(this),
             }),
+
             new Label({ text: "Label" }),
-            new Input("CNLabel", {
+            new Input("CNLabelCreate", {
               placeholder: "Enter label",
               required: true,
-              liveChange: this._validateCNForm.bind(this),
+              liveChange: this._validateCNCreateForm.bind(this),
             }),
+
             new Label({ text: "Type" }),
-            new Input("CNType", {
+            new Input("CNTypeCreate", {
               placeholder: "Enter type",
               required: true,
-              liveChange: this._validateCNForm.bind(this),
+              liveChange: this._validateCNCreateForm.bind(this),
             }),
+
             new Label({ text: "Value" }),
-            new Input("CNValue", {
+            new Input("CNValueCreate", {
               placeholder: "Enter value",
               required: true,
-              liveChange: this._validateCNForm.bind(this),
+              liveChange: this._validateCNCreateForm.bind(this),
             }),
           ],
         });
       },
 
-      _validateCNForm: function () {
-        // List of your Input IDs
-        const aFieldIds = ["CNPath", "CNLabel", "CNType", "CNValue"];
-        // Check that each one has a non‐empty, trimmed value
+      _createCNFormForEdit: function (oEditData) {
+        return new SimpleForm({
+          content: [
+            new Label({ text: "Task ID" }),
+            new Input("CNTaskIdEdit", {
+              value: this._sTaskId,
+              editable: false,
+            }),
+
+            new Label({ text: "Path" }),
+            new Input("CNPathEdit", {
+              value: oEditData.path,
+              placeholder: "Enter path",
+            }),
+
+            new Label({ text: "Label" }),
+            new Input("CNLabelEdit", {
+              value: oEditData.label,
+              placeholder: "Enter label",
+            }),
+
+            new Label({ text: "Type" }),
+            new Input("CNTypeEdit", {
+              value: oEditData.type,
+              placeholder: "Enter type",
+            }),
+
+            new Label({ text: "Value" }),
+            new Input("CNValueEdit", {
+              value: oEditData.value,
+              placeholder: "Enter value",
+            }),
+          ],
+        });
+      },
+
+      _validateCNCreateForm: function () {
+        const aFieldIds = [
+          "CNPathCreate",
+          "CNLabelCreate",
+          "CNTypeCreate",
+          "CNValueCreate",
+        ];
         const bAllFilled = aFieldIds.every((sId) => {
           const oInput = sap.ui.getCore().byId(sId);
           return oInput && oInput.getValue().trim().length > 0;
         });
-        // Enable/disable the dialog’s Begin button
-        this.oSubmitDialog.getBeginButton().setEnabled(bAllFilled);
+        this.oCreateDialog.getBeginButton().setEnabled(bAllFilled);
       },
 
       onDeleteCNData: async function () {
@@ -219,7 +298,57 @@ sap.ui.define(
         }
       },
 
-      onEditCNContent: function () {},
+      onEditCNData: function () {
+        const oTree = this.byId("docTree");
+        const oSelected = oTree.getSelectedItem();
+
+        if (!oSelected) {
+          MessageToast.show("Please select a context node to edit!");
+          return;
+        }
+
+        const oJsonCtx = oSelected.getBindingContext("contextNodes");
+        const oEditData = {
+          ID: oJsonCtx.getProperty("ID"),
+          path: oJsonCtx.getProperty("path"),
+          label: oJsonCtx.getProperty("label"),
+          type: oJsonCtx.getProperty("type"),
+          value: oJsonCtx.getProperty("value"),
+        };
+
+        const oCNForm = this._createCNFormForEdit(oEditData);
+
+        this.oEditDialog = new Dialog({
+          title: "Edit Context Node",
+          content: [oCNForm],
+          beginButton: new Button({
+            text: "Update",
+            enabled: true, // Sudah terisi
+            press: this._updateContextNodes.bind(this, oEditData.ID),
+          }),
+          endButton: new Button({
+            text: "Cancel",
+            press: function () {
+              this.oEditDialog.close();
+            }.bind(this),
+          }),
+          afterClose: function () {
+            this.oEditDialog.destroy();
+            this.oEditDialog = null;
+          }.bind(this),
+        });
+
+        this.getView().addDependent(this.oEditDialog);
+        this.oEditDialog.open();
+      },
+
+      _refreshCNContent: function () {
+        const oForm = this.byId("ContextNodeForm");
+        const oElementBinding = oForm.getElementBinding();
+        if (oElementBinding) {
+          oElementBinding.refresh();
+        }
+      },
       // ---------------------------------------Context Tree -------------------------------------
 
       // -----------------------------------------Task Tree --------------------------------------
