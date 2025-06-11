@@ -119,7 +119,8 @@ sap.ui.define(
               }.bind(this)
             );
         // If it's not a bot, then it must be a task
-        } else {
+        // If it is a task, only display the bot instances of the task when isMain is false
+        } else if (oContext.getProperty("isMain") == false) {
           const oModel = this.getOwnerComponent().getModel();
           oModel
             .bindList("/Tasks('" + sID + "')/botInstances")
