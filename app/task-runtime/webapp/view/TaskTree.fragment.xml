@@ -9,15 +9,18 @@
             <Button
                 icon="sap-icon://add"
                 tooltip="Create"
+                press=".onCreateSubTask"
             />
             <Button
                 icon="sap-icon://edit"
                 tooltip="Edit"
+                press=".onEditSubTask"
             />
             <Button
                 icon="sap-icon://delete"
                 tooltip="Delete"
                 type="Reject"
+                press=".onDeleteSubTask"
             />
         </Toolbar>
         <ScrollContainer

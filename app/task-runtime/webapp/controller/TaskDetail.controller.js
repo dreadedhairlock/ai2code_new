@@ -6,6 +6,7 @@ sap.ui.define(
     "sap/m/DialogType",
     "sap/ui/layout/form/SimpleForm",
     "sap/m/Label",
+    "sap/m/TextArea",
     "sap/m/Input",
     "sap/m/Button",
     "sap/m/ButtonType",
@@ -19,6 +20,7 @@ sap.ui.define(
     DialogType,
     SimpleForm,
     Label,
+    TextArea,
     Input,
     Button,
     ButtonType,
@@ -69,10 +71,10 @@ sap.ui.define(
 
       // ---------------------------------------Context Tree -------------------------------------
       onCreate: function () {
-        if (!this.oSubmitDialog) {
-          this.oSubmitDialog = new Dialog({
+        if (!this.oSubmitDialogContextTree) {
+          this.oSubmitDialogContextTree = new Dialog({
             type: DialogType.Message,
-            title: "Create",
+            title: "Create Context Node",
             content: [this._createCNForm()],
             beginButton: new Button({
               type: ButtonType.Emphasized,
@@ -80,25 +82,25 @@ sap.ui.define(
               enabled: false,
               press: function () {
                 this._createContextNodes();
-                this.oSubmitDialog.close();
+                this.oSubmitDialogContextTree.close();
               }.bind(this),
             }),
             endButton: new Button({
               text: "Cancel",
               press: function () {
-                this.oSubmitDialog.close();
+                this.oSubmitDialogContextTree.close();
               }.bind(this),
             }),
           });
 
-          this.oSubmitDialog.attachAfterClose(
+          this.oSubmitDialogContextTree.attachAfterClose(
             function () {
               this._clearCNInputs();
             }.bind(this)
           );
         }
 
-        this.oSubmitDialog.open();
+        this.oSubmitDialogContextTree.open();
       },
 
       _clearCNInputs: function () {
@@ -179,7 +181,7 @@ sap.ui.define(
           return oInput && oInput.getValue().trim().length > 0;
         });
         // Enable/disable the dialog’s Begin button
-        this.oSubmitDialog.getBeginButton().setEnabled(bAllFilled);
+        this.oSubmitDialogContextTree.getBeginButton().setEnabled(bAllFilled);
       },
       // ---------------------------------------Context Tree -------------------------------------
 
@@ -302,6 +304,148 @@ sap.ui.define(
       onEditContextPress: function () {},
 
       // -----------------------------------------Task Tree --------------------------------------
+
+      onCreateSubTask: function () {
+        if (!this.oSubmitDialogTaskTree) {
+          this.oSubmitDialogTaskTree = new Dialog({
+            type: DialogType.Message,
+            title: "Create Subtask",
+            content: [this._createTaskForm()],
+            beginButton: new Button({
+              type: ButtonType.Emphasized,
+              text: "Create",
+              enabled: false,
+              press: function () {
+                this._createTask();
+                this.oSubmitDialogTaskTree.close();
+              }.bind(this),
+            }),
+            endButton: new Button({
+              text: "Cancel",
+              press: function () {
+                this.oSubmitDialogTaskTree.close();
+              }.bind(this),
+            }),
+          });
+        }
+
+        this.oSubmitDialogTaskTree.open();
+      },
+
+      onItemPress: function (oEvent) {
+        // Handle item press event
+        const oItem = oEvent.getSource();
+        const oContext = oItem.getBindingContext();
+        if (oContext) {
+          this._navToTaskRunDetail(oContext.getProperty("ID"));
+        } else {
+          MessageToast.show("No context available for the selected item.");
+        }
+      },
+
+      _navToTaskRunDetail: function (sTaskId) {
+        this.getOwnerComponent().getRouter().navTo("RouteTaskDetail", {
+          taskId: sTaskId,
+        });
+      },
+
+      _createSelectTaskTypeDialog: function () {
+        return this.oSelectTypeDialog
+          ? this.oSelectTypeDialog
+          : new SelectDialog({
+              noDataText: "No task types found",
+              title: "Select Task Type",
+              items: {
+                path: "/TaskTypes",
+                template: new sap.m.StandardListItem({
+                  title: "{name}",
+                  description: "{description}",
+                  highlightText: "{ID}", // ID placeholder
+                }),
+              },
+              confirm: function (oEvent) {
+                const oSelectedItem = oEvent.getParameter("selectedItem");
+                if (oSelectedItem) {
+                  Element.getElementById("taskTypeId").setValue(
+                    oSelectedItem.getHighlightText()
+                  );
+                }
+              }.bind(this),
+            });
+      },
+
+      _createTaskForm: function () {
+        return new SimpleForm({
+          content: [
+            new Label({ text: "Task name" }),
+            new Input("taskName", {
+              placeholder: "Enter task name",
+              required: true,
+              liveChange: function (oEvent) {
+                var sText = oEvent.getParameter("value");
+                this.oSubmitDialogTaskTree
+                  .getBeginButton()
+                  .setEnabled(sText.length > 0);
+              }.bind(this),
+            }),
+            
+            new Label({ text: "Description" }),
+            new TextArea("taskDescription", {
+              placeholder: "Enter task description",
+              rows: 3,
+            }),
+
+            new Label({ text: "Type id" }),
+            new Input("taskTypeId", {
+              showValueHelp: true,
+              valueHelpOnly: true,
+              valueHelpRequest: function () {
+                this.oSelectTypeDialog = this._createSelectTaskTypeDialog();
+                this.oSelectTypeDialog.setModel(
+                  this.getOwnerComponent().getModel()
+                );
+                this.oSelectTypeDialog.open();
+              }.bind(this),
+            }),
+          ],
+        });
+      },
+
+      _createTask: function () {
+        /*
+        const sTaskName = Element.getElementById("taskName").getValue();
+        const sTaskDescription =
+          Element.getElementById("taskDescription").getValue();
+        const sTaskTypeId = Element.getElementById("taskTypeId").getValue();
+        const oNewTask = {
+          name: sTaskName,
+          description: sTaskDescription,
+          type_ID: sTaskTypeId == "" ? null : sTaskTypeId,
+        };
+        const oModel = this.getOwnerComponent().getModel();
+        const sPath = "/createTaskWithBots(...)";
+        const oContextBinding = oModel.bindContext(sPath);
+        oContextBinding.setParameter("name", oNewTask.name);
+        oContextBinding.setParameter("description", oNewTask.description);
+        oContextBinding.setParameter("typeId", oNewTask.type_ID);
+        oContextBinding
+          .invoke()
+          .then(
+            function (oContext) {
+              MessageToast.show("Task created successfully");
+              this._navToTaskRunDetail(
+                oContextBinding.getBoundContext().getProperty("ID")
+              );
+              oModel.refresh();
+            }.bind(this)
+          )
+          .catch(
+            function (oError) {
+              MessageToast.show("Error creating task: " + oError.message);
+            }.bind(this)
+          );
+          */
+      },
 
       // ---------------------------------------Chat Bot -------------------------------------
       onSubmitQuery: function () {
