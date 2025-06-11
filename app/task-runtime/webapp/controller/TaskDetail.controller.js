@@ -233,11 +233,6 @@ sap.ui.define(
                 //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
                 const oJSONModel = new JSONModel();
                 oJSONModel.setData({ results: aData });
-                var isDuplicate = oNewParent.nodes.some(function (
-                  existingItem
-                ) {
-                  return existingItem.ID === newItem.ID;
-                });
 
                 aData.forEach(function (newItem) {
                   var isDuplicate = oNewParent.nodes.some(function (
@@ -273,11 +268,6 @@ sap.ui.define(
                 //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
                 const oJSONModel = new JSONModel();
                 oJSONModel.setData({ results: aData });
-                var isDuplicate = oNewParent.nodes.some(function (
-                  existingItem
-                ) {
-                  return existingItem.ID === newItem.ID;
-                });
 
                 aData.forEach(function (newItem) {
                   var isDuplicate = oNewParent.nodes.some(function (
@@ -445,6 +435,14 @@ sap.ui.define(
             }.bind(this)
           );
           */
+      },
+
+      onEditSubTask: function () {
+
+      },
+
+      onDeleteSubTask: function () {
+
       },
 
       // ---------------------------------------Chat Bot -------------------------------------
