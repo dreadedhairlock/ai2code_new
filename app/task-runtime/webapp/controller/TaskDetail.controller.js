@@ -95,187 +95,188 @@ sap.ui.define(
         return null;
       },
 
-      onTreeItemPress: function (oEvent) {
-        // 1) get the pressed item context
-        const oItem = oEvent.getParameter("listItem");
-        const oTreeCtx = oItem.getBindingContext("tree");
-        const sUuid = oTreeCtx.getProperty("ID");
-        if (!sUuid) {
-          MessageBox.warning("No ID on this node");
-          return;
-        }
+        onTreeItemPress: function (oEvent) {
+          // 1) get the pressed item context
+          const oItem = oEvent.getParameter("listItem");
+          const oTreeCtx = oItem.getBindingContext("tree");
+          const sUuid = oTreeCtx.getProperty("ID");
+          if (!sUuid) {
+            MessageBox.warning("No ID on this node");
+            return;
+          }
 
-        // 2) assemble your read path and fetch full entity
-        const sReadPath = `/ContextNodes('${sUuid}')`;
-        const oOData = this.getOwnerComponent().getModel(); // your V4 model
-        oOData
-          .bindContext(sReadPath)
-          .requestObject()
-          .then(
-            function () {
-              // this.byId("ContextNodeForm").setVisible(true);
-
-              const oCNForm = this.byId("ContextNodeForm");
-
-              const sPath = "/ContextNodes('" + sUuid + "')";
-
-              oCNForm.bindElement({ path: sPath });
-            }.bind(this)
-          )
-          .catch(function (oErr) {
-            MessageBox.error("Failed to load details: " + oErr.message);
-          });
-      },
-
-      // ---------------------------------------Context Tree -------------------------------------
-      // This is Detail page
-      onContextNodesSelect: function () {
-        // Get the reference to the author list control by its ID
-        const oList = this.byId("ContextNodesList");
-
-        // Get the currently selected item (author) from the list
-        const oContextNodeSelected = oList.getSelectedItem();
-
-        // If no author is selected, exit the function
-        if (!oContextNodeSelected) {
-          return;
-        }
-
-        // Retrieve the ID of the selected author from its binding context
-        const sContextNodeId = oContextNodeSelected
-          .getBindingContext()
-          .getProperty("ID");
-        console.log(sContextNodeId);
-        // Call a private function to bind and display books related to the selected author
-        this._bindContextNode(sContextNodeId);
-      },
-
-      _bindContextNode: function (sContextNodeId) {
-        // Get a reference to the books table control by its ID
-        const oForm = this.byId("ContextNodeForm");
-        const oOtherForm = this.byId("BotInstanceForm");
-
-        // If no author ID is provided, unbind the table and exit
-        if (!sContextNodeId) {
-          oForm.setVisible(false);
-          oForm.unbindItems();
-          return;
-        } else {
-          oForm.setVisible(true);
-          oOtherForm.setVisible(false);
-          // Bind the table items to the /Books entity set, filtered by the selected author's ID
-          const sPath = "/contextNodes('" + sContextNodeId + "')";
-
-          oForm.bindElement({
-            path: sPath,
-          });
-        }
-      },
-      // ---------------------------------------Context Tree -------------------------------------
-
-      // -----------------------------------------Task Tree --------------------------------------
-      // This is Detail page
-      onTaskSelect: function (oEvent) {
-        // Get the reference to the author list control by its ID
-        var oSelectedItem = oEvent.getParameter("listItem"); // atau "item"
-        var oContext = oSelectedItem.getBindingContext("botInstances");
-        var sID = oContext.getProperty("ID");
-        var sType = oContext.getProperty("type");
-
-        var oTree = this.byId("tree"),
-          aSelectedItems = oTree.getSelectedItems(),
-          aSelectedIndices = [];
-
-        for (var i = 0; i < aSelectedItems.length; i++) {
-          aSelectedIndices.push(oTree.indexOfItem(aSelectedItems[i]));
-        }
-
-        var oTree = this.byId("tree");
-        var oBinding = oTree.getBinding("items");
-        var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
-        var oNewParentContext = oBinding.getContextByIndex(iItemIndex);
-
-        if (!oNewParentContext) {
-          return;
-        }
-
-        var oNewParent = oNewParentContext.getProperty();
-
-        // Gunakan "nodes" sesuai struktur JSON Anda
-        if (!oNewParent.nodes) {
-          oNewParent.nodes = [];
-        }
-
-        if (sType == "bot") {
-          const oModel = this.getOwnerComponent().getModel();
-          oModel
-            .bindList("/BotInstances('" + sID + "')/tasks")
-            .requestContexts()
+          // 2) assemble your read path and fetch full entity
+          const sReadPath = `/ContextNodes('${sUuid}')`;
+          const oOData = this.getOwnerComponent().getModel(); // your V4 model
+          oOData
+            .bindContext(sReadPath)
+            .requestObject()
             .then(
-              function (aContexts) {
-                var aData = aContexts.map(function (oContext) {
-                  var oObj = oContext.getObject();
-                  oObj.type = "task"; // add type tree 'bot'
-                  return oObj;
-                });
-                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                const oJSONModel = new JSONModel();
-                oJSONModel.setData({ results: aData });
-                oNewParent.nodes.push(...aData);
-                // Refresh tree
-                oTree.getBinding("items").refresh();
-                oTree.expand(aSelectedIndices);
+              function () {
+                // this.byId("ContextNodeForm").setVisible(true);
+
+                const oCNForm = this.byId("ContextNodeForm");
+
+                const sPath = "/ContextNodes('" + sUuid + "')";
+
+                oCNForm.bindElement({ path: sPath });
               }.bind(this)
-            );
-        } else {
-          const oModel = this.getOwnerComponent().getModel();
-          oModel
-            .bindList("/Tasks('" + sID + "')/botInstances")
-            .requestContexts()
-            .then(
-              function (aContexts) {
-                var aData = aContexts.map(function (oContext) {
-                  var oObj = oContext.getObject();
-                  oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
-                  return oObj;
-                });
-                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                const oJSONModel = new JSONModel();
-                oJSONModel.setData({ results: aData });
-                var isDuplicate = oNewParent.nodes.some(function (
-                  existingItem
-                ) {
-                  return existingItem.ID === newItem.ID;
-                });
+            )
+            .catch(function (oErr) {
+              MessageBox.error("Failed to load details: " + oErr.message);
+            });
+        },
 
-                aData.forEach(function (newItem) {
+        // ---------------------------------------Context Tree -------------------------------------
+        // This is Detail page
+        onContextNodesSelect: function () {
+          // Get the reference to the author list control by its ID
+          const oList = this.byId("ContextNodesList");
+
+          // Get the currently selected item (author) from the list
+          const oContextNodeSelected = oList.getSelectedItem();
+
+          // If no author is selected, exit the function
+          if (!oContextNodeSelected) {
+            return;
+          }
+
+          // Retrieve the ID of the selected author from its binding context
+          const sContextNodeId = oContextNodeSelected
+            .getBindingContext()
+            .getProperty("ID");
+          console.log(sContextNodeId);
+          // Call a private function to bind and display books related to the selected author
+          this._bindContextNode(sContextNodeId);
+        },
+
+        _bindContextNode: function (sContextNodeId) {
+          // Get a reference to the books table control by its ID
+          const oForm = this.byId("ContextNodeForm");
+          const oOtherForm = this.byId("BotInstanceForm");
+
+          // If no author ID is provided, unbind the table and exit
+          if (!sContextNodeId) {
+            oForm.setVisible(false);
+            oForm.unbindItems();
+            return;
+          } else {
+            oForm.setVisible(true);
+            oOtherForm.setVisible(false);
+            // Bind the table items to the /Books entity set, filtered by the selected author's ID
+            const sPath = "/contextNodes('" + sContextNodeId + "')";
+
+            oForm.bindElement({
+              path: sPath,
+            });
+          }
+        },
+        // ---------------------------------------Context Tree -------------------------------------
+
+        // -----------------------------------------Task Tree --------------------------------------
+        // This is Detail page
+        onTaskSelect: function (oEvent) {
+          // Get the reference to the author list control by its ID
+          var oSelectedItem = oEvent.getParameter("listItem"); // atau "item"
+          var oContext = oSelectedItem.getBindingContext("botInstances");
+          var sID = oContext.getProperty("ID");
+          var sType = oContext.getProperty("type");
+
+          var oTree = this.byId("tree"),
+            aSelectedItems = oTree.getSelectedItems(),
+            aSelectedIndices = [];
+
+          for (var i = 0; i < aSelectedItems.length; i++) {
+            aSelectedIndices.push(oTree.indexOfItem(aSelectedItems[i]));
+          }
+
+          var oTree = this.byId("tree");
+          var oBinding = oTree.getBinding("items");
+          var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
+          var oNewParentContext = oBinding.getContextByIndex(iItemIndex);
+
+          if (!oNewParentContext) {
+            return;
+          }
+
+          var oNewParent = oNewParentContext.getProperty();
+
+          // Gunakan "nodes" sesuai struktur JSON Anda
+          if (!oNewParent.nodes) {
+            oNewParent.nodes = [];
+          }
+
+          if (sType == "bot") {
+            const oModel = this.getOwnerComponent().getModel();
+            oModel
+              .bindList("/BotInstances('" + sID + "')/tasks")
+              .requestContexts()
+              .then(
+                function (aContexts) {
+                  var aData = aContexts.map(function (oContext) {
+                    var oObj = oContext.getObject();
+                    oObj.type = "task"; // add type tree 'bot'
+                    return oObj;
+                  });
+                  //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                  const oJSONModel = new JSONModel();
+                  oJSONModel.setData({ results: aData });
+                  oNewParent.nodes.push(...aData);
+                  // Refresh tree
+                  oTree.getBinding("items").refresh();
+                  oTree.expand(aSelectedIndices);
+                }.bind(this)
+              );
+          } else {
+            const oModel = this.getOwnerComponent().getModel();
+            oModel
+              .bindList("/Tasks('" + sID + "')/botInstances")
+              .requestContexts()
+              .then(
+                function (aContexts) {
+                  var aData = aContexts.map(function (oContext) {
+                    var oObj = oContext.getObject();
+                    oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
+                    return oObj;
+                  });
+                  //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                  const oJSONModel = new JSONModel();
+                  oJSONModel.setData({ results: aData });
                   var isDuplicate = oNewParent.nodes.some(function (
                     existingItem
                   ) {
                     return existingItem.ID === newItem.ID;
                   });
 
-                  if (!isDuplicate) {
-                    oNewParent.nodes.push(newItem);
-                  }
-                });
-                // Refresh tree
+                  aData.forEach(function (newItem) {
+                    var isDuplicate = oNewParent.nodes.some(function (
+                      existingItem
+                    ) {
+                      return existingItem.ID === newItem.ID;
+                    });
 
-                oTree.getBinding("items").refresh();
-                oTree.expand(aSelectedIndices);
-              }.bind(this)
-            );
-        }
+                    if (!isDuplicate) {
+                      oNewParent.nodes.push(newItem);
+                    }
+                  });
+                  // Refresh tree
 
-        // Refresh untuk update tampilan
-      },
+                  oTree.getBinding("items").refresh();
+                  oTree.expand(aSelectedIndices);
+                }.bind(this)
+              );
+          }
 
-      onEditContextPress: function () {},
+          // Refresh untuk update tampilan
+        },
 
-      // -----------------------------------------Task Tree --------------------------------------
+        onEditContextPress: function () { },
 
-      // ---------------------------------------Chat Bot -------------------------------------
-      onSubmitQuery: function () {
+        // -----------------------------------------Task Tree --------------------------------------
+
+        // ---------------------------------------Chat Bot -------------------------------------
+
+      onSubmitQuery: async function () {
         var oInput = this.byId("chatInput");
         var sMessage = oInput.getValue().trim();
         if (sMessage) {
@@ -283,12 +284,47 @@ sap.ui.define(
           this.addChatMessage(sMessage, "user");
           // Clear input
           oInput.setValue("");
+          console.log(sMessage);
           // Simulate AI response (replace with your actual AI call)
-          setTimeout(() => {
-            this.addChatMessage("AI received: " + sMessage, "ai");
-          }, 1000);
+          try {
+            const API_KEY = "AIzaSyDyE_D4ej7SljvLAV5vWMmkQxg5OjGv5r4";
+            const model = "gemini-2.0-flash";
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json", // Replace with a secure way of storing it
+                },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      role: "user",
+                      parts: [
+                        {
+                          text: sMessage,
+                        },
+                      ],
+                    },
+                  ],
+                }),
+              }
+            );
+            console.log(response);
+            const data = await response.json();
+            console.log(data);
+            const reply =
+              data.candidates?.[0]?.content?.parts?.[0]?.text ||
+              "No response from AI.";
+
+            this.addChatMessage(reply, "ai");
+          } catch (error) {
+            this.addChatMessage("Error: " + error.message, "ai");
+          }
+
         }
       },
+
       addChatMessage: function (sMessage, sType) {
         var oChatBox = this.byId("chatMessagesBox");
         var sTimestamp = new Date().toLocaleTimeString([], {
@@ -303,25 +339,31 @@ sap.ui.define(
                             <div class="chatTimestamp">${sTimestamp}</div>
                         </div>
                     </div>
-                `
-            });
-            oChatBox.addItem(oHTML);
-            // Scroll to bottom
-            setTimeout(() => {
-                var oScrollContainer = this.byId("chatMessagesContainer");
-                if (oScrollContainer && oScrollContainer.getDomRef("scroll")) {
-                    oScrollContainer.scrollTo(0, oScrollContainer.getDomRef("scroll").scrollHeight);
-                }
-            }, 100);
-                // Set the bottom section text if message is from AI
+                `,
+        });
+        oChatBox.addItem(oHTML);
+        // Scroll to bottom
+        setTimeout(() => {
+          var oScrollContainer = this.byId("chatMessagesContainer");
+          if (oScrollContainer && oScrollContainer.getDomRef("scroll")) {
+            oScrollContainer.scrollTo(
+              0,
+              oScrollContainer.getDomRef("scroll").scrollHeight
+            );
+          }
+        }, 100);
+        
               if (sType === "ai") {
                   var oCodeResultText = this.byId("codeResultText");
                   if (oCodeResultText) {
                       oCodeResultText.setText(sMessage);
                   }
               }
-        }
-      // ---------------------------------------Chat Bot -------------------------------------
-    });
+      },
+
+        // ---------------------------------------Chat Bot -------------------------------------
+    
+    }
+    )
   }
 );
