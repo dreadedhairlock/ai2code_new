@@ -6,18 +6,20 @@
     <Toolbar>
         <Title text="Details" />
     </Toolbar>
-    
+
     <!-- Use Flexible Box Layout for better control -->
-    <l:VerticalLayout width="90%" height="100%">
-        
+    <l:VerticalLayout width="90%">
         <!-- Chat Section - Fixed Height -->
-        <l:VerticalLayout width="100%" height="50%" class="topSection">
+        <l:VerticalLayout
+            width="100%"
+            class="topSection"
+        >
             <Title
                 text="AI Chat"
                 level="H4"
                 class="aiChatTitle"
             />
-            
+
             <!-- Chat Messages - Scrollable Area -->
             <ScrollContainer
                 id="chatMessagesContainer"
@@ -33,7 +35,7 @@
                     <!-- Chat messages will be added here dynamically -->
                 </VBox>
             </ScrollContainer>
-            
+
             <!-- Input Box - Fixed at Bottom of Chat Section -->
             <HBox
                 class="chatInputBox"
@@ -57,9 +59,12 @@
                 />
             </HBox>
         </l:VerticalLayout>
-        
+
         <!-- Bottom Section -->
-        <l:VerticalLayout width="100%" height="50%" class="bottomSection">
+        <l:VerticalLayout
+            width="100%"
+            class="bottomSection"
+        >
             <Title
                 text="Code Result"
                 level="H4"
@@ -73,6 +78,5 @@
                 <Text text="Bottom Section Content" />
             </ScrollContainer>
         </l:VerticalLayout>
-        
     </l:VerticalLayout>
 </core:FragmentDefinition>
