@@ -73,6 +73,8 @@ sap.ui.define(
                 }
                 sectionMap[item.path].children.push({
                   ID: item.ID,
+                  path: item.path,
+                  type: item.type,
                   label: item.label,
                   value: item.value,
                   children: [],
