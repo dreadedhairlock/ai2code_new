@@ -36,5 +36,4 @@
         <Label text="Path" />
         <Text text="{path}" />
     </forms:SimpleForm>
-
 </core:FragmentDefinition>
