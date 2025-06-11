@@ -75,7 +75,7 @@
                 height="calc(100% - 40px)"
                 vertical="true"
             >
-                <Text text="Bottom Section Content" />
+                <Text id="codeResultText" text="The AI's response is shown here" />
             </ScrollContainer>
         </l:VerticalLayout>
     </l:VerticalLayout>
