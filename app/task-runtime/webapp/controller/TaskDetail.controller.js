@@ -79,7 +79,7 @@ sap.ui.define(
         if (!oNewParent.nodes) {
           oNewParent.nodes = [];
         }
-
+        // Check if the selected node item is a botIsntances
         if (sType == "bot") {
           const oModel = this.getOwnerComponent().getModel();
           oModel
@@ -95,12 +95,30 @@ sap.ui.define(
                 //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
                 const oJSONModel = new JSONModel();
                 oJSONModel.setData({ results: aData });
-                oNewParent.nodes.push(...aData);
+                var isDuplicate = oNewParent.nodes.some(function (
+                  existingItem
+                ) {
+                  return existingItem.ID === newItem.ID;
+                });
+
+                aData.forEach(function (newItem) {
+                  var isDuplicate = oNewParent.nodes.some(function (
+                    existingItem
+                  ) {
+                    return existingItem.ID === newItem.ID;
+                  });
+
+                  if (!isDuplicate) {
+                    oNewParent.nodes.push(newItem);
+                  }
+                });
                 // Refresh tree
+
                 oTree.getBinding("items").refresh();
                 oTree.expand(aSelectedIndices);
               }.bind(this)
             );
+        // If it's not a bot, then it must be a task
         } else {
           const oModel = this.getOwnerComponent().getModel();
           oModel
