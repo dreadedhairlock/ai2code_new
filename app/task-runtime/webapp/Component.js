@@ -67,7 +67,7 @@ sap.ui.define(
                 if (!sectionMap[item.path]) {
                   sectionMap[item.path] = {
                     path: item.path,
-                    label: item.path.split("/").pop(),
+                    label: item.path,
                     children: [],
                   };
                 }
