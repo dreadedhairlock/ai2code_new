@@ -66,7 +66,6 @@ sap.ui.define(
               oCNForm.bindElement({ path: sPath });
             }.bind(this)
           );
-        this.getOwnerComponent()._loadContextNodes(this._sTaskId);
       },
 
       // ---------------------------------------Context Tree -------------------------------------
@@ -262,7 +261,7 @@ sap.ui.define(
         this.oCreateDialog.getBeginButton().setEnabled(bAllFilled);
       },
 
-      onDeleteCNData: async function () {
+      onDeleteCNData: function () {
         const oTree = this.byId("docTree");
         const oSelected = oTree.getSelectedItem();
 
@@ -273,29 +272,45 @@ sap.ui.define(
 
         const oJsonCtx = oSelected.getBindingContext("contextNodes");
         const sID = oJsonCtx.getProperty("ID");
-
-        // Langsung gunakan path, seperti program awal tapi dengan await requestObject
-        const oODataModel = this.getOwnerComponent().getModel();
         const sPath = "/ContextNodes('" + sID + "')";
 
-        try {
-          const oContext = oODataModel.bindContext(sPath);
+        // Tampilkan konfirmasi sebelum delete
+        MessageBox.confirm(
+          "Are you sure you want to delete this context node?",
+          {
+            title: "Confirm Deletion",
+            icon: MessageBox.Icon.WARNING,
+            actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+            emphasizedAction: MessageBox.Action.CANCEL,
+            onClose: async (sAction) => {
+              if (sAction === MessageBox.Action.OK) {
+                try {
+                  const oODataModel = this.getOwnerComponent().getModel();
+                  const oContext = oODataModel.bindContext(sPath);
 
-          // KUNCI: Request object dulu untuk memastikan context valid
-          await oContext.requestObject();
-          const oBoundContext = oContext.getBoundContext();
+                  // Pastikan context valid
+                  await oContext.requestObject();
+                  const oBoundContext = oContext.getBoundContext();
 
-          if (oBoundContext) {
-            await oBoundContext.delete();
-            MessageToast.show("Context node deleted successfully.");
-            await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
-          } else {
-            MessageToast.show("Could not find context with ID: " + sID);
+                  if (oBoundContext) {
+                    await oBoundContext.delete();
+                    MessageToast.show("Context node deleted successfully.");
+                    // Reload ulang tree/list
+                    await this.getOwnerComponent()._loadContextNodes(
+                      this._sTaskId
+                    );
+                  } else {
+                    MessageToast.show("Could not find context with ID: " + sID);
+                  }
+                } catch (oError) {
+                  console.error("Delete error:", oError);
+                  MessageToast.show("Error: " + (oError.message || oError));
+                }
+              }
+              // Jika Cancel, tidak ada yang terjadi
+            },
           }
-        } catch (oError) {
-          console.error("Delete error:", oError);
-          MessageToast.show("Error: " + (oError.message || oError));
-        }
+        );
       },
 
       onEditCNData: function () {
