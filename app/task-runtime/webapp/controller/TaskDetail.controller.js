@@ -1,6 +1,30 @@
 sap.ui.define(
-  ["sap/ui/core/mvc/Controller", "sap/ui/model/json/JSONModel"],
-  (Controller, JSONModel) => {
+  [
+    "sap/ui/core/mvc/Controller",
+    "sap/ui/model/json/JSONModel",
+    "sap/m/Dialog",
+    "sap/m/DialogType",
+    "sap/ui/layout/form/SimpleForm",
+    "sap/m/Label",
+    "sap/m/Input",
+    "sap/m/Button",
+    "sap/m/ButtonType",
+    "sap/ui/core/Element",
+    "sap/m/MessageToast",
+  ],
+  (
+    Controller,
+    JSONModel,
+    Dialog,
+    DialogType,
+    SimpleForm,
+    Label,
+    Input,
+    Button,
+    ButtonType,
+    Element,
+    MessageToast
+  ) => {
     "use strict";
 
     return Controller.extend("task-runtime.controller.TaskDetail", {
@@ -9,6 +33,7 @@ sap.ui.define(
         const oModel = this.getOwnerComponent().getModel();
         oRouter.attachRouteMatched(
           function (oEvent) {
+            this._sTaskId = oEvent.getParameter("arguments").taskId;
             oModel.refresh();
           }.bind(this)
         );
@@ -21,30 +46,141 @@ sap.ui.define(
         const oTreeCtx = oItem.getBindingContext("contextNodes");
         const sUuid = oTreeCtx.getProperty("ID");
 
+        if (!sUuid) {
+          return;
+        }
+
         // 2) assemble your read path and fetch full entity
         const sReadPath = `/ContextNodes('${sUuid}')`;
-        const oOData = this.getOwnerComponent().getModel(); // your V4 model
+        const oOData = this.getOwnerComponent().getModel();
         oOData
           .bindContext(sReadPath)
           .requestObject()
           .then(
             function () {
-              // this.byId("ContextNodeForm").setVisible(true);
-
               const oCNForm = this.byId("ContextNodeForm");
 
               const sPath = "/ContextNodes('" + sUuid + "')";
 
               oCNForm.bindElement({ path: sPath });
             }.bind(this)
-          )
-          .catch(function (oErr) {
-            MessageBox.error("Failed to load details: " + oErr.message);
-          });
+          );
       },
 
       // ---------------------------------------Context Tree -------------------------------------
+      onCreate: function () {
+        if (!this.oSubmitDialog) {
+          this.oSubmitDialog = new Dialog({
+            type: DialogType.Message,
+            title: "Create",
+            content: [this._createCNForm()],
+            beginButton: new Button({
+              type: ButtonType.Emphasized,
+              text: "Create",
+              enabled: false,
+              press: function () {
+                this._createContextNodes();
+                this.oSubmitDialog.close();
+              }.bind(this),
+            }),
+            endButton: new Button({
+              text: "Cancel",
+              press: function () {
+                this.oSubmitDialog.close();
+              }.bind(this),
+            }),
+          });
 
+          this.oSubmitDialog.attachAfterClose(
+            function () {
+              this._clearCNInputs();
+            }.bind(this)
+          );
+        }
+
+        this.oSubmitDialog.open();
+      },
+
+      _clearCNInputs: function () {
+        const aInputIds = ["CNPath", "CNLabel", "CNType", "CNValue"];
+        aInputIds.forEach((id) => {
+          const oInput = sap.ui.getCore().byId(id);
+          if (oInput) {
+            oInput.setValue("");
+          }
+        });
+      },
+
+      _createContextNodes: async function () {
+        const sPath = Element.getElementById("CNPath").getValue();
+        const sLabel = Element.getElementById("CNLabel").getValue();
+        const sType = Element.getElementById("CNType").getValue();
+        const sValue = Element.getElementById("CNValue").getValue();
+
+        const oNewContextNodes = {
+          task_ID: this._sTaskId,
+          path: sPath,
+          label: sLabel,
+          type: sType,
+          value: sValue,
+        };
+
+        const oModel = this.getOwnerComponent().getModel();
+        const oBinding = oModel.bindList("/ContextNodes");
+        await oBinding.create(oNewContextNodes).created();
+        MessageToast.show("Context Nodes created");
+
+        await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+      },
+
+      _createCNForm: function () {
+        return new SimpleForm({
+          content: [
+            new Label({ text: "Task ID" }),
+            new Input("CNTaskId", {
+              value: this._sTaskId,
+              editable: false,
+            }),
+
+            new Label({ text: "Path" }),
+            new Input("CNPath", {
+              placeholder: "Enter path",
+              required: true,
+              liveChange: this._validateCNForm.bind(this),
+            }),
+            new Label({ text: "Label" }),
+            new Input("CNLabel", {
+              placeholder: "Enter label",
+              required: true,
+              liveChange: this._validateCNForm.bind(this),
+            }),
+            new Label({ text: "Type" }),
+            new Input("CNType", {
+              placeholder: "Enter type",
+              required: true,
+              liveChange: this._validateCNForm.bind(this),
+            }),
+            new Label({ text: "Value" }),
+            new Input("CNValue", {
+              placeholder: "Enter value",
+              required: true,
+              liveChange: this._validateCNForm.bind(this),
+            }),
+          ],
+        });
+      },
+
+      _validateCNForm: function () {
+        // List of your Input IDs
+        const aFieldIds = ["CNPath", "CNLabel", "CNType", "CNValue"];
+        // Check that each one has a non‐empty, trimmed value
+        const bAllFilled = aFieldIds.every((sId) => {
+          const oInput = sap.ui.getCore().byId(sId);
+          return oInput && oInput.getValue().trim().length > 0;
+        });
+        // Enable/disable the dialog’s Begin button
+        this.oSubmitDialog.getBeginButton().setEnabled(bAllFilled);
+      },
       // ---------------------------------------Context Tree -------------------------------------
 
       // -----------------------------------------Task Tree --------------------------------------
@@ -78,7 +214,7 @@ sap.ui.define(
         if (!oNewParent.nodes) {
           oNewParent.nodes = [];
         }
-
+        // Check if the selected node item is a botIsntances
         if (sType == "bot") {
           const oModel = this.getOwnerComponent().getModel();
           oModel
@@ -91,18 +227,35 @@ sap.ui.define(
                   oObj.type = "task"; // add type tree 'bot'
                   return oObj;
                 });
-                // Filter aData untuk hanya menyertakan item dengan ID yang belum ada di oNewParent.nodes
-                var existingIDs = new Set(oNewParent.nodes.map(node => node.ID));
-                var newNodes = aData.filter(item => !existingIDs.has(item.ID));
+                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
+                const oJSONModel = new JSONModel();
+                oJSONModel.setData({ results: aData });
+                var isDuplicate = oNewParent.nodes.some(function (
+                  existingItem
+                ) {
+                  return existingItem.ID === newItem.ID;
+                });
 
-                // Tambahkan node baru yang belum ada
-                oNewParent.nodes.push(...newNodes);
+                aData.forEach(function (newItem) {
+                  var isDuplicate = oNewParent.nodes.some(function (
+                    existingItem
+                  ) {
+                    return existingItem.ID === newItem.ID;
+                  });
+
+                  if (!isDuplicate) {
+                    oNewParent.nodes.push(newItem);
+                  }
+                });
                 // Refresh tree
+
                 oTree.getBinding("items").refresh();
                 oTree.expand(aSelectedIndices);
               }.bind(this)
             );
-        } else {
+          // If it's not a bot, then it must be a task
+          // If it is a task, only display the bot instances of the task when isMain is false
+        } else if (oContext.getProperty("isMain") == false) {
           const oModel = this.getOwnerComponent().getModel();
           oModel
             .bindList("/Tasks('" + sID + "')/botInstances")
@@ -143,7 +296,7 @@ sap.ui.define(
         // Refresh untuk update tampilan
       },
 
-      onEditContextPress: function () {},
+      onEditContextPress: function () { },
 
       // -----------------------------------------Task Tree --------------------------------------
 
