@@ -14,13 +14,13 @@
             <Tree
                 id="docTree"
                 items="{
-          path: 'tree>/nodes'
+          path: 'contextNodes>/nodes'
         }"
-                itemPress="onTreeItemPress"
-                selectionChange="onTreeItemPress"
+                itemPress=".onCNItemPress"
+                selectionChange=".onCNItemPress"
             >
                 <StandardTreeItem
-                    title="{tree>label}"
+                    title="{contextNodes>label}"
                     type="Active"
                 />
             </Tree>
