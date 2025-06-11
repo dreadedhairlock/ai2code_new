@@ -1,4 +1,1 @@
 ID,role,message,ragData,botInstance_ID,createdAt,createdBy,modifiedAt,modifiedBy
-770e8400-e29b-41d4-a716-446655440400,user,"What is the total revenue for Q1?","",550e8400-e29b-41d4-a716-446655440300,2024-06-01T10:07:00Z,system,2024-06-01T10:17:00Z,system
-770e8400-e29b-41d4-a716-446655440401,assistant,"The total revenue for Q1 is 1.5 million.","",550e8400-e29b-41d4-a716-446655440300,2024-06-01T10:08:00Z,system,2024-06-01T10:18:00Z,system
-770e8400-e29b-41d4-a716-446655440402,user,"Show me the invoice list.","",550e8400-e29b-41d4-a716-446655440301,2024-06-01T11:07:00Z,system,2024-06-01T11:17:00Z,system

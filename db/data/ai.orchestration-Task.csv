@@ -1,3 +1,2 @@
 ID,name,description,contextPath,sequence,isMain,botInstance_ID,createdAt,createdBy,modifiedAt,modifiedBy
-550e8400-e29b-41d4-a716-446655440100,Document Classification,Classify PDF files,/documents/section1,1,true,880e8400-e29b-41d4-a716-446655440500,2024-06-01T10:00:00Z,system,2024-06-01T10:10:00Z,system
-550e8400-e29b-41d4-a716-446655440101,Text Extraction,Extract info from PDF,/documents/section2,2,false,880e8400-e29b-41d4-a716-446655440501,2024-06-01T11:00:00Z,system,2024-06-01T11:10:00Z,system
+98eb493f-02fa-42cd-9f7d-1741c4575aec,FirstRAPReport,The first AI code rap report,,,X,,,,,

@@ -48,6 +48,8 @@ sap.ui.define(
           this.oSubmitDialog = new Dialog({
             type: DialogType.Message,
             title: "Create",
+            contentWidth: "600px",
+            contentHeight: "600px",
             content: [this._createTaskForm()],
             beginButton: new Button({
               type: ButtonType.Emphasized,
@@ -70,6 +72,7 @@ sap.ui.define(
         this.oSubmitDialog.open();
       },
 
+
       onItemPress: function (oEvent) {
         // Handle item press event
         const oItem = oEvent.getSource();
@@ -91,30 +94,50 @@ sap.ui.define(
         return this.oSelectTypeDialog
           ? this.oSelectTypeDialog
           : new SelectDialog({
-              noDataText: "No task types found",
-              title: "Select Task Type",
-              items: {
-                path: "/TaskType",
-                template: new sap.m.StandardListItem({
-                  title: "{name}",
-                  description: "{description}",
-                  highlightText: "{ID}", // ID placeholder
-                }),
-              },
-              confirm: function (oEvent) {
-                const oSelectedItem = oEvent.getParameter("selectedItem");
-                if (oSelectedItem) {
-                  Element.getElementById("taskTypeId").setValue(
-                    oSelectedItem.getHighlightText()
-                  );
-                }
-              }.bind(this),
-            });
+            noDataText: "No task types found",
+            title: "Select Task Type",
+            items: {
+              path: "/TaskType",
+              template: new sap.m.StandardListItem({
+                title: "{name}",
+                description: "{description}",
+                highlightText: "{ID}", // ID placeholder
+              }),
+            },
+            confirm: function (oEvent) {
+              const oSelectedItem = oEvent.getParameter("selectedItem");
+              if (oSelectedItem) {
+                Element.getElementById("taskTypeName").setValue(
+                  oSelectedItem.getTitle()
+                );
+                Element.getElementById("taskTypeId").setValue(
+                  oSelectedItem.getHighlightText()
+                );
+              }
+            }.bind(this),
+          });
       },
 
       _createTaskForm: function () {
         return new SimpleForm({
           content: [
+            new Label({ text: "Type name" }),
+            new Input("taskTypeName", {
+              showValueHelp: true,
+              valueHelpOnly: true,
+              valueHelpRequest: function () {
+                this.oSelectTypeDialog = this._createSelectTaskTypeDialog();
+                this.oSelectTypeDialog.setModel(
+                  this.getOwnerComponent().getModel()
+                );
+                this.oSelectTypeDialog.open();
+              }.bind(this),
+            }),
+            // new Label({ text: "Type id" }),
+            new Input("taskTypeId", {
+              editable: false,
+              visible: false,
+            }),
             new Label({ text: "Task name" }),
             new Input("taskName", {
               placeholder: "Enter task name",
@@ -129,19 +152,7 @@ sap.ui.define(
             new Label({ text: "Description" }),
             new TextArea("taskDescription", {
               placeholder: "Enter task description",
-              rows: 3,
-            }),
-            new Label({ text: "Type id" }),
-            new Input("taskTypeId", {
-              showValueHelp: true,
-              valueHelpOnly: true,
-              valueHelpRequest: function () {
-                this.oSelectTypeDialog = this._createSelectTaskTypeDialog();
-                this.oSelectTypeDialog.setModel(
-                  this.getOwnerComponent().getModel()
-                );
-                this.oSelectTypeDialog.open();
-              }.bind(this),
+              rows: 16,
             }),
           ],
         });
