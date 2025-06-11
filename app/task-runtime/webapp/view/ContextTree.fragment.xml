@@ -9,7 +9,7 @@
             <Button
                 icon="sap-icon://add"
                 tooltip="Create"
-                press=".onCreate"
+                press=".onCreateCNData"
             />
             <Button
                 icon="sap-icon://edit"
@@ -19,6 +19,7 @@
                 icon="sap-icon://delete"
                 tooltip="Delete"
                 type="Reject"
+                press=".onDeleteCNData"
             />
         </Toolbar>
         <ScrollContainer
@@ -28,6 +29,7 @@
         >
             <Tree
                 id="docTree"
+                mode="SingleSelectMaster"
                 items="{
           path: 'contextNodes>/nodes'
         }"
