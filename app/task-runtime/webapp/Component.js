@@ -3,8 +3,10 @@ sap.ui.define(
     "sap/ui/core/UIComponent",
     "task-runtime/model/models",
     "sap/ui/model/json/JSONModel",
+    "sap/ui/model/Filter",
+    "sap/ui/model/FilterOperator",
   ],
-  (UIComponent, models, JSONModel) => {
+  (UIComponent, models, JSONModel, Filter, FilterOperator) => {
     "use strict";
 
     return UIComponent.extend("task-runtime.Component", {
@@ -24,7 +26,7 @@ sap.ui.define(
         this.setModel(oCNModel, "contextNodes");
 
         const oBIModel = new JSONModel({ results: [] });
-        this.setModel(oBIModel, "botInstances");
+        this.setModel(oBIModel, "taskTree");
 
         // enable routing
         this.getRouter().initialize();
@@ -36,22 +38,27 @@ sap.ui.define(
         const oArgs = oEvent.getParameter("arguments");
         if (sRoute === "RouteTaskDetail" && oArgs.taskId) {
           // reuse loader
-          this._loadBotInstances(oArgs.taskId);
+          this._loadMainTasks(oArgs.taskId);
           this._loadContextNodes(oArgs.taskId);
         }
       },
 
-      _loadBotInstances: function (taskId) {
+      // Ganti _loadBotInstances dengan _loadMainTasks
+      _loadMainTasks: function () {
         return this.getModel()
-          .bindList("/Tasks('" + taskId + "')/botInstances")
+          .bindList("/Tasks", null, null, [
+            new Filter("isMain", FilterOperator.EQ, true),
+          ])
           .requestContexts()
           .then((aCtx) => {
             const aData = aCtx.map((c) => {
               const o = c.getObject();
-              o.type = "bot";
+              o.type = "task"; // Set type sebagai task
+              o.nodes = []; // Initialize nodes untuk children
               return o;
             });
-            this.getModel("botInstances").setData({ results: aData });
+            // Set sebagai root data untuk tree
+            this.getModel("taskTree").setData(aData);
           });
       },
 

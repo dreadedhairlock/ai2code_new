@@ -31,12 +31,19 @@
             <Tree
                 id="tree"
                 mode="SingleSelectMaster"
-                items="{path: 'botInstances>/'}"
+                items="{path: 'taskTree>/'}"
                 itemPress=".onTaskSelect"
                 selectionChange=".onTaskSelect"
             >
                 <StandardTreeItem
-                    title="{botInstances>type} : {botInstances>ID}"
+                    title="{=
+    ${taskTree>type}
+    + ' : '
+    + ( ${taskTree>name}
+        ? ${taskTree>name}
+        : ${taskTree>ID}
+      )
+  }"
                 />
             </Tree>
         </ScrollContainer>

@@ -13,6 +13,7 @@ sap.ui.define(
     "sap/ui/core/Element",
     "sap/m/MessageToast",
     "sap/m/MessageBox",
+    "sap/m/SelectDialog",
   ],
   (
     Controller,
@@ -27,7 +28,8 @@ sap.ui.define(
     ButtonType,
     Element,
     MessageToast,
-    MessageBox
+    MessageBox,
+    SelectDialog
   ) => {
     "use strict";
 
@@ -377,73 +379,36 @@ sap.ui.define(
       // -----------------------------------------Task Tree --------------------------------------
       // This is Detail page
       onTaskSelect: function (oEvent) {
-        // Get the reference to the author list control by its ID
-        var oSelectedItem = oEvent.getParameter("listItem"); // atau "item"
-        var oContext = oSelectedItem.getBindingContext("botInstances");
-        var sID = oContext.getProperty("ID");
-        var sType = oContext.getProperty("type");
+        var oSelectedItem = oEvent.getParameter("listItem");
+        var oContext = oSelectedItem.getBindingContext("taskTree");
 
-        var oTree = this.byId("tree"),
-          aSelectedItems = oTree.getSelectedItems(),
-          aSelectedIndices = [];
-
-        for (var i = 0; i < aSelectedItems.length; i++) {
-          aSelectedIndices.push(oTree.indexOfItem(aSelectedItems[i]));
-        }
-
-        var oTree = this.byId("tree");
-        var oBinding = oTree.getBinding("items");
-        var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
-        var oNewParentContext = oBinding.getContextByIndex(iItemIndex);
-
-        if (!oNewParentContext) {
+        if (!oContext) {
+          console.error("No context found!");
           return;
         }
 
-        var oNewParent = oNewParentContext.getProperty();
+        var sID = oContext.getProperty("ID");
+        var sType = oContext.getProperty("type");
 
-        // Gunakan "nodes" sesuai struktur JSON Anda
-        if (!oNewParent.nodes) {
-          oNewParent.nodes = [];
+        var oTree = this.byId("tree");
+        var oBinding = oTree.getBinding("items");
+        var iItemIndex = oTree.indexOfItem(oSelectedItem);
+        var oSelectedContext = oBinding.getContextByIndex(iItemIndex);
+
+        if (!oSelectedContext) {
+          return;
         }
-        // Check if the selected node item is a botIsntances
-        if (sType == "bot") {
-          const oModel = this.getOwnerComponent().getModel();
-          oModel
-            .bindList("/BotInstances('" + sID + "')/tasks")
-            .requestContexts()
-            .then(
-              function (aContexts) {
-                var aData = aContexts.map(function (oContext) {
-                  var oObj = oContext.getObject();
-                  oObj.type = "task"; // add type tree 'bot'
-                  return oObj;
-                });
-                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                const oJSONModel = new JSONModel();
-                oJSONModel.setData({ results: aData });
 
-                aData.forEach(function (newItem) {
-                  var isDuplicate = oNewParent.nodes.some(function (
-                    existingItem
-                  ) {
-                    return existingItem.ID === newItem.ID;
-                  });
+        var oSelectedNode = oSelectedContext.getProperty();
 
-                  if (!isDuplicate) {
-                    oNewParent.nodes.push(newItem);
-                  }
-                });
-                // Refresh tree
+        if (!oSelectedNode.nodes) {
+          oSelectedNode.nodes = [];
+        }
 
-                oTree.getBinding("items").refresh();
-                oTree.expand(aSelectedIndices);
-              }.bind(this)
-            );
-          // If it's not a bot, then it must be a task
-          // If it is a task, only display the bot instances of the task when isMain is false
-        } else {
-          const oModel = this.getOwnerComponent().getModel();
+        const oModel = this.getOwnerComponent().getModel();
+
+        // Jika yang dipilih adalah TASK -> load BotInstances
+        if (sType === "task") {
           oModel
             .bindList("/Tasks('" + sID + "')/botInstances")
             .requestContexts()
@@ -451,33 +416,63 @@ sap.ui.define(
               function (aContexts) {
                 var aData = aContexts.map(function (oContext) {
                   var oObj = oContext.getObject();
-                  oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
+                  oObj.type = "bot"; // Set type sebagai bot
+                  oObj.nodes = []; // Initialize nodes untuk children
                   return oObj;
                 });
-                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                const oJSONModel = new JSONModel();
-                oJSONModel.setData({ results: aData });
 
+                // Add children ke selected task node
                 aData.forEach(function (newItem) {
-                  var isDuplicate = oNewParent.nodes.some(function (
+                  var isDuplicate = oSelectedNode.nodes.some(function (
                     existingItem
                   ) {
                     return existingItem.ID === newItem.ID;
                   });
 
                   if (!isDuplicate) {
-                    oNewParent.nodes.push(newItem);
+                    oSelectedNode.nodes.push(newItem);
                   }
                 });
-                // Refresh tree
 
-                oTree.getBinding("items").refresh();
-                oTree.expand(aSelectedIndices);
+                // Refresh tree
+                this.getOwnerComponent().getModel("taskTree").updateBindings();
+                oTree.expand(iItemIndex);
               }.bind(this)
             );
         }
+        // Jika yang dipilih adalah BOT -> load sub-Tasks
+        else if (sType === "bot") {
+          oModel
+            .bindList("/BotInstances('" + sID + "')/tasks")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                var aData = aContexts.map(function (oContext) {
+                  var oObj = oContext.getObject();
+                  oObj.type = "task"; // Set type sebagai task
+                  oObj.nodes = []; // Initialize nodes untuk children
+                  return oObj;
+                });
 
-        // Refresh untuk update tampilan
+                // Add children ke selected bot node
+                aData.forEach(function (newItem) {
+                  var isDuplicate = oSelectedNode.nodes.some(function (
+                    existingItem
+                  ) {
+                    return existingItem.ID === newItem.ID;
+                  });
+
+                  if (!isDuplicate) {
+                    oSelectedNode.nodes.push(newItem);
+                  }
+                });
+
+                // Refresh tree
+                this.getOwnerComponent().getModel("taskTree").updateBindings();
+                oTree.expand(iItemIndex);
+              }.bind(this)
+            );
+        }
       },
 
       // -----------------------------------------Task Tree --------------------------------------
@@ -509,23 +504,6 @@ sap.ui.define(
         this.oSubmitDialogTaskTree.open();
       },
 
-      onItemPress: function (oEvent) {
-        // Handle item press event
-        const oItem = oEvent.getSource();
-        const oContext = oItem.getBindingContext();
-        if (oContext) {
-          this._navToTaskRunDetail(oContext.getProperty("ID"));
-        } else {
-          MessageToast.show("No context available for the selected item.");
-        }
-      },
-
-      _navToTaskRunDetail: function (sTaskId) {
-        this.getOwnerComponent().getRouter().navTo("RouteTaskDetail", {
-          taskId: sTaskId,
-        });
-      },
-
       _createSelectTaskTypeDialog: function () {
         return this.oSelectTypeDialog
           ? this.oSelectTypeDialog
@@ -555,7 +533,7 @@ sap.ui.define(
         return new SimpleForm({
           content: [
             new Label({ text: "Task name" }),
-            new Input("taskName", {
+            new Input("taskNameDetail", {
               placeholder: "Enter task name",
               required: true,
               liveChange: function (oEvent) {
@@ -567,13 +545,13 @@ sap.ui.define(
             }),
 
             new Label({ text: "Description" }),
-            new TextArea("taskDescription", {
+            new TextArea("taskDescriptionDetail", {
               placeholder: "Enter task description",
               rows: 3,
             }),
 
             new Label({ text: "Type id" }),
-            new Input("taskTypeId", {
+            new Input("taskTypeIdDetail", {
               showValueHelp: true,
               valueHelpOnly: true,
               valueHelpRequest: function () {
@@ -589,10 +567,12 @@ sap.ui.define(
       },
 
       _createTask: function () {
-        const sTaskName = Element.getElementById("taskName").getValue();
-        const sTaskDescription =
-          Element.getElementById("taskDescription").getValue();
-        const sTaskTypeId = Element.getElementById("taskTypeId").getValue();
+        const sTaskName = Element.getElementById("taskNameDetail").getValue();
+        const sTaskDescription = Element.getElementById(
+          "taskDescriptionDetail"
+        ).getValue();
+        const sTaskTypeId =
+          Element.getElementById("taskTypeIdDetail").getValue();
         const oNewTask = {
           name: sTaskName,
           description: sTaskDescription,
@@ -607,12 +587,9 @@ sap.ui.define(
         oContextBinding
           .invoke()
           .then(
-            function (oContext) {
+            async function () {
               MessageToast.show("Task created successfully");
-              this._navToTaskRunDetail(
-                oContextBinding.getBoundContext().getProperty("ID")
-              );
-              oModel.refresh();
+              await this.getOwnerComponent()._loadMainTasks(this._sTaskId);
             }.bind(this)
           )
           .catch(
@@ -632,7 +609,58 @@ sap.ui.define(
         }
       },
 
-      onDeleteSubTask: function () {},
+      onDeleteSubTask: function () {
+        const oTree = this.byId("tree");
+        const oSelected = oTree.getSelectedItem();
+
+        if (!oSelected) {
+          MessageToast.show("Please select task to delete!");
+          return;
+        }
+
+        const oJsonCtx = oSelected.getBindingContext("taskTree");
+        const sID = oJsonCtx.getProperty("ID");
+
+        if (!sID) {
+          MessageToast.show("Select one task item first!");
+          return;
+        }
+
+        const sPath = "/Tasks('" + sID + "')";
+
+        // Tampilkan konfirmasi sebelum delete
+        MessageBox.confirm("Are you sure you want to delete this task?", {
+          title: "Confirm Deletion",
+          icon: MessageBox.Icon.WARNING,
+          actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+          emphasizedAction: MessageBox.Action.CANCEL,
+          onClose: async (sAction) => {
+            if (sAction === MessageBox.Action.OK) {
+              try {
+                const oODataModel = this.getOwnerComponent().getModel();
+                const oContext = oODataModel.bindContext(sPath);
+
+                // Pastikan context valid
+                await oContext.requestObject();
+                const oBoundContext = oContext.getBoundContext();
+
+                if (oBoundContext) {
+                  await oBoundContext.delete();
+                  MessageToast.show("Task deleted successfully.");
+                  // Reload ulang tree/list
+                  await this.getOwnerComponent()._loadMainTasks(this._sTaskId);
+                } else {
+                  MessageToast.show("Could not find task with ID: " + sID);
+                }
+              } catch (oError) {
+                console.error("Delete error:", oError);
+                MessageToast.show("Error: " + (oError.message || oError));
+              }
+            }
+            // Jika Cancel, tidak ada yang terjadi
+          },
+        });
+      },
 
       // ---------------------------------------Chat Bot -------------------------------------
 
