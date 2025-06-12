@@ -14,11 +14,22 @@
             width="100%"
             class="topSection"
         >
-            <Title
-                text="AI Chat"
-                level="H4"
-                class="aiChatTitle"
-            />
+            <Toolbar>
+                <content>
+                    <Title
+                        text="AI Chat"
+                        level="H4"
+                        class="aiChatTitle"
+                    />
+                    <ToolbarSpacer />
+                    <Button
+                        icon="sap-icon://history"
+                        tooltip="Chat History"
+                        class="chatHistoryButton"
+                        press="onHistoryPress"
+                    />
+                </content>
+            </Toolbar>
 
             <!-- Chat Messages - Scrollable Area -->
             <ScrollContainer
@@ -75,7 +86,15 @@
                 height="calc(100% - 40px)"
                 vertical="true"
             >
-                <Text id="codeResultText" text="The AI's response is shown here" />
+                <VBox
+                    id="codeResultBox"
+                    class="codeResults"
+                >
+                    <core:HTML
+                        id="codeResultText"
+                        class="codeResultContent"
+                    />
+                </VBox>
             </ScrollContainer>
         </l:VerticalLayout>
     </l:VerticalLayout>
