@@ -12,3 +12,5 @@ service ConfigService {
   //entity RagFunctions         as projection on cfg.RagFunction;
   entity ContextTypes         as projection on cfg.ContextType;
 }
+
+annotate ConfigService.TaskTypes with @odata.draft.enabled ;

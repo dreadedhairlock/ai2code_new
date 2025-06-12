@@ -1,0 +1,130 @@
+{   "defaultRenderer": "fiori2",
+    "applications" : {},
+    "services": {
+        "LaunchPage": {
+            "adapter": {
+                "config": {
+                    "catalogs": [],
+                    "groups": [
+                        {
+                            "id": "ConfigService",
+                            "title": "Configuration Service",
+                            "isPreset": true,
+                            "isVisible": true,
+                            "isGroupLocked": false,
+                            "tiles": [
+                                {
+                                    "id": "tasksconfig",
+                                    "tileType": "sap.ushell.ui.tile.StaticTile",
+                                    "properties": {
+                                        "targetURL": "#TasksConfig-manage",
+                                        "title": "Task Types",
+                                        "info": "Configure task types",
+                                        "icon": "sap-icon://add-activity"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": "MainService",
+                            "title": "Main Service",
+                            "isPreset": true,
+                            "isVisible": true,
+                            "isGroupLocked": false,
+                            "tiles": [
+                                {
+                                    "id": "tasksruntime",
+                                    "tileType": "sap.ushell.ui.tile.StaticTile",
+                                    "properties": {
+                                        "targetURL": "#TaskRuntime-manage",
+                                        "title": "Tasks",
+                                        "info": "Manage all runtime tasks",
+                                        "icon": "sap-icon://activity-assigned-to-goal"
+                                    }
+                                },
+                                {
+                                    "id": "botsruntime",
+                                    "tileType": "sap.ushell.ui.tile.StaticTile",
+                                    "properties": {
+                                        "targetURL": "#BotInstances-display",
+                                        "title": "Bot instances",
+                                        "info": "Display all bot instances",
+                                        "icon" : "sap-icon://ai"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "NavTargetResolution": {
+            "config": {
+                "enableClientSideTargetResolution": true
+            }
+        },
+        "ClientSideTargetResolution": {
+            "adapter": {
+                "config": {
+                    "inbounds": {
+                        "tasksruntime": {
+                            "semanticObject": "TaskRuntime",
+                            "action": "manage",
+                            "signature": {
+                                "parameters": {
+                                    "Tasks.ID": {
+                                        "renameTo": "ID"
+                                    },
+                                    "BotInstances.tasks.ID" : {
+                                        "renameTo" : "ID"
+                                    }
+                                },
+                                "additionalParameters": "ignored"
+                            },
+                            "resolutionResult": {
+                                "applicationType": "SAPUI5",
+                                "additionalInformation": "SAPUI5.Component=task-runtime",
+                                "url": "/task-runtime/webapp"
+                            }
+                        },
+                        "botsruntime": {
+                            "semanticObject": "BotInstances",
+                            "action": "display",
+                            "signature": {
+                                "parameters": {
+                                    "BotInstances.ID": {
+                                        "renameTo": "ID"
+                                    },
+                                    "Tasks.botInstances.ID" : {
+                                        "renameTo" : "ID"
+                                    }
+                                },
+                                "additionalParameters": "ignored"
+                            },
+                            "resolutionResult": {
+                                "applicationType": "SAPUI5",
+                                "additionalInformation": "SAPUI5.Component=bots-runtime",
+                                "url": "/bots-runtime/webapp"
+                            }
+                        },
+                        "tasksconfig": {
+                            "semanticObject": "TasksConfig",
+                            "action": "manage",
+                            "signature": {
+                                "parameters": {
+
+                                },
+                                "additionalParameters": "ignored"
+                            },
+                            "resolutionResult": {
+                                "applicationType": "SAPUI5",
+                                "additionalInformation": "SAPUI5.Component=task-config",
+                                "url": "/task-config/webapp"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -86,7 +86,7 @@ public class createTaskWithBotsHandler implements EventHandler {
                 + context.getResult().getName() + ", "
                 + context.getResult().getDescription() + ", "
                 + context.getResult().getTypeId());
-
+        String TaskID = context.getResult().getId();
         CqnSelect select = Select.from(BOT_TYPES).where(b -> b.taskType_ID().eq(context.getResult().getTypeId()));
         Result selectResult = db.run(select);
         System.out.println("Bot types: " + selectResult.toJson());
@@ -100,6 +100,7 @@ public class createTaskWithBotsHandler implements EventHandler {
                 botInstance.setTypeId(row.getPath("ID"));
                 // status设置为BotInstanceStatus.code.C (Created)
                 botInstance.setStatusCode("C");
+                botInstance.setTaskId(TaskID);
                 CqnInsert insertBot = Insert.into(BotInstances_.CDS_NAME).entry(botInstance);
                 Result insertBotResult = db.run(insertBot);
             }
@@ -107,7 +108,7 @@ public class createTaskWithBotsHandler implements EventHandler {
 
         // 将description和第二步得到的Tasks.Id，创建一条MainService.ContextNodes。
             ContextNodes contextNode = ContextNodes.create();
-            contextNode.setTaskId(context.getResult().getId());
+            contextNode.setTaskId(TaskID);
             contextNode.setPath(context.getResult().getDescription());
             contextNode.setLabel(context.getResult().getDescription());
             contextNode.setValue(context.getResult().getDescription());
