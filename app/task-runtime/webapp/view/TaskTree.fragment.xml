@@ -5,28 +5,33 @@
     <VBox height="50%">
         <Toolbar>
             <Title text="Task Tree" />
-            <ToolbarSpacer />
+        </Toolbar>
+        <Toolbar>
             <Button
                 icon="sap-icon://add"
-                tooltip="Create"
+                tooltip="Create Task"
                 press=".onCreateSubTask"
+                text="Task"
             />
             <Button
                 icon="sap-icon://add"
                 tooltip="Create Bot"
                 press=".onCreateBotInstance"
-                type="Emphasized"
-            />
-            <Button
-                icon="sap-icon://edit"
-                tooltip="Edit"
-                press=".onEditSubTask"
+                text="Bot"
             />
             <Button
                 icon="sap-icon://delete"
                 tooltip="Delete"
                 type="Reject"
                 press=".onDeleteSubTask"
+                text="Task"
+            />
+            <Button
+                icon="sap-icon://delete"
+                tooltip="Delete"
+                type="Reject"
+                press=".onDeleteBotInstance"
+                text="Bot"
             />
         </Toolbar>
         <ScrollContainer
