@@ -63,7 +63,7 @@ sap.ui.define(
             function () {
               const oCNForm = this.byId("ContextNodeForm");
 
-                const sPath = "/ContextNodes('" + sUuid + "')";
+              const sPath = "/ContextNodes('" + sUuid + "')";
 
               oCNForm.bindElement({ path: sPath });
             }.bind(this)
@@ -274,6 +274,12 @@ sap.ui.define(
 
         const oJsonCtx = oSelected.getBindingContext("contextNodes");
         const sID = oJsonCtx.getProperty("ID");
+
+        if (!sID) {
+          MessageToast.show("Select one context node item first!");
+          return;
+        }
+
         const sPath = "/ContextNodes('" + sID + "')";
 
         // Tampilkan konfirmasi sebelum delete
@@ -318,13 +324,13 @@ sap.ui.define(
       onEditCNData: function () {
         const oTree = this.byId("docTree");
         const oSelected = oTree.getSelectedItem();
+        const oJsonCtx = oSelected.getBindingContext("contextNodes");
+        const sId = oJsonCtx.getProperty("ID");
 
-        if (!oSelected) {
-          MessageToast.show("Please select a context node to edit!");
+        if (!sId) {
+          MessageToast.show("Please select a context node item to edit!");
           return;
         }
-
-        const oJsonCtx = oSelected.getBindingContext("contextNodes");
         const oEditData = {
           ID: oJsonCtx.getProperty("ID"),
           path: oJsonCtx.getProperty("path"),
@@ -368,33 +374,33 @@ sap.ui.define(
       },
       // ---------------------------------------Context Tree -------------------------------------
 
-        // -----------------------------------------Task Tree --------------------------------------
-        // This is Detail page
-        onTaskSelect: function (oEvent) {
-          // Get the reference to the author list control by its ID
-          var oSelectedItem = oEvent.getParameter("listItem"); // atau "item"
-          var oContext = oSelectedItem.getBindingContext("botInstances");
-          var sID = oContext.getProperty("ID");
-          var sType = oContext.getProperty("type");
+      // -----------------------------------------Task Tree --------------------------------------
+      // This is Detail page
+      onTaskSelect: function (oEvent) {
+        // Get the reference to the author list control by its ID
+        var oSelectedItem = oEvent.getParameter("listItem"); // atau "item"
+        var oContext = oSelectedItem.getBindingContext("botInstances");
+        var sID = oContext.getProperty("ID");
+        var sType = oContext.getProperty("type");
 
-          var oTree = this.byId("tree"),
-            aSelectedItems = oTree.getSelectedItems(),
-            aSelectedIndices = [];
+        var oTree = this.byId("tree"),
+          aSelectedItems = oTree.getSelectedItems(),
+          aSelectedIndices = [];
 
-          for (var i = 0; i < aSelectedItems.length; i++) {
-            aSelectedIndices.push(oTree.indexOfItem(aSelectedItems[i]));
-          }
+        for (var i = 0; i < aSelectedItems.length; i++) {
+          aSelectedIndices.push(oTree.indexOfItem(aSelectedItems[i]));
+        }
 
-          var oTree = this.byId("tree");
-          var oBinding = oTree.getBinding("items");
-          var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
-          var oNewParentContext = oBinding.getContextByIndex(iItemIndex);
+        var oTree = this.byId("tree");
+        var oBinding = oTree.getBinding("items");
+        var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
+        var oNewParentContext = oBinding.getContextByIndex(iItemIndex);
 
-          if (!oNewParentContext) {
-            return;
-          }
+        if (!oNewParentContext) {
+          return;
+        }
 
-          var oNewParent = oNewParentContext.getProperty();
+        var oNewParent = oNewParentContext.getProperty();
 
         // Gunakan "nodes" sesuai struktur JSON Anda
         if (!oNewParent.nodes) {
@@ -436,7 +442,7 @@ sap.ui.define(
             );
           // If it's not a bot, then it must be a task
           // If it is a task, only display the bot instances of the task when isMain is false
-        } else if (oContext.getProperty("isMain") == false) {
+        } else {
           const oModel = this.getOwnerComponent().getModel();
           oModel
             .bindList("/Tasks('" + sID + "')/botInstances")
@@ -452,24 +458,24 @@ sap.ui.define(
                 const oJSONModel = new JSONModel();
                 oJSONModel.setData({ results: aData });
 
-                  aData.forEach(function (newItem) {
-                    var isDuplicate = oNewParent.nodes.some(function (
-                      existingItem
-                    ) {
-                      return existingItem.ID === newItem.ID;
-                    });
-
-                    if (!isDuplicate) {
-                      oNewParent.nodes.push(newItem);
-                    }
+                aData.forEach(function (newItem) {
+                  var isDuplicate = oNewParent.nodes.some(function (
+                    existingItem
+                  ) {
+                    return existingItem.ID === newItem.ID;
                   });
-                  // Refresh tree
 
-                  oTree.getBinding("items").refresh();
-                  oTree.expand(aSelectedIndices);
-                }.bind(this)
-              );
-          }
+                  if (!isDuplicate) {
+                    oNewParent.nodes.push(newItem);
+                  }
+                });
+                // Refresh tree
+
+                oTree.getBinding("items").refresh();
+                oTree.expand(aSelectedIndices);
+              }.bind(this)
+            );
+        }
 
         // Refresh untuk update tampilan
       },
@@ -559,7 +565,7 @@ sap.ui.define(
                   .setEnabled(sText.length > 0);
               }.bind(this),
             }),
-            
+
             new Label({ text: "Description" }),
             new TextArea("taskDescription", {
               placeholder: "Enter task description",
@@ -614,7 +620,6 @@ sap.ui.define(
               MessageToast.show("Error creating task: " + oError.message);
             }.bind(this)
           );
-          
       },
 
       onEditSubTask: function () {
@@ -627,11 +632,9 @@ sap.ui.define(
         }
       },
 
-      onDeleteSubTask: function () {
+      onDeleteSubTask: function () {},
 
-      },
-
-        // ---------------------------------------Chat Bot -------------------------------------
+      // ---------------------------------------Chat Bot -------------------------------------
 
       onSubmitQuery: async function () {
         var oInput = this.byId("chatInput");
@@ -678,7 +681,6 @@ sap.ui.define(
           } catch (error) {
             this.addChatMessage("Error: " + error.message, "ai");
           }
-
         }
       },
 
@@ -709,18 +711,16 @@ sap.ui.define(
             );
           }
         }, 100);
-        
-              if (sType === "ai") {
-                  var oCodeResultText = this.byId("codeResultText");
-                  if (oCodeResultText) {
-                      oCodeResultText.setText(sMessage);
-                  }
-              }
+
+        if (sType === "ai") {
+          var oCodeResultText = this.byId("codeResultText");
+          if (oCodeResultText) {
+            oCodeResultText.setText(sMessage);
+          }
+        }
       },
 
-        // ---------------------------------------Chat Bot -------------------------------------
-    
-    }
-    )
+      // ---------------------------------------Chat Bot -------------------------------------
+    });
   }
 );

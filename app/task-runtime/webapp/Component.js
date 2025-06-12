@@ -60,28 +60,86 @@ sap.ui.define(
           .bindList("/Tasks('" + taskId + "')/contextNodes")
           .requestContexts()
           .then((aCtx) => {
-            const sectionMap = {};
-            aCtx
-              .map((c) => c.getObject())
-              .forEach((item) => {
-                if (!sectionMap[item.path]) {
-                  sectionMap[item.path] = {
-                    path: item.path,
-                    label: item.path,
+            const items = aCtx.map((c) => c.getObject());
+
+            // Group items berdasarkan path hierarchy
+            const treeMap = {};
+
+            items.forEach((item) => {
+              // Split path menggunakan dot notation
+              const pathParts = item.path
+                .split(".")
+                .filter((part) => part !== "");
+              let currentPath = "";
+
+              // Buat hierarchy untuk setiap level
+              pathParts.forEach((part, index) => {
+                const previousPath = currentPath;
+                currentPath = currentPath ? currentPath + "." + part : part;
+
+                // Buat node jika belum ada
+                if (!treeMap[currentPath]) {
+                  treeMap[currentPath] = {
+                    path: currentPath,
+                    label: part,
                     children: [],
+                    isFolder: true,
                   };
                 }
-                sectionMap[item.path].children.push({
+
+                // Link dengan parent
+                if (previousPath && treeMap[previousPath]) {
+                  const parent = treeMap[previousPath];
+                  const current = treeMap[currentPath];
+
+                  if (
+                    !parent.children.find(
+                      (child) => child.path === current.path
+                    )
+                  ) {
+                    parent.children.push(current);
+                  }
+                }
+              });
+
+              // Tambahkan item data ke node terakhir
+              const finalPath = item.path;
+              if (treeMap[finalPath]) {
+                treeMap[finalPath].children.push({
                   ID: item.ID,
                   path: item.path,
                   type: item.type,
                   label: item.label,
                   value: item.value,
                   children: [],
+                  isFolder: false,
                 });
-              });
-            const aRoots = Object.values(sectionMap);
-            this.getModel("contextNodes").setData({ nodes: aRoots });
+              }
+            });
+
+            // Ambil root nodes
+            const rootNodes = Object.values(treeMap).filter((node) => {
+              const parentPath = node.path.includes(".")
+                ? node.path.substring(0, node.path.lastIndexOf("."))
+                : "";
+              return parentPath === "" || !treeMap[parentPath];
+            });
+
+            // Sort secara rekursif
+            const sortChildren = (node) => {
+              if (node.children && node.children.length > 0) {
+                node.children.sort((a, b) => {
+                  if (a.isFolder !== b.isFolder) {
+                    return a.isFolder ? -1 : 1;
+                  }
+                  return a.label.localeCompare(b.label);
+                });
+                node.children.forEach((child) => sortChildren(child));
+              }
+            };
+
+            rootNodes.forEach((rootNode) => sortChildren(rootNode));
+            this.getModel("contextNodes").setData({ nodes: rootNodes });
           });
       },
     });
