@@ -14,6 +14,7 @@ sap.ui.define(
     "sap/m/MessageToast",
     "sap/m/MessageBox",
     "sap/m/SelectDialog",
+    "sap/ui/core/Fragment",
   ],
   (
     Controller,
@@ -29,7 +30,8 @@ sap.ui.define(
     Element,
     MessageToast,
     MessageBox,
-    SelectDialog
+    SelectDialog,
+    Fragment
   ) => {
     "use strict";
 
@@ -662,6 +664,297 @@ sap.ui.define(
         });
       },
 
+      // ---------------------------------------Bot Instance -------------------------------------
+
+      /* =========================================================== */
+      /* Create Bot Instance - Main Function                         */
+      /* =========================================================== */
+
+      /**
+       * Handler untuk tombol Create Bot Instance
+       */
+      onCreateBotInstance: function () {
+        // Dapatkan node Task yang saat ini dipilih
+        var oTree = this.byId("tree");
+        var oSelectedItem = oTree.getSelectedItem();
+
+        // Validasi jika item dipilih dan tipenya adalah task
+        if (!oSelectedItem) {
+          MessageToast.show("Select the task first!");
+          return;
+        }
+
+        var oContext = oSelectedItem.getBindingContext("taskTree");
+        var sNodeType = oContext.getProperty("type");
+
+        if (sNodeType !== "task") {
+          MessageToast.show("Bot instance only created in the node Task");
+          return;
+        }
+
+        var sTaskId = oContext.getProperty("ID");
+        var sTaskName = oContext.getProperty("name") || "Task";
+
+        // Tampilkan dialog untuk membuat BotInstance baru
+        this._openSimpleCreateBotInstanceDialog(sTaskId, sTaskName);
+      },
+
+      /* =========================================================== */
+      /* Create Bot Instance - Helper Functions                      */
+      /* =========================================================== */
+
+      /**
+       * Membuka dialog sederhana untuk pembuatan BotInstance
+       * @param {string} sTaskId - ID task yang menjadi parent
+       * @param {string} sTaskName - Nama task untuk ditampilkan di dialog
+       */
+      _openSimpleCreateBotInstanceDialog: function (sTaskId, sTaskName) {
+        // Siapkan model untuk dialog dengan hardcoded bot types
+        var oDialogModel = new JSONModel({
+          taskId: sTaskId,
+          taskName: sTaskName,
+          botInstance: {
+            sequence: 1, // Default value
+            type_code: "GPT", // Default value, dapat diubah user
+            status_code: "C", // Default status: Created
+          },
+          // Hardcoded bot types untuk dropdown
+          botTypes: [
+            { code: "GPT", name: "GPT Bot" },
+            { code: "SEARCH", name: "Search Bot" },
+            { code: "ANALYSIS", name: "Analysis Bot" },
+            { code: "SUMMARIZE", name: "Summary Bot" },
+          ],
+        });
+
+        this.getView().setModel(oDialogModel, "dialog");
+
+        // Cek apakah dialog sudah ada
+        if (!this._oBotInstanceDialog) {
+          // Buat dialog via fragment
+          Fragment.load({
+            id: this.getView().getId(),
+            name: "task-runtime.view.CreateBotInstanceDialog", // Adjust fragment name if needed
+            controller: this,
+          }).then(
+            function (oDialog) {
+              this._oBotInstanceDialog = oDialog;
+              this.getView().addDependent(this._oBotInstanceDialog);
+              this._oBotInstanceDialog.open();
+            }.bind(this)
+          );
+        } else {
+          this._oBotInstanceDialog.open();
+        }
+      },
+
+      /**
+       * Handler untuk tombol Cancel di dialog
+       */
+      onCancelBotInstance: function () {
+        if (this._oBotInstanceDialog) {
+          this._oBotInstanceDialog.close();
+        }
+      },
+
+      /**
+       * Handler untuk tombol Save di dialog
+       * Menyimpan BotInstance baru ke backend menggunakan OData V4
+       */
+      onSaveBotInstance: function () {
+        // Dapatkan data dari model dialog
+        var oDialogModel = this.getView().getModel("dialog");
+        // var sBotTypeCode = oDialogModel.getProperty("/botInstance/type_code");
+        var iSequence = oDialogModel.getProperty("/botInstance/sequence");
+        var sTaskId = oDialogModel.getProperty("/taskId");
+
+        // Validasi input
+        // if (!sBotTypeCode) {
+        //   MessageToast.show("Silahkan pilih Bot Type");
+        //   return;
+        // }
+
+        // Siapkan payload untuk create - gunakan type_code tanpa perlu type_ID
+        var oPayload = {
+          sequence: iSequence,
+          status_code: "C", // Default status: Created
+          task_ID: sTaskId,
+        };
+
+        // Set busy indicator
+        // this.getView().setBusy(true);
+
+        // Kirim request create ke backend dengan OData V4
+        try {
+          var oList = this.getOwnerComponent()
+            .getModel()
+            .bindList("/BotInstances");
+          var oContext = oList.create(oPayload);
+
+          // Handle hasil operasi create
+          oContext
+            .created()
+            .then(
+              function () {
+                // Notifikasi sukses
+                MessageToast.show("Bot Instance successfully created!");
+
+                // Tutup dialog
+                if (this._oBotInstanceDialog) {
+                  this._oBotInstanceDialog.close();
+                }
+
+                // this.getView().setBusy(false);
+
+                // Optional: refresh parent node untuk tampilkan data baru
+                // this._refreshTaskNode(sTaskId);
+                this._refreshSelectedTaskNode(sTaskId);
+              }.bind(this)
+            )
+            .catch(
+              function (oError) {
+                // Error handling
+                MessageBox.error(
+                  "Error creating Bot Instance: " + oError.message
+                );
+                this.getView().setBusy(false);
+              }.bind(this)
+            );
+        } catch (oError) {
+          MessageBox.error("Error: " + oError.message);
+          this.getView().setBusy(false);
+        }
+      },
+
+      /**
+       * Refresh node Task yang dipilih
+       * @param {string} sTaskId - ID task yang perlu di-refresh
+       */
+      _refreshSelectedTaskNode: function (sTaskId) {
+        // Dapatkan Tree UI control
+        var oTree = this.byId("tree");
+        if (!oTree) {
+          MessageToast.show("Tree control not found");
+          return;
+        }
+
+        // Dapatkan model tree
+        var oTreeModel = this.getOwnerComponent().getModel("taskTree");
+
+        // Set busy indicator
+        this.getView().setBusy(true);
+
+        try {
+          // Dapatkan OData model
+          var oModel = this.getOwnerComponent().getModel();
+
+          // Fetch botInstances yang baru untuk task ini
+          oModel
+            .bindList("/Tasks('" + sTaskId + "')/botInstances")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                // Ubah hasil menjadi nodes untuk tree
+                var aBotInstances = aContexts.map(function (oContext) {
+                  var oBot = oContext.getObject();
+                  oBot.type = "bot"; // Set type sebagai bot
+                  oBot.nodes = []; // Initialize nodes untuk children
+                  return oBot;
+                });
+
+                // Cari node Task dalam tree model
+                this._updateTaskNodeChildren(
+                  oTreeModel.getData(),
+                  sTaskId,
+                  aBotInstances
+                );
+
+                // Refresh model tree untuk update UI
+                oTreeModel.refresh(true);
+
+                // Expand node Task untuk menampilkan botInstances baru
+                this._expandTaskNode(sTaskId);
+
+                // Reset busy indicator
+                this.getView().setBusy(false);
+              }.bind(this)
+            )
+            .catch(
+              function (oError) {
+                MessageToast.show(
+                  "Error refreshing task node: " + oError.message
+                );
+                this.getView().setBusy(false);
+              }.bind(this)
+            );
+        } catch (oError) {
+          MessageToast.show("Error: " + oError.message);
+          this.getView().setBusy(false);
+        }
+      },
+
+      /**
+       * Fungsi rekursif untuk mencari node Task dan update children-nya
+       * @param {Array|Object} oNodes - Nodes untuk dicari
+       * @param {string} sTaskId - ID task yang dicari
+       * @param {Array} aNewChildren - Children baru untuk ditambahkan
+       * @returns {boolean} True jika node ditemukan dan diupdate
+       */
+      _updateTaskNodeChildren: function (oNodes, sTaskId, aNewChildren) {
+        // Handle jika parameter adalah array (multiple nodes) atau objek (single node)
+        var aNodes = Array.isArray(oNodes) ? oNodes : [oNodes];
+
+        // Iterasi semua node untuk menemukan task yang sesuai
+        for (var i = 0; i < aNodes.length; i++) {
+          var oNode = aNodes[i];
+
+          // Cek apakah ini node yang dicari
+          if (oNode.type === "task" && oNode.ID === sTaskId) {
+            // Node ditemukan, update children
+            oNode.nodes = aNewChildren;
+            return true;
+          }
+
+          // Jika node ini memiliki children, cek secara rekursif
+          if (oNode.nodes && oNode.nodes.length > 0) {
+            var bFound = this._updateTaskNodeChildren(
+              oNode.nodes,
+              sTaskId,
+              aNewChildren
+            );
+            if (bFound) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+      },
+
+      /**
+       * Expand node Task dalam tree UI
+       * @param {string} sTaskId - ID task yang akan di-expand
+       */
+      _expandTaskNode: function (sTaskId) {
+        var oTree = this.byId("tree");
+        var aItems = oTree.getItems();
+
+        // Iterasi items di tree untuk menemukan node Task
+        for (var i = 0; i < aItems.length; i++) {
+          var oItem = aItems[i];
+          var oContext = oItem.getBindingContext("taskTree");
+
+          if (
+            oContext &&
+            oContext.getProperty("type") === "task" &&
+            oContext.getProperty("ID") === sTaskId
+          ) {
+            // Node ditemukan, expand
+            oTree.expand(oTree.indexOfItem(oItem));
+            break;
+          }
+        }
+      },
       // ---------------------------------------Chat Bot -------------------------------------
 
       onSubmitQuery: async function () {

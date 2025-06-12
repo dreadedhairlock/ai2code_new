@@ -12,6 +12,12 @@
                 press=".onCreateSubTask"
             />
             <Button
+                icon="sap-icon://add"
+                tooltip="Create Bot"
+                press=".onCreateBotInstance"
+                type="Emphasized"
+            />
+            <Button
                 icon="sap-icon://edit"
                 tooltip="Edit"
                 press=".onEditSubTask"

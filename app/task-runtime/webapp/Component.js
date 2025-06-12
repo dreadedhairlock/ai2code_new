@@ -43,7 +43,6 @@ sap.ui.define(
         }
       },
 
-      // Ganti _loadBotInstances dengan _loadMainTasks
       _loadMainTasks: function () {
         return this.getModel()
           .bindList("/Tasks", null, null, [
