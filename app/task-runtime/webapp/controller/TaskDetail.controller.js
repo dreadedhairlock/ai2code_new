@@ -17,7 +17,7 @@ sap.ui.define(
     "sap/ui/core/Fragment",
     "sap/m/ComboBox",
     "sap/m/FormattedText",
-    "sap/ui/core/ListItem"
+    "sap/ui/core/ListItem",
   ],
   function (
     Controller,
@@ -44,6 +44,7 @@ sap.ui.define(
     return Controller.extend("task-runtime.controller.TaskDetail", {
       // Initialize router & chat history
       onInit: function () {
+        this.oFlexibleColumnLayout = this.byId("flexibleColumnLayout");
         const oRouter = this.getOwnerComponent().getRouter();
         const oModel = this.getOwnerComponent().getModel();
 
@@ -59,6 +60,58 @@ sap.ui.define(
         this._currentChatId = null;
         this._loadHistoryFromStorage();
         this.startNewChat();
+      },
+
+      onToggleBeginColumn: function () {
+        var sCurrentLayout = this.oFlexibleColumnLayout.getLayout();
+
+        if (sCurrentLayout === "ThreeColumnsEndExpanded") {
+          this.oFlexibleColumnLayout.setLayout("TwoColumnsMidExpanded");
+        } else if (sCurrentLayout === "TwoColumnsMidExpanded") {
+          this.oFlexibleColumnLayout.setLayout("ThreeColumnsEndExpanded");
+        } else if (sCurrentLayout === "OneColumn") {
+          this.oFlexibleColumnLayout.setLayout("TwoColumnsMidExpanded");
+        }
+      },
+
+      // Navigation ke column pertama
+      onNavToBeginColumn: function () {
+        this.oFlexibleColumnLayout.setLayout("OneColumn");
+      },
+
+      // Navigation ke column tengah
+      onNavToMidColumn: function () {
+        this.oFlexibleColumnLayout.setLayout("TwoColumnsMidExpanded");
+      },
+
+      // Full screen untuk column tengah
+      onMidColumnFullScreen: function () {
+        this.oFlexibleColumnLayout.setLayout("MidColumnFullScreen");
+      },
+
+      // Exit full screen untuk column tengah
+      onExitMidColumnFullScreen: function () {
+        this.oFlexibleColumnLayout.setLayout("ThreeColumnsEndExpanded");
+      },
+
+      // Tampilkan column akhir (details)
+      onShowEndColumn: function () {
+        this.oFlexibleColumnLayout.setLayout("ThreeColumnsEndExpanded");
+      },
+
+      // Full screen untuk column akhir
+      onEndColumnFullScreen: function () {
+        this.oFlexibleColumnLayout.setLayout("EndColumnFullScreen");
+      },
+
+      // Exit full screen untuk column akhir
+      onExitEndColumnFullScreen: function () {
+        this.oFlexibleColumnLayout.setLayout("ThreeColumnsEndExpanded");
+      },
+
+      // Tutup column akhir
+      onCloseEndColumn: function () {
+        this.oFlexibleColumnLayout.setLayout("TwoColumnsMidExpanded");
       },
 
       // Handle selecting a context‐node in the list
@@ -153,7 +206,7 @@ sap.ui.define(
               value: initialPath,
             }),
 
-            new FormattedText("CNPathHelp", {
+            new FormattedText("CNPathHelpCreate", {
               htmlText:
                 "<em>Supported formats:</em><br/>• Simple: <code>user.name</code><br/>• Arrays: <code>user.addresses[0].street</code><br/>• Nested: <code>data.items[2].properties[0].value</code>",
               width: "100%",
@@ -230,9 +283,67 @@ sap.ui.define(
         this.oCreateDialog.close();
       },
 
+      onDeleteCNData: function () {
+        const oTree = this.byId("contextTree");
+        const oSelected = oTree.getSelectedItem();
+
+        if (!oSelected) {
+          MessageToast.show("Please select a context node to delete!");
+          return;
+        }
+
+        const oJsonCtx = oSelected.getBindingContext("contextNodes");
+        const sID = oJsonCtx.getProperty("ID");
+
+        if (!sID) {
+          MessageToast.show("Select one context node item first!");
+          return;
+        }
+
+        const sPath = "/ContextNodes('" + sID + "')";
+
+        // Tampilkan konfirmasi sebelum delete
+        MessageBox.confirm(
+          "Are you sure you want to delete this context node?",
+          {
+            title: "Confirm Deletion",
+            icon: MessageBox.Icon.WARNING,
+            actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+            emphasizedAction: MessageBox.Action.CANCEL,
+            onClose: async (sAction) => {
+              if (sAction === MessageBox.Action.OK) {
+                try {
+                  const oODataModel = this.getOwnerComponent().getModel();
+                  const oContext = oODataModel.bindContext(sPath);
+
+                  // Pastikan context valid
+                  await oContext.requestObject();
+                  const oBoundContext = oContext.getBoundContext();
+
+                  if (oBoundContext) {
+                    await oBoundContext.delete();
+                    MessageToast.show("Context node deleted successfully.");
+                    // Reload ulang tree/list
+                    await this.getOwnerComponent()._loadContextNodes(
+                      this._sTaskId
+                    );
+                  } else {
+                    MessageToast.show("Could not find context with ID: " + sID);
+                  }
+                } catch (oError) {
+                  console.error("Delete error:", oError);
+                  MessageToast.show("Error: " + (oError.message || oError));
+                }
+              }
+              // Jika Cancel, tidak ada yang terjadi
+            },
+          }
+        );
+      },
+
       // Edit an existing Context Node
       onEditCNData: function () {
-        const oTree = this.byId("docTree");
+        const oTree = this.byId("contextTree");
         const oSel = oTree.getSelectedItem();
         const oCtx = oSel.getBindingContext("contextNodes");
         const sId = oCtx.getProperty("ID");
@@ -281,13 +392,47 @@ sap.ui.define(
               editable: false,
             }),
             new Label({ text: "Path" }),
-            new Input("CNPathEdit", { value: oData.path }),
+            new Input("CNPathEdit", {
+              value: oData.path,
+              required: true,
+              liveChange: this._validateCNCreateForm.bind(this),
+            }),
+
+            new FormattedText("CNPathHelpEdit", {
+              htmlText:
+                "<em>Supported formats:</em><br/>• Simple: <code>user.name</code><br/>• Arrays: <code>user.addresses[0].street</code><br/>• Nested: <code>data.items[2].properties[0].value</code>",
+              width: "100%",
+            }),
+
             new Label({ text: "Label" }),
-            new Input("CNLabelEdit", { value: oData.label }),
+            new Input("CNLabelEdit", {
+              value: oData.label,
+              required: true,
+              liveChange: this._validateCNCreateForm.bind(this),
+            }),
             new Label({ text: "Type" }),
-            new Input("CNTypeEdit", { value: oData.type }),
+            new ComboBox("CNTypeEdit", {
+              value: oData.type,
+              selectedKey: oData.type,
+              required: true,
+              items: [
+                new ListItem({ key: "string", text: "String" }),
+                new ListItem({ key: "number", text: "Number" }),
+                new ListItem({ key: "boolean", text: "Boolean" }),
+                new ListItem({ key: "array", text: "Array" }),
+                new ListItem({ key: "object", text: "Object" }),
+                new ListItem({ key: "date", text: "Date" }),
+              ],
+              selectionChange: this._validateCNCreateForm.bind(this),
+            }),
+
             new Label({ text: "Value" }),
-            new Input("CNValueEdit", { value: oData.value }),
+            new TextArea("CNValueEdit", {
+              value: oData.value,
+              required: true,
+              rows: 3,
+              liveChange: this._validateCNCreateForm.bind(this),
+            }),
           ],
         });
       },
@@ -351,7 +496,7 @@ sap.ui.define(
         var sID = oContext.getProperty("ID");
         var sType = oContext.getProperty("type");
 
-        var oTree = this.byId("tree");
+        var oTree = this.byId("taskAndBotTree");
         var oBinding = oTree.getBinding("items");
         var iItemIndex = oTree.indexOfItem(oSelectedItem);
         var oSelectedContext = oBinding.getContextByIndex(iItemIndex);
@@ -443,7 +588,7 @@ sap.ui.define(
        */
       onCreateSubTask: function () {
         // Dapatkan node yang dipilih (harus Bot Instance)
-        var oTree = this.byId("tree");
+        var oTree = this.byId("taskAndBotTree");
         var oSelectedItem = oTree.getSelectedItem();
 
         // Validasi jika item dipilih dan tipenya adalah bot
@@ -523,18 +668,18 @@ sap.ui.define(
               noDataText: "No task types found",
               title: "Select Task Type",
               items: {
-                path: "/TaskType", // Sesuaikan dengan entity set OData Anda
-                template: new StandardListItem({
+                path: "/TaskType",
+                template: new sap.m.StandardListItem({
                   title: "{name}",
                   description: "{description}",
-                  info: "{ID}", // OData V4 tidak menggunakan highlightText
+                  highlightText: "{ID}", // ID placeholder
                 }),
               },
               confirm: function (oEvent) {
                 const oSelectedItem = oEvent.getParameter("selectedItem");
                 if (oSelectedItem) {
-                  Element.getElementById("taskTypeIdDetail").setValue(
-                    oSelectedItem.getInfo()
+                  Element.getElementById("taskTypeId").setValue(
+                    oSelectedItem.getHighlightText()
                   );
                 }
               }.bind(this),
@@ -659,7 +804,7 @@ sap.ui.define(
        */
       _refreshSelectedBotNode: function (sBotId) {
         // Dapatkan Tree UI control
-        var oTree = this.byId("tree");
+        var oTree = this.byId("taskAndBotTree");
         if (!oTree) {
           MessageToast.show("Tree control not found");
           return;
@@ -763,7 +908,7 @@ sap.ui.define(
        * @param {string} sBotId - ID bot instance yang akan di-expand
        */
       _expandBotNode: function (sBotId) {
-        var oTree = this.byId("tree");
+        var oTree = this.byId("taskAndBotTree");
         var aItems = oTree.getItems();
 
         // Iterasi items di tree untuk menemukan node Bot Instance
@@ -784,7 +929,7 @@ sap.ui.define(
       },
 
       onEditSubTask: function () {
-        const oTree = this.byId("tree");
+        const oTree = this.byId("taskAndBotTree");
         const oSelected = oTree.getSelectedItem();
 
         if (!oSelected || oSelected.getProperty("type") == "bot") {
@@ -794,7 +939,7 @@ sap.ui.define(
       },
 
       onDeleteSubTask: function () {
-        const oTree = this.byId("tree");
+        const oTree = this.byId("taskAndBotTree");
         const oSelected = oTree.getSelectedItem();
 
         if (!oSelected) {
@@ -857,7 +1002,7 @@ sap.ui.define(
        */
       onCreateBotInstance: function () {
         // Dapatkan node Task yang saat ini dipilih
-        var oTree = this.byId("tree");
+        var oTree = this.byId("taskAndBotTree");
         var oSelectedItem = oTree.getSelectedItem();
 
         // Validasi jika item dipilih dan tipenya adalah task
@@ -878,7 +1023,7 @@ sap.ui.define(
         var sTaskName = oContext.getProperty("name") || "Task";
 
         // Tampilkan dialog untuk membuat BotInstance baru
-        this._openSimpleCreateBotInstanceDialog(sTaskId, sTaskName);
+        this._openCreateBotInstanceDialog(sTaskId, sTaskName);
       },
 
       /* =========================================================== */
@@ -890,7 +1035,7 @@ sap.ui.define(
        * @param {string} sTaskId - ID task yang menjadi parent
        * @param {string} sTaskName - Nama task untuk ditampilkan di dialog
        */
-      _openSimpleCreateBotInstanceDialog: function (sTaskId, sTaskName) {
+      _openCreateBotInstanceDialog: function (sTaskId, sTaskName) {
         // Siapkan model untuk dialog dengan hardcoded bot types
         var oDialogModel = new JSONModel({
           taskId: sTaskId,
@@ -1007,9 +1152,10 @@ sap.ui.define(
           this.getView().setBusy(false);
         }
       },
+      
 
       onDeleteBotInstance: function () {
-        const oTree = this.byId("tree");
+        const oTree = this.byId("taskAndBotTree");
         const oSelected = oTree.getSelectedItem();
 
         if (!oSelected) {
@@ -1072,7 +1218,7 @@ sap.ui.define(
        */
       _refreshSelectedTaskNode: function (sTaskId) {
         // Dapatkan Tree UI control
-        var oTree = this.byId("tree");
+        var oTree = this.byId("taskAndBotTree");
         if (!oTree) {
           MessageToast.show("Tree control not found");
           return;
@@ -1176,7 +1322,7 @@ sap.ui.define(
        * @param {string} sTaskId - ID task yang akan di-expand
        */
       _expandTaskNode: function (sTaskId) {
-        var oTree = this.byId("tree");
+        var oTree = this.byId("taskAndBotTree");
         var aItems = oTree.getItems();
 
         // Iterasi items di tree untuk menemukan node Task

@@ -1,4 +1,2 @@
-ID,name,description,createdAt
-550e8400-e29b-41d4-a716-446655440000,Classification,Classify input documents,2024-06-01T10:00:00Z
-550e8400-e29b-41d4-a716-446655440001,Extraction,Extract entities from text,2024-06-01T10:10:00Z
-550e8400-e29b-41d4-a716-446655440002,Translation,Translate text from English to German,2024-06-01T10:20:00Z
+ID,name,description,autoRun,isMain,createdAt,createdBy,modifiedAt,modifiedBy
+17f0ad88-ae6b-4114-bc4b-e8e15ae0cceb,SimpleRAPReport,Simple RAP generate Report,,X,,,,

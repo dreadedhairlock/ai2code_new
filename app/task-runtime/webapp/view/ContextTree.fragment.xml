@@ -3,28 +3,13 @@
     xmlns:core="sap.ui.core"
 >
     <VBox height="50%">
-        <Toolbar>
-            <Title text="Context Tree" />
-            <ToolbarSpacer />
-            <Button
-                icon="sap-icon://add"
-                tooltip="Create"
-                press=".onCreateCNData"
-            />
-            <Button
-                icon="sap-icon://delete"
-                tooltip="Delete"
-                type="Reject"
-                press=".onDeleteCNData"
-            />
-        </Toolbar>
         <ScrollContainer
             height="90%"
             vertical="true"
             horizontal="false"
         >
             <Tree
-                id="docTree"
+                id="contextTree"
                 mode="SingleSelectMaster"
                 items="{
           path: 'contextNodes>/nodes'
