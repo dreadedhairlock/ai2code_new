@@ -57,24 +57,40 @@ sap.ui.define(
 
       // Handle selecting a context‐node in the list
       onCNItemPress: function (oEvent) {
+        // Get the clicked item
         const oItem = oEvent.getParameter("listItem");
-        const oCtx = oItem.getBindingContext("contextNodes");
-        const sUuid = oCtx.getProperty("ID");
-        if (!sUuid) {
+        if (!oItem) {
           return;
         }
 
-        const sPath = `/ContextNodes('${sUuid}')`;
-        const oOData = this.getOwnerComponent().getModel();
+        // Get the binding context and node data
+        const oCtx = oItem.getBindingContext("contextNodes");
+        if (!oCtx) {
+          return;
+        }
 
-        oOData
-          .bindContext(sPath)
-          .requestObject()
-          .then(
-            function () {
-              this.byId("ContextNodeForm").bindElement({ path: sPath });
-            }.bind(this)
-          );
+        // Get node data from the context
+        const oNode = oCtx.getObject();
+
+        // Store the selected node's attributes
+        this._selectedNodePath = oNode.path;
+        this._selectedNodeIsFolder = oNode.isFolder;
+        this._selectedNodeLabel = oNode.label;
+
+        // If it's a data node with ID (not a folder), bind to the form
+        if (oNode.ID) {
+          const sPath = `/ContextNodes('${oNode.ID}')`;
+          const oOData = this.getOwnerComponent().getModel();
+
+          oOData
+            .bindContext(sPath)
+            .requestObject()
+            .then(
+              function () {
+                this.byId("ContextNodeForm").bindElement({ path: sPath });
+              }.bind(this)
+            );
+        }
       },
 
       // Create new Context Node dialog
@@ -90,11 +106,17 @@ sap.ui.define(
           }),
           endButton: new Button({
             text: "Cancel",
-            press: () => this.oCreateDialog.close(),
+            press: () => {
+              this.oCreateDialog.close();
+              this._selectedNodePath = null;
+              this._selectedNodeIsFolder = false;
+            },
           }),
           afterClose: () => {
             this.oCreateDialog.destroy();
             this.oCreateDialog = null;
+            this._selectedNodePath = null;
+            this._selectedNodeIsFolder = false;
           },
         });
         this.getView().addDependent(this.oCreateDialog);
@@ -103,6 +125,16 @@ sap.ui.define(
 
       // Build form for creating a Context Node
       _createCNFormForCreate: function () {
+        // Pre-fill with path from selected node
+        let initialPath = "";
+
+        if (this._selectedNodePath) {
+          // For SAP.m.Tree, use the exact path from the selected node
+          initialPath = this._selectedNodePath;
+        }
+
+        // Path information text to help the user
+        let pathInfo = "Current path: " + (initialPath || "root");
         return new SimpleForm({
           content: [
             new Label({ text: "Task ID" }),
@@ -115,7 +147,9 @@ sap.ui.define(
               placeholder: "Enter path",
               required: true,
               liveChange: this._validateCNCreateForm.bind(this),
+              value: initialPath,
             }),
+
             new Label({ text: "Label" }),
             new Input("CNLabelCreate", {
               placeholder: "Enter label",
@@ -172,6 +206,9 @@ sap.ui.define(
         const oBinding = oModel.bindList("/ContextNodes");
         await oBinding.create(oNew).created();
         MessageToast.show("Context Node created");
+
+        this._selectedNodePath = null;
+        this._selectedNodeIsFolder = false;
 
         await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
         this.oCreateDialog.close();
