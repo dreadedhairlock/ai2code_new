@@ -15,6 +15,9 @@ sap.ui.define(
     "sap/m/MessageBox",
     "sap/m/SelectDialog",
     "sap/ui/core/Fragment",
+    "sap/m/ComboBox",
+    "sap/m/FormattedText",
+    "sap/ui/core/ListItem"
   ],
   function (
     Controller,
@@ -31,7 +34,10 @@ sap.ui.define(
     MessageToast,
     MessageBox,
     SelectDialog,
-    Fragment
+    Fragment,
+    ComboBox,
+    FormattedText,
+    ListItem
   ) {
     "use strict";
 
@@ -95,7 +101,18 @@ sap.ui.define(
 
       // Create new Context Node dialog
       onCreateCNData: function () {
-        const oForm = this._createCNFormForCreate();
+        // Store current path in a temporary variable that won't be reset
+        if (this._selectedNodePath && !this._lastSelectedNodePath) {
+          this._lastSelectedNodePath = this._selectedNodePath;
+        }
+
+        // Use either the currently selected path or the last stored path
+        const pathToUse =
+          this._selectedNodePath || this._lastSelectedNodePath || "";
+
+        // Create form with the correct path
+        const oForm = this._createCNFormForCreate(pathToUse);
+
         this.oCreateDialog = new Dialog({
           title: "Add New Context Node",
           content: [oForm],
@@ -108,15 +125,11 @@ sap.ui.define(
             text: "Cancel",
             press: () => {
               this.oCreateDialog.close();
-              this._selectedNodePath = null;
-              this._selectedNodeIsFolder = false;
             },
           }),
           afterClose: () => {
             this.oCreateDialog.destroy();
             this.oCreateDialog = null;
-            this._selectedNodePath = null;
-            this._selectedNodeIsFolder = false;
           },
         });
         this.getView().addDependent(this.oCreateDialog);
@@ -124,17 +137,7 @@ sap.ui.define(
       },
 
       // Build form for creating a Context Node
-      _createCNFormForCreate: function () {
-        // Pre-fill with path from selected node
-        let initialPath = "";
-
-        if (this._selectedNodePath) {
-          // For SAP.m.Tree, use the exact path from the selected node
-          initialPath = this._selectedNodePath;
-        }
-
-        // Path information text to help the user
-        let pathInfo = "Current path: " + (initialPath || "root");
+      _createCNFormForCreate: function (initialPath) {
         return new SimpleForm({
           content: [
             new Label({ text: "Task ID" }),
@@ -144,10 +147,16 @@ sap.ui.define(
             }),
             new Label({ text: "Path" }),
             new Input("CNPathCreate", {
-              placeholder: "Enter path",
+              placeholder: "e.g., documents.section1",
               required: true,
               liveChange: this._validateCNCreateForm.bind(this),
               value: initialPath,
+            }),
+
+            new FormattedText("CNPathHelp", {
+              htmlText:
+                "<em>Supported formats:</em><br/>• Simple: <code>user.name</code><br/>• Arrays: <code>user.addresses[0].street</code><br/>• Nested: <code>data.items[2].properties[0].value</code>",
+              width: "100%",
             }),
 
             new Label({ text: "Label" }),
@@ -157,15 +166,25 @@ sap.ui.define(
               liveChange: this._validateCNCreateForm.bind(this),
             }),
             new Label({ text: "Type" }),
-            new Input("CNTypeCreate", {
-              placeholder: "Enter type",
+            new ComboBox("CNTypeCreate", {
+              placeholder: "Select type",
               required: true,
-              liveChange: this._validateCNCreateForm.bind(this),
+              items: [
+                new ListItem({ key: "string", text: "String" }),
+                new ListItem({ key: "number", text: "Number" }),
+                new ListItem({ key: "boolean", text: "Boolean" }),
+                new ListItem({ key: "array", text: "Array" }),
+                new ListItem({ key: "object", text: "Object" }),
+                new ListItem({ key: "date", text: "Date" }),
+              ],
+              selectionChange: this._validateCNCreateForm.bind(this),
             }),
+
             new Label({ text: "Value" }),
-            new Input("CNValueCreate", {
-              placeholder: "Enter value",
+            new TextArea("CNValueCreate", {
+              placeholder: "Enter value (JSON format for objects/arrays)",
               required: true,
+              rows: 3,
               liveChange: this._validateCNCreateForm.bind(this),
             }),
           ],
@@ -206,9 +225,6 @@ sap.ui.define(
         const oBinding = oModel.bindList("/ContextNodes");
         await oBinding.create(oNew).created();
         MessageToast.show("Context Node created");
-
-        this._selectedNodePath = null;
-        this._selectedNodeIsFolder = false;
 
         await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
         this.oCreateDialog.close();
