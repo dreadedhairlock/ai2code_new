@@ -16,7 +16,7 @@ sap.ui.define(
     "sap/m/SelectDialog",
     "sap/ui/core/Fragment",
   ],
-  (
+  function (
     Controller,
     JSONModel,
     Dialog,
@@ -32,55 +32,57 @@ sap.ui.define(
     MessageBox,
     SelectDialog,
     Fragment
-  ) => {
+  ) {
     "use strict";
 
     return Controller.extend("task-runtime.controller.TaskDetail", {
+      // Initialize router & chat history
       onInit: function () {
         const oRouter = this.getOwnerComponent().getRouter();
         const oModel = this.getOwnerComponent().getModel();
+
         oRouter.attachRouteMatched(
           function (oEvent) {
             this._sTaskId = oEvent.getParameter("arguments").taskId;
             oModel.refresh();
           }.bind(this)
         );
+
+        this._chatHistory = [];
+        this._currentMessages = [];
+        this._currentChatId = null;
+        this._loadHistoryFromStorage();
+        this.startNewChat();
       },
 
+      // Handle selecting a context‐node in the list
       onCNItemPress: function (oEvent) {
-        // 1) get the pressed item context
         const oItem = oEvent.getParameter("listItem");
-        const oTreeCtx = oItem.getBindingContext("contextNodes");
-        const sUuid = oTreeCtx.getProperty("ID");
-
+        const oCtx = oItem.getBindingContext("contextNodes");
+        const sUuid = oCtx.getProperty("ID");
         if (!sUuid) {
           return;
         }
 
-        // 2) assemble your read path and fetch full entity
-        const sReadPath = `/ContextNodes('${sUuid}')`;
+        const sPath = `/ContextNodes('${sUuid}')`;
         const oOData = this.getOwnerComponent().getModel();
+
         oOData
-          .bindContext(sReadPath)
+          .bindContext(sPath)
           .requestObject()
           .then(
             function () {
-              const oCNForm = this.byId("ContextNodeForm");
-
-              const sPath = "/ContextNodes('" + sUuid + "')";
-
-              oCNForm.bindElement({ path: sPath });
+              this.byId("ContextNodeForm").bindElement({ path: sPath });
             }.bind(this)
           );
       },
 
-      // ---------------------------------------Context Tree -------------------------------------
+      // Create new Context Node dialog
       onCreateCNData: function () {
-        const oCNForm = this._createCNFormForCreate();
-
+        const oForm = this._createCNFormForCreate();
         this.oCreateDialog = new Dialog({
           title: "Add New Context Node",
-          content: [oCNForm],
+          content: [oForm],
           beginButton: new Button({
             text: "Create",
             enabled: false,
@@ -88,95 +90,18 @@ sap.ui.define(
           }),
           endButton: new Button({
             text: "Cancel",
-            press: function () {
-              this.oCreateDialog.close();
-            }.bind(this),
+            press: () => this.oCreateDialog.close(),
           }),
-          afterClose: function () {
+          afterClose: () => {
             this.oCreateDialog.destroy();
             this.oCreateDialog = null;
-          }.bind(this),
+          },
         });
-
         this.getView().addDependent(this.oCreateDialog);
         this.oCreateDialog.open();
       },
 
-      _clearCNInputs: function () {
-        const aInputIds = ["CNPath", "CNLabel", "CNType", "CNValue"];
-        aInputIds.forEach((id) => {
-          const oInput = sap.ui.getCore().byId(id);
-          if (oInput) {
-            oInput.setValue("");
-          }
-        });
-      },
-
-      _createContextNodes: async function () {
-        const sPath = Element.getElementById("CNPathCreate").getValue();
-        const sLabel = Element.getElementById("CNLabelCreate").getValue();
-        const sType = Element.getElementById("CNTypeCreate").getValue();
-        const sValue = Element.getElementById("CNValueCreate").getValue();
-
-        const oNewContextNodes = {
-          task_ID: this._sTaskId,
-          path: sPath,
-          label: sLabel,
-          type: sType,
-          value: sValue,
-        };
-
-        const oModel = this.getOwnerComponent().getModel();
-        const oBinding = oModel.bindList("/ContextNodes");
-        await oBinding.create(oNewContextNodes).created();
-        MessageToast.show("Context Nodes created");
-
-        await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
-        this.oCreateDialog.close();
-      },
-
-      _updateContextNodes: async function (sContextNodeId) {
-        const sPath = Element.getElementById("CNPathEdit").getValue();
-        const sLabel = Element.getElementById("CNLabelEdit").getValue();
-        const sType = Element.getElementById("CNTypeEdit").getValue();
-        const sValue = Element.getElementById("CNValueEdit").getValue();
-
-        try {
-          const oModel = this.getOwnerComponent().getModel();
-          const sEntityPath = "/ContextNodes('" + sContextNodeId + "')";
-
-          // Bind ke specific context untuk update
-          const oContext = oModel.bindContext(sEntityPath);
-          await oContext.requestObject(); // Load existing data
-          const oBoundContext = oContext.getBoundContext();
-
-          if (!oBoundContext) {
-            MessageToast.show("Context node not found!");
-            return;
-          }
-
-          // Update properties
-          oBoundContext.setProperty("path", sPath);
-          oBoundContext.setProperty("label", sLabel);
-          oBoundContext.setProperty("type", sType);
-          oBoundContext.setProperty("value", sValue);
-
-          MessageToast.show("Context Node updated successfully!");
-
-          // Close dialog dan refresh data
-          this.oEditDialog.close();
-
-          await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
-
-          this._refreshCNContent();
-        } catch (oError) {
-          console.error("Update error:", oError);
-          MessageToast.show(
-            "Error updating context node: " + (oError.message || oError)
-          );
-        }
-      },
-
+      // Build form for creating a Context Node
       _createCNFormForCreate: function () {
         return new SimpleForm({
           content: [
@@ -185,28 +110,24 @@ sap.ui.define(
               value: this._sTaskId,
               editable: false,
             }),
-
             new Label({ text: "Path" }),
             new Input("CNPathCreate", {
               placeholder: "Enter path",
               required: true,
               liveChange: this._validateCNCreateForm.bind(this),
             }),
-
             new Label({ text: "Label" }),
             new Input("CNLabelCreate", {
               placeholder: "Enter label",
               required: true,
               liveChange: this._validateCNCreateForm.bind(this),
             }),
-
             new Label({ text: "Type" }),
             new Input("CNTypeCreate", {
               placeholder: "Enter type",
               required: true,
               liveChange: this._validateCNCreateForm.bind(this),
             }),
-
             new Label({ text: "Value" }),
             new Input("CNValueCreate", {
               placeholder: "Enter value",
@@ -217,7 +138,88 @@ sap.ui.define(
         });
       },
 
-      _createCNFormForEdit: function (oEditData) {
+      // Enable Create button when all fields have values
+      _validateCNCreateForm: function () {
+        const fields = [
+          "CNPathCreate",
+          "CNLabelCreate",
+          "CNTypeCreate",
+          "CNValueCreate",
+        ];
+        const allFilled = fields.every((id) => {
+          const inp = sap.ui.getCore().byId(id);
+          return inp && inp.getValue().trim().length > 0;
+        });
+        this.oCreateDialog.getBeginButton().setEnabled(allFilled);
+      },
+
+      // Send new Context Node to the backend
+      _createContextNodes: async function () {
+        const sPath = Element.getElementById("CNPathCreate").getValue();
+        const sLabel = Element.getElementById("CNLabelCreate").getValue();
+        const sType = Element.getElementById("CNTypeCreate").getValue();
+        const sValue = Element.getElementById("CNValueCreate").getValue();
+
+        const oNew = {
+          task_ID: this._sTaskId,
+          path: sPath,
+          label: sLabel,
+          type: sType,
+          value: sValue,
+        };
+
+        const oModel = this.getOwnerComponent().getModel();
+        const oBinding = oModel.bindList("/ContextNodes");
+        await oBinding.create(oNew).created();
+        MessageToast.show("Context Node created");
+
+        await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+        this.oCreateDialog.close();
+      },
+
+      // Edit an existing Context Node
+      onEditCNData: function () {
+        const oTree = this.byId("docTree");
+        const oSel = oTree.getSelectedItem();
+        const oCtx = oSel.getBindingContext("contextNodes");
+        const sId = oCtx.getProperty("ID");
+
+        if (!sId) {
+          MessageToast.show("Please select a context node to edit!");
+          return;
+        }
+
+        const data = {
+          path: oCtx.getProperty("path"),
+          label: oCtx.getProperty("label"),
+          type: oCtx.getProperty("type"),
+          value: oCtx.getProperty("value"),
+        };
+
+        const oForm = this._createCNFormForEdit(data);
+        this.oEditDialog = new Dialog({
+          title: "Edit Context Node",
+          content: [oForm],
+          beginButton: new Button({
+            text: "Update",
+            press: this._updateContextNodes.bind(this, sId),
+          }),
+          endButton: new Button({
+            text: "Cancel",
+            press: () => this.oEditDialog.close(),
+          }),
+          afterClose: () => {
+            this.oEditDialog.destroy();
+            this.oEditDialog = null;
+          },
+        });
+
+        this.getView().addDependent(this.oEditDialog);
+        this.oEditDialog.open();
+      },
+
+      // Build form for editing a Context Node
+      _createCNFormForEdit: function (oData) {
         return new SimpleForm({
           content: [
             new Label({ text: "Task ID" }),
@@ -225,157 +227,61 @@ sap.ui.define(
               value: this._sTaskId,
               editable: false,
             }),
-
             new Label({ text: "Path" }),
-            new Input("CNPathEdit", {
-              value: oEditData.path,
-              placeholder: "Enter path",
-            }),
-
+            new Input("CNPathEdit", { value: oData.path }),
             new Label({ text: "Label" }),
-            new Input("CNLabelEdit", {
-              value: oEditData.label,
-              placeholder: "Enter label",
-            }),
-
+            new Input("CNLabelEdit", { value: oData.label }),
             new Label({ text: "Type" }),
-            new Input("CNTypeEdit", {
-              value: oEditData.type,
-              placeholder: "Enter type",
-            }),
-
+            new Input("CNTypeEdit", { value: oData.type }),
             new Label({ text: "Value" }),
-            new Input("CNValueEdit", {
-              value: oEditData.value,
-              placeholder: "Enter value",
-            }),
+            new Input("CNValueEdit", { value: oData.value }),
           ],
         });
       },
 
-      _validateCNCreateForm: function () {
-        const aFieldIds = [
-          "CNPathCreate",
-          "CNLabelCreate",
-          "CNTypeCreate",
-          "CNValueCreate",
-        ];
-        const bAllFilled = aFieldIds.every((sId) => {
-          const oInput = sap.ui.getCore().byId(sId);
-          return oInput && oInput.getValue().trim().length > 0;
-        });
-        this.oCreateDialog.getBeginButton().setEnabled(bAllFilled);
-      },
+      // Submit changes for an existing Context Node
+      _updateContextNodes: async function (sContextNodeId) {
+        const sPath = Element.getElementById("CNPathEdit").getValue();
+        const sLabel = Element.getElementById("CNLabelEdit").getValue();
+        const sType = Element.getElementById("CNTypeEdit").getValue();
+        const sValue = Element.getElementById("CNValueEdit").getValue();
 
-      onDeleteCNData: function () {
-        const oTree = this.byId("docTree");
-        const oSelected = oTree.getSelectedItem();
+        try {
+          const oModel = this.getOwnerComponent().getModel();
+          const sEntityPath = `/ContextNodes('${sContextNodeId}')`;
+          const oContext = oModel.bindContext(sEntityPath);
 
-        if (!oSelected) {
-          MessageToast.show("Please select a context node to delete!");
-          return;
-        }
-
-        const oJsonCtx = oSelected.getBindingContext("contextNodes");
-        const sID = oJsonCtx.getProperty("ID");
-
-        if (!sID) {
-          MessageToast.show("Select one context node item first!");
-          return;
-        }
-
-        const sPath = "/ContextNodes('" + sID + "')";
-
-        // Tampilkan konfirmasi sebelum delete
-        MessageBox.confirm(
-          "Are you sure you want to delete this context node?",
-          {
-            title: "Confirm Deletion",
-            icon: MessageBox.Icon.WARNING,
-            actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
-            emphasizedAction: MessageBox.Action.CANCEL,
-            onClose: async (sAction) => {
-              if (sAction === MessageBox.Action.OK) {
-                try {
-                  const oODataModel = this.getOwnerComponent().getModel();
-                  const oContext = oODataModel.bindContext(sPath);
-
-                  // Pastikan context valid
-                  await oContext.requestObject();
-                  const oBoundContext = oContext.getBoundContext();
-
-                  if (oBoundContext) {
-                    await oBoundContext.delete();
-                    MessageToast.show("Context node deleted successfully.");
-                    // Reload ulang tree/list
-                    await this.getOwnerComponent()._loadContextNodes(
-                      this._sTaskId
-                    );
-                  } else {
-                    MessageToast.show("Could not find context with ID: " + sID);
-                  }
-                } catch (oError) {
-                  console.error("Delete error:", oError);
-                  MessageToast.show("Error: " + (oError.message || oError));
-                }
-              }
-              // Jika Cancel, tidak ada yang terjadi
-            },
+          await oContext.requestObject();
+          const oBound = oContext.getBoundContext();
+          if (!oBound) {
+            MessageToast.show("Context node not found");
+            return;
           }
-        );
-      },
 
-      onEditCNData: function () {
-        const oTree = this.byId("docTree");
-        const oSelected = oTree.getSelectedItem();
-        const oJsonCtx = oSelected.getBindingContext("contextNodes");
-        const sId = oJsonCtx.getProperty("ID");
+          oBound.setProperty("path", sPath);
+          oBound.setProperty("label", sLabel);
+          oBound.setProperty("type", sType);
+          oBound.setProperty("value", sValue);
 
-        if (!sId) {
-          MessageToast.show("Please select a context node item to edit!");
-          return;
+          MessageToast.show("Context Node updated");
+          this.oEditDialog.close();
+          await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+          this._refreshCNContent();
+        } catch (err) {
+          console.error("Update error:", err);
+          MessageToast.show("Error updating context node: " + err.message);
         }
-        const oEditData = {
-          ID: oJsonCtx.getProperty("ID"),
-          path: oJsonCtx.getProperty("path"),
-          label: oJsonCtx.getProperty("label"),
-          type: oJsonCtx.getProperty("type"),
-          value: oJsonCtx.getProperty("value"),
-        };
-
-        const oCNForm = this._createCNFormForEdit(oEditData);
-
-        this.oEditDialog = new Dialog({
-          title: "Edit Context Node",
-          content: [oCNForm],
-          beginButton: new Button({
-            text: "Update",
-            enabled: true, // Sudah terisi
-            press: this._updateContextNodes.bind(this, oEditData.ID),
-          }),
-          endButton: new Button({
-            text: "Cancel",
-            press: function () {
-              this.oEditDialog.close();
-            }.bind(this),
-          }),
-          afterClose: function () {
-            this.oEditDialog.destroy();
-            this.oEditDialog = null;
-          }.bind(this),
-        });
-
-        this.getView().addDependent(this.oEditDialog);
-        this.oEditDialog.open();
       },
 
+      // Refresh the bound ContextNode form
       _refreshCNContent: function () {
         const oForm = this.byId("ContextNodeForm");
-        const oElementBinding = oForm.getElementBinding();
-        if (oElementBinding) {
-          oElementBinding.refresh();
+        const oBind = oForm.getElementBinding();
+        if (oBind) {
+          oBind.refresh();
         }
       },
+
       // ---------------------------------------Context Tree -------------------------------------
 
       // -----------------------------------------Task Tree --------------------------------------
@@ -536,20 +442,6 @@ sap.ui.define(
             }),
           });
         }
-
-        // Reset form values
-        if (Element.getElementById("taskNameDetail")) {
-          Element.getElementById("taskNameDetail").setValue("");
-        }
-        if (Element.getElementById("taskDescriptionDetail")) {
-          Element.getElementById("taskDescriptionDetail").setValue("");
-        }
-        if (Element.getElementById("taskTypeIdDetail")) {
-          Element.getElementById("taskTypeIdDetail").setValue("");
-        }
-
-        // Disable create button initially
-        this.oSubmitDialogTaskTree.getBeginButton().setEnabled(false);
 
         // Reset form values
         if (Element.getElementById("taskNameDetail")) {
@@ -1250,7 +1142,7 @@ sap.ui.define(
           }
         }
       },
-           // ---------------------------------------Chat Bot -------------------------------------
+      // ---------------------------------------Chat Bot -------------------------------------
       conversationHistory: [],
 
       parseAIResponse: function (response) {
@@ -1401,16 +1293,16 @@ sap.ui.define(
               this.conversationHistory
             );
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+              }
+            );
             console.log(response);
             const data = await response.json();
             console.log(data);
@@ -1882,20 +1774,6 @@ sap.ui.define(
         this.loadChatSession(oChatData.id);
       },
 
-      // Initialize history on controller init
-      onInit: function () {
-        // Your existing onInit code...
-
-        // Initialize chat history
-        this._chatHistory = [];
-        this._currentMessages = [];
-        this._currentChatId = null;
-        this._loadHistoryFromStorage();
-
-        // Start with a new chat
-        this.startNewChat();
-      },
-
       // Helper function to escape HTML (keeping your existing function)
       escapeHtml: function (text) {
         const div = document.createElement("div");
@@ -1911,7 +1789,7 @@ sap.ui.define(
           this._oHistoryDialog = null;
         }
       },
-            // ---------------------------------------Chat Bot -------------------------------------
+      // ---------------------------------------Chat Bot -------------------------------------
     });
   }
 );
