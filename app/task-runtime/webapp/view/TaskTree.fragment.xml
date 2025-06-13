@@ -5,22 +5,33 @@
     <VBox height="50%">
         <Toolbar>
             <Title text="Task Tree" />
-            <ToolbarSpacer />
+        </Toolbar>
+        <Toolbar>
             <Button
                 icon="sap-icon://add"
-                tooltip="Create"
+                tooltip="Create Task"
                 press=".onCreateSubTask"
+                text="Task"
             />
             <Button
-                icon="sap-icon://edit"
-                tooltip="Edit"
-                press=".onEditSubTask"
+                icon="sap-icon://add"
+                tooltip="Create Bot"
+                press=".onCreateBotInstance"
+                text="Bot"
             />
             <Button
                 icon="sap-icon://delete"
                 tooltip="Delete"
                 type="Reject"
                 press=".onDeleteSubTask"
+                text="Task"
+            />
+            <Button
+                icon="sap-icon://delete"
+                tooltip="Delete"
+                type="Reject"
+                press=".onDeleteBotInstance"
+                text="Bot"
             />
         </Toolbar>
         <ScrollContainer
@@ -31,12 +42,19 @@
             <Tree
                 id="tree"
                 mode="SingleSelectMaster"
-                items="{path: 'botInstances>/'}"
+                items="{path: 'taskTree>/'}"
                 itemPress=".onTaskSelect"
                 selectionChange=".onTaskSelect"
             >
                 <StandardTreeItem
-                    title="{botInstances>type} : {botInstances>ID}"
+                    title="{=
+    ${taskTree>type}
+    + ' : '
+    + ( ${taskTree>name}
+        ? ${taskTree>name}
+        : ${taskTree>ID}
+      )
+  }"
                 />
             </Tree>
         </ScrollContainer>

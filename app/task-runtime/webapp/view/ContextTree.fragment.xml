@@ -12,10 +12,6 @@
                 press=".onCreateCNData"
             />
             <Button
-                icon="sap-icon://edit"
-                tooltip="Edit"
-            />
-            <Button
                 icon="sap-icon://delete"
                 tooltip="Delete"
                 type="Reject"

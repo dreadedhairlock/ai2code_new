@@ -13,6 +13,7 @@ sap.ui.define(
     "sap/ui/core/Element",
     "sap/m/MessageToast",
     "sap/m/MessageBox",
+    "sap/m/SelectDialog",
     "sap/ui/core/Fragment",
   ],
   (
@@ -29,6 +30,7 @@ sap.ui.define(
     Element,
     MessageToast,
     MessageBox,
+    SelectDialog,
     Fragment
   ) => {
     "use strict";
@@ -276,6 +278,12 @@ sap.ui.define(
 
         const oJsonCtx = oSelected.getBindingContext("contextNodes");
         const sID = oJsonCtx.getProperty("ID");
+
+        if (!sID) {
+          MessageToast.show("Select one context node item first!");
+          return;
+        }
+
         const sPath = "/ContextNodes('" + sID + "')";
 
         // Tampilkan konfirmasi sebelum delete
@@ -320,13 +328,13 @@ sap.ui.define(
       onEditCNData: function () {
         const oTree = this.byId("docTree");
         const oSelected = oTree.getSelectedItem();
+        const oJsonCtx = oSelected.getBindingContext("contextNodes");
+        const sId = oJsonCtx.getProperty("ID");
 
-        if (!oSelected) {
-          MessageToast.show("Please select a context node to edit!");
+        if (!sId) {
+          MessageToast.show("Please select a context node item to edit!");
           return;
         }
-
-        const oJsonCtx = oSelected.getBindingContext("contextNodes");
         const oEditData = {
           ID: oJsonCtx.getProperty("ID"),
           path: oJsonCtx.getProperty("path"),
@@ -373,73 +381,36 @@ sap.ui.define(
       // -----------------------------------------Task Tree --------------------------------------
       // This is Detail page
       onTaskSelect: function (oEvent) {
-        // Get the reference to the author list control by its ID
-        var oSelectedItem = oEvent.getParameter("listItem"); // atau "item"
-        var oContext = oSelectedItem.getBindingContext("botInstances");
-        var sID = oContext.getProperty("ID");
-        var sType = oContext.getProperty("type");
+        var oSelectedItem = oEvent.getParameter("listItem");
+        var oContext = oSelectedItem.getBindingContext("taskTree");
 
-        var oTree = this.byId("tree"),
-          aSelectedItems = oTree.getSelectedItems(),
-          aSelectedIndices = [];
-
-        for (var i = 0; i < aSelectedItems.length; i++) {
-          aSelectedIndices.push(oTree.indexOfItem(aSelectedItems[i]));
-        }
-
-        var oTree = this.byId("tree");
-        var oBinding = oTree.getBinding("items");
-        var iItemIndex = oTree.indexOfItem(aSelectedItems[0]);
-        var oNewParentContext = oBinding.getContextByIndex(iItemIndex);
-
-        if (!oNewParentContext) {
+        if (!oContext) {
+          console.error("No context found!");
           return;
         }
 
-        var oNewParent = oNewParentContext.getProperty();
+        var sID = oContext.getProperty("ID");
+        var sType = oContext.getProperty("type");
 
-        // Gunakan "nodes" sesuai struktur JSON Anda
-        if (!oNewParent.nodes) {
-          oNewParent.nodes = [];
+        var oTree = this.byId("tree");
+        var oBinding = oTree.getBinding("items");
+        var iItemIndex = oTree.indexOfItem(oSelectedItem);
+        var oSelectedContext = oBinding.getContextByIndex(iItemIndex);
+
+        if (!oSelectedContext) {
+          return;
         }
-        // Check if the selected node item is a botIsntances
-        if (sType == "bot") {
-          const oModel = this.getOwnerComponent().getModel();
-          oModel
-            .bindList("/BotInstances('" + sID + "')/tasks")
-            .requestContexts()
-            .then(
-              function (aContexts) {
-                var aData = aContexts.map(function (oContext) {
-                  var oObj = oContext.getObject();
-                  oObj.type = "task"; // add type tree 'bot'
-                  return oObj;
-                });
-                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                const oJSONModel = new JSONModel();
-                oJSONModel.setData({ results: aData });
 
-                aData.forEach(function (newItem) {
-                  var isDuplicate = oNewParent.nodes.some(function (
-                    existingItem
-                  ) {
-                    return existingItem.ID === newItem.ID;
-                  });
+        var oSelectedNode = oSelectedContext.getProperty();
 
-                  if (!isDuplicate) {
-                    oNewParent.nodes.push(newItem);
-                  }
-                });
-                // Refresh tree
+        if (!oSelectedNode.nodes) {
+          oSelectedNode.nodes = [];
+        }
 
-                oTree.getBinding("items").refresh();
-                oTree.expand(aSelectedIndices);
-              }.bind(this)
-            );
-          // If it's not a bot, then it must be a task
-          // If it is a task, only display the bot instances of the task when isMain is false
-        } else if (oContext.getProperty("isMain") == false) {
-          const oModel = this.getOwnerComponent().getModel();
+        const oModel = this.getOwnerComponent().getModel();
+
+        // Jika yang dipilih adalah TASK -> load BotInstances
+        if (sType === "task") {
           oModel
             .bindList("/Tasks('" + sID + "')/botInstances")
             .requestContexts()
@@ -447,38 +418,102 @@ sap.ui.define(
               function (aContexts) {
                 var aData = aContexts.map(function (oContext) {
                   var oObj = oContext.getObject();
-                  oObj.type = "bot"; // Tambahkan properti 'type' dengan nilai 'bot'
+                  oObj.type = "bot"; // Set type sebagai bot
+                  oObj.nodes = []; // Initialize nodes untuk children
                   return oObj;
                 });
-                //   Now aData is a plain JavaScript array -> can be used to create a JSONModel
-                const oJSONModel = new JSONModel();
-                oJSONModel.setData({ results: aData });
 
+                // Add children ke selected task node
                 aData.forEach(function (newItem) {
-                  var isDuplicate = oNewParent.nodes.some(function (
+                  var isDuplicate = oSelectedNode.nodes.some(function (
                     existingItem
                   ) {
                     return existingItem.ID === newItem.ID;
                   });
 
                   if (!isDuplicate) {
-                    oNewParent.nodes.push(newItem);
+                    oSelectedNode.nodes.push(newItem);
                   }
                 });
-                // Refresh tree
 
-                oTree.getBinding("items").refresh();
-                oTree.expand(aSelectedIndices);
+                // Refresh tree
+                this.getOwnerComponent().getModel("taskTree").updateBindings();
+                oTree.expand(iItemIndex);
               }.bind(this)
             );
         }
+        // Jika yang dipilih adalah BOT -> load sub-Tasks
+        else if (sType === "bot") {
+          oModel
+            .bindList("/BotInstances('" + sID + "')/tasks")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                var aData = aContexts.map(function (oContext) {
+                  var oObj = oContext.getObject();
+                  oObj.type = "task"; // Set type sebagai task
+                  oObj.nodes = []; // Initialize nodes untuk children
+                  return oObj;
+                });
 
-        // Refresh untuk update tampilan
+                // Add children ke selected bot node
+                aData.forEach(function (newItem) {
+                  var isDuplicate = oSelectedNode.nodes.some(function (
+                    existingItem
+                  ) {
+                    return existingItem.ID === newItem.ID;
+                  });
+
+                  if (!isDuplicate) {
+                    oSelectedNode.nodes.push(newItem);
+                  }
+                });
+
+                // Refresh tree
+                this.getOwnerComponent().getModel("taskTree").updateBindings();
+                oTree.expand(iItemIndex);
+              }.bind(this)
+            );
+        }
       },
 
       // -----------------------------------------Task Tree --------------------------------------
 
+      /**
+       * Handler untuk membuat Sub Task di bawah Bot Instance yang dipilih
+       */
       onCreateSubTask: function () {
+        // Dapatkan node yang dipilih (harus Bot Instance)
+        var oTree = this.byId("tree");
+        var oSelectedItem = oTree.getSelectedItem();
+
+        // Validasi jika item dipilih dan tipenya adalah bot
+        if (!oSelectedItem) {
+          MessageToast.show("Select the bot instance first");
+          return;
+        }
+
+        var oContext = oSelectedItem.getBindingContext("taskTree");
+        var sNodeType = oContext.getProperty("type");
+
+        if (sNodeType !== "bot") {
+          MessageToast.show(
+            "New tasks can only be created under a Bot Instance"
+          );
+          return;
+        }
+
+        // Simpan ID Bot Instance yang dipilih
+        this._selectedBotInstanceId = oContext.getProperty("ID");
+
+        // Buka dialog create task
+        this._openCreateTaskDialog();
+      },
+
+      /**
+       * Membuka dialog untuk pembuatan Task
+       */
+      _openCreateTaskDialog: function () {
         if (!this.oSubmitDialogTaskTree) {
           this.oSubmitDialogTaskTree = new Dialog({
             type: DialogType.Message,
@@ -489,7 +524,7 @@ sap.ui.define(
               text: "Create",
               enabled: false,
               press: function () {
-                this._createTask();
+                this._createSubTask();
                 this.oSubmitDialogTaskTree.close();
               }.bind(this),
             }),
@@ -502,26 +537,40 @@ sap.ui.define(
           });
         }
 
+        // Reset form values
+        if (Element.getElementById("taskNameDetail")) {
+          Element.getElementById("taskNameDetail").setValue("");
+        }
+        if (Element.getElementById("taskDescriptionDetail")) {
+          Element.getElementById("taskDescriptionDetail").setValue("");
+        }
+        if (Element.getElementById("taskTypeIdDetail")) {
+          Element.getElementById("taskTypeIdDetail").setValue("");
+        }
+
+        // Disable create button initially
+        this.oSubmitDialogTaskTree.getBeginButton().setEnabled(false);
+
+        // Reset form values
+        if (Element.getElementById("taskNameDetail")) {
+          Element.getElementById("taskNameDetail").setValue("");
+        }
+        if (Element.getElementById("taskDescriptionDetail")) {
+          Element.getElementById("taskDescriptionDetail").setValue("");
+        }
+        if (Element.getElementById("taskTypeIdDetail")) {
+          Element.getElementById("taskTypeIdDetail").setValue("");
+        }
+
+        // Disable create button initially
+        this.oSubmitDialogTaskTree.getBeginButton().setEnabled(false);
+
         this.oSubmitDialogTaskTree.open();
       },
 
-      onItemPress: function (oEvent) {
-        // Handle item press event
-        const oItem = oEvent.getSource();
-        const oContext = oItem.getBindingContext();
-        if (oContext) {
-          this._navToTaskRunDetail(oContext.getProperty("ID"));
-        } else {
-          MessageToast.show("No context available for the selected item.");
-        }
-      },
-
-      _navToTaskRunDetail: function (sTaskId) {
-        this.getOwnerComponent().getRouter().navTo("RouteTaskDetail", {
-          taskId: sTaskId,
-        });
-      },
-
+      /**
+       * Membuat dialog untuk memilih Task Type
+       */
       _createSelectTaskTypeDialog: function () {
         return this.oSelectTypeDialog
           ? this.oSelectTypeDialog
@@ -529,29 +578,32 @@ sap.ui.define(
               noDataText: "No task types found",
               title: "Select Task Type",
               items: {
-                path: "/TaskTypes",
-                template: new sap.m.StandardListItem({
+                path: "/TaskType", // Sesuaikan dengan entity set OData Anda
+                template: new StandardListItem({
                   title: "{name}",
                   description: "{description}",
-                  highlightText: "{ID}", // ID placeholder
+                  info: "{ID}", // OData V4 tidak menggunakan highlightText
                 }),
               },
               confirm: function (oEvent) {
                 const oSelectedItem = oEvent.getParameter("selectedItem");
                 if (oSelectedItem) {
-                  Element.getElementById("taskTypeId").setValue(
-                    oSelectedItem.getHighlightText()
+                  Element.getElementById("taskTypeIdDetail").setValue(
+                    oSelectedItem.getInfo()
                   );
                 }
               }.bind(this),
             });
       },
 
+      /**
+       * Membuat form untuk input Task
+       */
       _createTaskForm: function () {
         return new SimpleForm({
           content: [
             new Label({ text: "Task name" }),
-            new Input("taskName", {
+            new Input("taskNameDetail", {
               placeholder: "Enter task name",
               required: true,
               liveChange: function (oEvent) {
@@ -563,13 +615,13 @@ sap.ui.define(
             }),
 
             new Label({ text: "Description" }),
-            new TextArea("taskDescription", {
+            new TextArea("taskDescriptionDetail", {
               placeholder: "Enter task description",
               rows: 3,
             }),
 
             new Label({ text: "Type id" }),
-            new Input("taskTypeId", {
+            new Input("taskTypeIdDetail", {
               showValueHelp: true,
               valueHelpOnly: true,
               valueHelpRequest: function () {
@@ -584,38 +636,206 @@ sap.ui.define(
         });
       },
 
-      _createTask: function () {
-        const sTaskName = Element.getElementById("taskName").getValue();
-        const sTaskDescription =
-          Element.getElementById("taskDescription").getValue();
-        const sTaskTypeId = Element.getElementById("taskTypeId").getValue();
-        const oNewTask = {
-          name: sTaskName,
-          description: sTaskDescription,
-          type_ID: sTaskTypeId == "" ? null : sTaskTypeId,
-        };
-        const oModel = this.getOwnerComponent().getModel();
-        const sPath = "/createTaskWithBots(...)";
-        const oContextBinding = oModel.bindContext(sPath);
-        oContextBinding.setParameter("name", oNewTask.name);
-        oContextBinding.setParameter("description", oNewTask.description);
-        oContextBinding.setParameter("typeId", oNewTask.type_ID);
-        oContextBinding
-          .invoke()
-          .then(
-            function (oContext) {
-              MessageToast.show("Task created successfully");
-              this._navToTaskRunDetail(
-                oContextBinding.getBoundContext().getProperty("ID")
-              );
-              oModel.refresh();
-            }.bind(this)
-          )
-          .catch(
-            function (oError) {
-              MessageToast.show("Error creating task: " + oError.message);
-            }.bind(this)
-          );
+      /**
+       * Membuat Sub Task di bawah Bot Instance
+       * Dimodifikasi untuk menggunakan OData V4 dan binding ke Bot Instance yang dipilih
+       */
+      _createSubTask: function () {
+        // Validasi Bot Instance yang dipilih
+        if (!this._selectedBotInstanceId) {
+          MessageToast.show("Bot Instance not found");
+          return;
+        }
+
+        // Ambil nilai dari form
+        const sTaskName = Element.getElementById("taskNameDetail").getValue();
+        const sTaskDescription = Element.getElementById(
+          "taskDescriptionDetail"
+        ).getValue();
+        const sTaskTypeId =
+          Element.getElementById("taskTypeIdDetail").getValue();
+
+        // Set busy state
+        this.getView().setBusy(true);
+
+        try {
+          // Siapkan payload untuk Task
+          var oPayload = {
+            name: sTaskName,
+            description: sTaskDescription,
+            isMain: false, // Sub task, bukan main task
+            sequence: 0, // Default sequence
+            contextPath: "", // Default empty path
+            botInstance_ID: this._selectedBotInstanceId, // Set parent Bot Instance
+          };
+
+          // Add type_ID jika ada
+          if (sTaskTypeId && sTaskTypeId !== "") {
+            oPayload.type_ID = sTaskTypeId;
+          }
+
+          // Gunakan OData V4 untuk create Task
+          var oContext = this.getOwnerComponent()
+            .getModel()
+            .bindList("/Tasks")
+            .create(oPayload);
+
+          oContext
+            .created()
+            .then(
+              function () {
+                MessageToast.show("Sub Task successfully created");
+
+                // Reset selected BotInstance ID
+                var sBotId = this._selectedBotInstanceId;
+                this._selectedBotInstanceId = null;
+
+                // Refresh node BotInstance untuk menampilkan Task baru
+                this._refreshSelectedBotNode(sBotId);
+
+                this.getView().setBusy(false);
+              }.bind(this)
+            )
+            .catch(
+              function (oError) {
+                MessageBox.error("Error creating Sub Task: " + oError.message);
+                this.getView().setBusy(false);
+              }.bind(this)
+            );
+        } catch (oError) {
+          MessageBox.error("Error: " + oError.message);
+          this.getView().setBusy(false);
+        }
+      },
+
+      /**
+       * Refresh node Bot Instance yang dipilih
+       * @param {string} sBotId - ID Bot Instance yang perlu di-refresh
+       */
+      _refreshSelectedBotNode: function (sBotId) {
+        // Dapatkan Tree UI control
+        var oTree = this.byId("tree");
+        if (!oTree) {
+          MessageToast.show("Tree control not found");
+          return;
+        }
+
+        // Dapatkan model tree
+        var oTreeModel = this.getOwnerComponent().getModel("taskTree");
+
+        // Set busy indicator
+        this.getView().setBusy(true);
+
+        try {
+          // Dapatkan OData model
+          var oModel = this.getOwnerComponent().getModel();
+
+          // Fetch tasks yang baru untuk Bot Instance ini
+          oModel
+            .bindList("/BotInstances('" + sBotId + "')/tasks")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                // Ubah hasil menjadi nodes untuk tree
+                var aTasks = aContexts.map(function (oContext) {
+                  var oTask = oContext.getObject();
+                  oTask.type = "task"; // Set type sebagai task
+                  oTask.nodes = []; // Initialize nodes untuk children
+                  return oTask;
+                });
+
+                // Cari node Bot Instance dalam tree model
+                this._updateBotNodeChildren(
+                  oTreeModel.getData(),
+                  sBotId,
+                  aTasks
+                );
+
+                // Refresh model tree untuk update UI
+                oTreeModel.refresh(true);
+
+                // Expand node Bot Instance untuk menampilkan tasks baru
+                this._expandBotNode(sBotId);
+
+                // Reset busy indicator
+                this.getView().setBusy(false);
+              }.bind(this)
+            )
+            .catch(
+              function (oError) {
+                MessageToast.show(
+                  "Error refreshing bot node: " + oError.message
+                );
+                this.getView().setBusy(false);
+              }.bind(this)
+            );
+        } catch (oError) {
+          MessageToast.show("Error: " + oError.message);
+          this.getView().setBusy(false);
+        }
+      },
+
+      /**
+       * Fungsi rekursif untuk mencari node Bot Instance dan update children-nya
+       * @param {Array|Object} oNodes - Nodes untuk dicari
+       * @param {string} sBotId - ID bot instance yang dicari
+       * @param {Array} aNewChildren - Children baru untuk ditambahkan
+       * @returns {boolean} True jika node ditemukan dan diupdate
+       */
+      _updateBotNodeChildren: function (oNodes, sBotId, aNewChildren) {
+        // Handle jika parameter adalah array (multiple nodes) atau objek (single node)
+        var aNodes = Array.isArray(oNodes) ? oNodes : [oNodes];
+
+        // Iterasi semua node untuk menemukan bot instance yang sesuai
+        for (var i = 0; i < aNodes.length; i++) {
+          var oNode = aNodes[i];
+
+          // Cek apakah ini node yang dicari
+          if (oNode.type === "bot" && oNode.ID === sBotId) {
+            // Node ditemukan, update children
+            oNode.nodes = aNewChildren;
+            return true;
+          }
+
+          // Jika node ini memiliki children, cek secara rekursif
+          if (oNode.nodes && oNode.nodes.length > 0) {
+            var bFound = this._updateBotNodeChildren(
+              oNode.nodes,
+              sBotId,
+              aNewChildren
+            );
+            if (bFound) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+      },
+
+      /**
+       * Expand node Bot Instance dalam tree UI
+       * @param {string} sBotId - ID bot instance yang akan di-expand
+       */
+      _expandBotNode: function (sBotId) {
+        var oTree = this.byId("tree");
+        var aItems = oTree.getItems();
+
+        // Iterasi items di tree untuk menemukan node Bot Instance
+        for (var i = 0; i < aItems.length; i++) {
+          var oItem = aItems[i];
+          var oContext = oItem.getBindingContext("taskTree");
+
+          if (
+            oContext &&
+            oContext.getProperty("type") === "bot" &&
+            oContext.getProperty("ID") === sBotId
+          ) {
+            // Node ditemukan, expand
+            oTree.expand(oTree.indexOfItem(oItem));
+            break;
+          }
+        }
       },
 
       onEditSubTask: function () {
@@ -628,132 +848,409 @@ sap.ui.define(
         }
       },
 
-      onDeleteSubTask: function () {},
+      onDeleteSubTask: function () {
+        const oTree = this.byId("tree");
+        const oSelected = oTree.getSelectedItem();
 
-            // ---------------------------------------Chat Bot -------------------------------------
-      conversationHistory: [],
-
-      parseAIResponse: function (response) {
-        const parts = [];
-        const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```|`([^`]+)`/g;
-
-        let lastIndex = 0;
-        let match;
-        let partIndex = 0;
-
-        while ((match = codeBlockRegex.exec(response)) !== null) {
-          // Add text before the code block
-          if (match.index > lastIndex) {
-            const textBefore = response
-              .substring(lastIndex, match.index)
-              .trim();
-            if (textBefore) {
-              parts.push({
-                type: "text",
-                content: textBefore,
-                index: partIndex++,
-              });
-            }
-          }
-
-          // Add the code block
-          if (match[0].startsWith("```")) {
-            // Multi-line code block
-            parts.push({
-              type: "code_block",
-              language: match[1] || "text",
-              content: match[2] ? match[2].trim() : "",
-              raw: match[0],
-              index: partIndex++,
-            });
-          } else {
-            // Inline code
-            parts.push({
-              type: "inline_code",
-              content: match[3] || "",
-              raw: match[0],
-              index: partIndex++,
-            });
-          }
-
-          lastIndex = match.index + match[0].length;
+        if (!oSelected) {
+          MessageToast.show("Please select task to delete!");
+          return;
         }
 
-        // Add remaining text
-        if (lastIndex < response.length) {
-          const remainingText = response.substring(lastIndex).trim();
-          if (remainingText) {
-            parts.push({
-              type: "text",
-              content: remainingText,
-              index: partIndex++,
-            });
-          }
+        const oJsonCtx = oSelected.getBindingContext("taskTree");
+        const sID = oJsonCtx.getProperty("ID");
+
+        if (!sID) {
+          MessageToast.show("Select one task item first!");
+          return;
         }
 
-        // If no matches found, return the entire response as text
-        if (parts.length === 0) {
-          parts.push({
-            type: "text",
-            content: response.trim(),
-            index: 0,
-          });
-        }
+        const sPath = "/Tasks('" + sID + "')";
 
-        return parts;
-      },
+        // Tampilkan konfirmasi sebelum delete
+        MessageBox.confirm("Are you sure you want to delete this task?", {
+          title: "Confirm Deletion",
+          icon: MessageBox.Icon.WARNING,
+          actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+          emphasizedAction: MessageBox.Action.CANCEL,
+          onClose: async (sAction) => {
+            if (sAction === MessageBox.Action.OK) {
+              try {
+                const oODataModel = this.getOwnerComponent().getModel();
+                const oContext = oODataModel.bindContext(sPath);
 
-      // Helper function to convert parsed response back to plain text for history
-      parsedResponseToText: function (parsedResponse) {
-        if (typeof parsedResponse === "string") {
-          return parsedResponse;
-        }
+                // Pastikan context valid
+                await oContext.requestObject();
+                const oBoundContext = oContext.getBoundContext();
 
-        if (Array.isArray(parsedResponse)) {
-          return parsedResponse
-            .map((part) => {
-              if (part.type === "text") {
-                return part.content;
-              } else if (part.type === "code_block") {
-                return `\`\`\`${part.language || ""}\n${part.content}\n\`\`\``;
-              } else if (part.type === "inline_code") {
-                return `\`${part.content}\``;
+                if (oBoundContext) {
+                  await oBoundContext.delete();
+                  MessageToast.show("Task deleted successfully.");
+                  // Reload ulang tree/list
+                  await this.getOwnerComponent()._loadMainTasks(this._sTaskId);
+                } else {
+                  MessageToast.show("Could not find task with ID: " + sID);
+                }
+              } catch (oError) {
+                console.error("Delete error:", oError);
+                MessageToast.show("Error: " + (oError.message || oError));
               }
-              return part.content || "";
-            })
-            .join("");
-        }
-
-        return String(parsedResponse);
+            }
+            // Jika Cancel, tidak ada yang terjadi
+          },
+        });
       },
 
-      // Function to manage conversation history
-      addToHistory: function (role, content) {
-        // Convert parsed content to plain text for API
-        const textContent = this.parsedResponseToText(content);
+      // ---------------------------------------Bot Instance -------------------------------------
 
-        this.conversationHistory.push({
-          role: role === "user" ? "user" : "model", // Gemini uses "model" instead of "assistant"
-          parts: [
-            {
-              text: textContent,
-            },
+      /* =========================================================== */
+      /* Create Bot Instance - Main Function                         */
+      /* =========================================================== */
+
+      /**
+       * Handler untuk tombol Create Bot Instance
+       */
+      onCreateBotInstance: function () {
+        // Dapatkan node Task yang saat ini dipilih
+        var oTree = this.byId("tree");
+        var oSelectedItem = oTree.getSelectedItem();
+
+        // Validasi jika item dipilih dan tipenya adalah task
+        if (!oSelectedItem) {
+          MessageToast.show("Select the task first!");
+          return;
+        }
+
+        var oContext = oSelectedItem.getBindingContext("taskTree");
+        var sNodeType = oContext.getProperty("type");
+
+        if (sNodeType !== "task") {
+          MessageToast.show("Bot instance only created in the node Task");
+          return;
+        }
+
+        var sTaskId = oContext.getProperty("ID");
+        var sTaskName = oContext.getProperty("name") || "Task";
+
+        // Tampilkan dialog untuk membuat BotInstance baru
+        this._openSimpleCreateBotInstanceDialog(sTaskId, sTaskName);
+      },
+
+      /* =========================================================== */
+      /* Create Bot Instance - Helper Functions                      */
+      /* =========================================================== */
+
+      /**
+       * Membuka dialog sederhana untuk pembuatan BotInstance
+       * @param {string} sTaskId - ID task yang menjadi parent
+       * @param {string} sTaskName - Nama task untuk ditampilkan di dialog
+       */
+      _openSimpleCreateBotInstanceDialog: function (sTaskId, sTaskName) {
+        // Siapkan model untuk dialog dengan hardcoded bot types
+        var oDialogModel = new JSONModel({
+          taskId: sTaskId,
+          taskName: sTaskName,
+          botInstance: {
+            sequence: 1, // Default value
+            type_code: "GPT", // Default value, dapat diubah user
+            status_code: "C", // Default status: Created
+          },
+          // Hardcoded bot types untuk dropdown
+          botTypes: [
+            { code: "GPT", name: "GPT Bot" },
+            { code: "SEARCH", name: "Search Bot" },
+            { code: "ANALYSIS", name: "Analysis Bot" },
+            { code: "SUMMARIZE", name: "Summary Bot" },
           ],
         });
 
-        // Optional: Limit history to prevent token overflow (keep last 20 exchanges)
-        const maxHistoryLength = 40; // 20 user + 20 AI messages
-        if (this.conversationHistory.length > maxHistoryLength) {
-          this.conversationHistory = this.conversationHistory.slice(
-            -maxHistoryLength
+        this.getView().setModel(oDialogModel, "dialog");
+
+        // Cek apakah dialog sudah ada
+        if (!this._oBotInstanceDialog) {
+          // Buat dialog via fragment
+          Fragment.load({
+            id: this.getView().getId(),
+            name: "task-runtime.view.CreateBotInstanceDialog", // Adjust fragment name if needed
+            controller: this,
+          }).then(
+            function (oDialog) {
+              this._oBotInstanceDialog = oDialog;
+              this.getView().addDependent(this._oBotInstanceDialog);
+              this._oBotInstanceDialog.open();
+            }.bind(this)
           );
+        } else {
+          this._oBotInstanceDialog.open();
         }
       },
 
-      // Function to clear conversation history
-      clearHistory: function () {
-        this.conversationHistory = [];
+      /**
+       * Handler untuk tombol Cancel di dialog
+       */
+      onCancelBotInstance: function () {
+        if (this._oBotInstanceDialog) {
+          this._oBotInstanceDialog.close();
+        }
       },
+
+      /**
+       * Handler untuk tombol Save di dialog
+       * Menyimpan BotInstance baru ke backend menggunakan OData V4
+       */
+      onSaveBotInstance: function () {
+        // Dapatkan data dari model dialog
+        var oDialogModel = this.getView().getModel("dialog");
+        // var sBotTypeCode = oDialogModel.getProperty("/botInstance/type_code");
+        var iSequence = oDialogModel.getProperty("/botInstance/sequence");
+        var sTaskId = oDialogModel.getProperty("/taskId");
+
+        // Validasi input
+        // if (!sBotTypeCode) {
+        //   MessageToast.show("Silahkan pilih Bot Type");
+        //   return;
+        // }
+
+        // Siapkan payload untuk create - gunakan type_code tanpa perlu type_ID
+        var oPayload = {
+          sequence: iSequence,
+          status_code: "C", // Default status: Created
+          task_ID: sTaskId,
+        };
+
+        // Set busy indicator
+        // this.getView().setBusy(true);
+
+        // Kirim request create ke backend dengan OData V4
+        try {
+          var oList = this.getOwnerComponent()
+            .getModel()
+            .bindList("/BotInstances");
+          var oContext = oList.create(oPayload);
+
+          // Handle hasil operasi create
+          oContext
+            .created()
+            .then(
+              function () {
+                // Notifikasi sukses
+                MessageToast.show("Bot Instance successfully created!");
+
+                // Tutup dialog
+                if (this._oBotInstanceDialog) {
+                  this._oBotInstanceDialog.close();
+                }
+
+                // this.getView().setBusy(false);
+
+                // Optional: refresh parent node untuk tampilkan data baru
+                // this._refreshTaskNode(sTaskId);
+                this._refreshSelectedTaskNode(sTaskId);
+              }.bind(this)
+            )
+            .catch(
+              function (oError) {
+                // Error handling
+                MessageBox.error(
+                  "Error creating Bot Instance: " + oError.message
+                );
+                this.getView().setBusy(false);
+              }.bind(this)
+            );
+        } catch (oError) {
+          MessageBox.error("Error: " + oError.message);
+          this.getView().setBusy(false);
+        }
+      },
+
+      onDeleteBotInstance: function () {
+        const oTree = this.byId("tree");
+        const oSelected = oTree.getSelectedItem();
+
+        if (!oSelected) {
+          MessageToast.show("Please select bot to delete!");
+          return;
+        }
+
+        const oJsonCtx = oSelected.getBindingContext("taskTree");
+        const sID = oJsonCtx.getProperty("ID");
+
+        if (!sID) {
+          MessageToast.show("Select one bot item first!");
+          return;
+        }
+
+        const sPath = "/BotInstances('" + sID + "')";
+
+        // Tampilkan konfirmasi sebelum delete
+        MessageBox.confirm(
+          "Are you sure you want to delete this bot instances?",
+          {
+            title: "Confirm Deletion",
+            icon: MessageBox.Icon.WARNING,
+            actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+            emphasizedAction: MessageBox.Action.CANCEL,
+            onClose: async (sAction) => {
+              if (sAction === MessageBox.Action.OK) {
+                try {
+                  const oODataModel = this.getOwnerComponent().getModel();
+                  const oContext = oODataModel.bindContext(sPath);
+
+                  // Pastikan context valid
+                  await oContext.requestObject();
+                  const oBoundContext = oContext.getBoundContext();
+
+                  if (oBoundContext) {
+                    await oBoundContext.delete();
+                    MessageToast.show("Bot Instances deleted successfully.");
+                    // Reload ulang tree/list
+                    await this.getOwnerComponent()._loadMainTasks(
+                      this._sTaskId
+                    );
+                  } else {
+                    MessageToast.show("Could not find bot with ID: " + sID);
+                  }
+                } catch (oError) {
+                  console.error("Delete error:", oError);
+                  MessageToast.show("Error: " + (oError.message || oError));
+                }
+              }
+              // Jika Cancel, tidak ada yang terjadi
+            },
+          }
+        );
+      },
+
+      /**
+       * Refresh node Task yang dipilih
+       * @param {string} sTaskId - ID task yang perlu di-refresh
+       */
+      _refreshSelectedTaskNode: function (sTaskId) {
+        // Dapatkan Tree UI control
+        var oTree = this.byId("tree");
+        if (!oTree) {
+          MessageToast.show("Tree control not found");
+          return;
+        }
+
+        // Dapatkan model tree
+        var oTreeModel = this.getOwnerComponent().getModel("taskTree");
+
+        // Set busy indicator
+        this.getView().setBusy(true);
+
+        try {
+          // Dapatkan OData model
+          var oModel = this.getOwnerComponent().getModel();
+
+          // Fetch botInstances yang baru untuk task ini
+          oModel
+            .bindList("/Tasks('" + sTaskId + "')/botInstances")
+            .requestContexts()
+            .then(
+              function (aContexts) {
+                // Ubah hasil menjadi nodes untuk tree
+                var aBotInstances = aContexts.map(function (oContext) {
+                  var oBot = oContext.getObject();
+                  oBot.type = "bot"; // Set type sebagai bot
+                  oBot.nodes = []; // Initialize nodes untuk children
+                  return oBot;
+                });
+
+                // Cari node Task dalam tree model
+                this._updateTaskNodeChildren(
+                  oTreeModel.getData(),
+                  sTaskId,
+                  aBotInstances
+                );
+
+                // Refresh model tree untuk update UI
+                oTreeModel.refresh(true);
+
+                // Expand node Task untuk menampilkan botInstances baru
+                this._expandTaskNode(sTaskId);
+
+                // Reset busy indicator
+                this.getView().setBusy(false);
+              }.bind(this)
+            )
+            .catch(
+              function (oError) {
+                MessageToast.show(
+                  "Error refreshing task node: " + oError.message
+                );
+                this.getView().setBusy(false);
+              }.bind(this)
+            );
+        } catch (oError) {
+          MessageToast.show("Error: " + oError.message);
+          this.getView().setBusy(false);
+        }
+      },
+
+      /**
+       * Fungsi rekursif untuk mencari node Task dan update children-nya
+       * @param {Array|Object} oNodes - Nodes untuk dicari
+       * @param {string} sTaskId - ID task yang dicari
+       * @param {Array} aNewChildren - Children baru untuk ditambahkan
+       * @returns {boolean} True jika node ditemukan dan diupdate
+       */
+      _updateTaskNodeChildren: function (oNodes, sTaskId, aNewChildren) {
+        // Handle jika parameter adalah array (multiple nodes) atau objek (single node)
+        var aNodes = Array.isArray(oNodes) ? oNodes : [oNodes];
+
+        // Iterasi semua node untuk menemukan task yang sesuai
+        for (var i = 0; i < aNodes.length; i++) {
+          var oNode = aNodes[i];
+
+          // Cek apakah ini node yang dicari
+          if (oNode.type === "task" && oNode.ID === sTaskId) {
+            // Node ditemukan, update children
+            oNode.nodes = aNewChildren;
+            return true;
+          }
+
+          // Jika node ini memiliki children, cek secara rekursif
+          if (oNode.nodes && oNode.nodes.length > 0) {
+            var bFound = this._updateTaskNodeChildren(
+              oNode.nodes,
+              sTaskId,
+              aNewChildren
+            );
+            if (bFound) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+      },
+
+      /**
+       * Expand node Task dalam tree UI
+       * @param {string} sTaskId - ID task yang akan di-expand
+       */
+      _expandTaskNode: function (sTaskId) {
+        var oTree = this.byId("tree");
+        var aItems = oTree.getItems();
+
+        // Iterasi items di tree untuk menemukan node Task
+        for (var i = 0; i < aItems.length; i++) {
+          var oItem = aItems[i];
+          var oContext = oItem.getBindingContext("taskTree");
+
+          if (
+            oContext &&
+            oContext.getProperty("type") === "task" &&
+            oContext.getProperty("ID") === sTaskId
+          ) {
+            // Node ditemukan, expand
+            oTree.expand(oTree.indexOfItem(oItem));
+            break;
+          }
+        }
+      },
+      // ---------------------------------------Chat Bot -------------------------------------
 
       onSubmitQuery: async function () {
         var oInput = this.byId("chatInput");
@@ -781,16 +1278,16 @@ sap.ui.define(
               this.conversationHistory
             );
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+              }
+            );
             console.log(response);
             const data = await response.json();
             console.log(data);
@@ -895,39 +1392,38 @@ sap.ui.define(
                         </div>
                     </div>
                 `,
-            });
-            oChatBox.addItem(oHTML);
-          }
+        });
+        oChatBox.addItem(oHTML);
 
-          // Handle code blocks separately
-          if (codeBlocks.length > 0) {
-            var oCodeResultText = this.byId("codeResultText");
-            if (oCodeResultText) {
-              const codeSections = codeBlocks.map((block) => {
-                const language = block.language || "code";
-                const langLabel = `<div class="codeLangLabel">${language.toUpperCase()}</div>`;
-                const codeBlock = `
+        // Handle code blocks separately
+        if (codeBlocks.length > 0) {
+          var oCodeResultText = this.byId("codeResultText");
+          if (oCodeResultText) {
+            const codeSections = codeBlocks.map((block) => {
+              const language = block.language || "code";
+              const langLabel = `<div class="codeLangLabel">${language.toUpperCase()}</div>`;
+              const codeBlock = `
                         <div class="codeBlockWrapper">
                             ${langLabel}
                             <pre><code class="language-${language}">${this.escapeHtml(
-                  block.content
-                )}</code></pre>
+                block.content
+              )}</code></pre>
                         </div>
                     `;
-                return codeBlock;
-              });
-              oCodeResultText.setContent(codeSections.join("<br/>"));
-            }
+              return codeBlock;
+            });
+            oCodeResultText.setContent(codeSections.join("<br/>"));
           }
+        }
 
-          // If no text content and no code blocks, show the original message
-          if (!textContent.trim() && codeBlocks.length === 0) {
-            console.log("No content found, showing original message");
-            const originalMessage = sMessage
-              .map((part) => part.content || part.raw || "")
-              .join(" ");
-            var oHTML = new sap.ui.core.HTML({
-              content: `
+        // If no text content and no code blocks, show the original message
+        if (!textContent.trim() && codeBlocks.length === 0) {
+          console.log("No content found, showing original message");
+          const originalMessage = sMessage
+            .map((part) => part.content || part.raw || "")
+            .join(" ");
+          var oHTML = new sap.ui.core.HTML({
+            content: `
                     <div class="chatBubbleContainer ${sType}">
                         <div class="chatBubble ${sType}">
                             <div>${
@@ -937,9 +1433,8 @@ sap.ui.define(
                         </div>
                     </div>
                 `,
-            });
-            oChatBox.addItem(oHTML);
-          }
+          });
+          oChatBox.addItem(oHTML);
         } else {
           // Handle regular string messages
           const messageContent =
