@@ -1,41 +1,243 @@
 <mvc:View
     controllerName="task-runtime.controller.TaskDetail"
     xmlns="sap.m"
+    xmlns:f="sap.f"
     xmlns:core="sap.ui.core"
     xmlns:mvc="sap.ui.core.mvc"
+    height="100%"
+    displayBlock="true"
 >
-    <Page
-        id="page"
-        title="{i18n>title}"
-    >
-        <HBox
-            width="100%"
-            height="100%"
-        >
-            <VBox width="25%">
-                <core:Fragment
-                    fragmentName="task-runtime.view.ContextTree"
-                    type="XML"
-                />
-                <core:Fragment
-                    fragmentName="task-runtime.view.TaskTree"
-                    type="XML"
-                />
-            </VBox>
+    <Shell appWidthLimited="false">
+        <App>
+            <pages>
+                <Page
+                    id="mainPage"
+                    title="Task Runtime"
+                    showNavButton="false"
+                    showHeader="true"
+                >
+                    <content>
+                        <f:FlexibleColumnLayout
+                            id="flexibleColumnLayout"
+                            backgroundDesign="Solid"
+                            layout="TwoColumnsMidExpanded"
+                            class="sapUiNoContentPadding"
+                        >
+                            <!-- Begin Column (Navigation - 25%) -->
+                            <f:beginColumnPages>
+                                <Page
+                                    id="beginPage"
+                                    title="Navigation"
+                                    showNavButton="false"
+                                    showHeader="true"
+                                    class="sapUiNoContentPadding"
+                                >
+                                    <headerContent>
+                                        <Button
+                                            icon="sap-icon://menu2"
+                                            tooltip="Toggle Layout"
+                                            press="onToggleBeginColumn"
+                                        />
+                                    </headerContent>
+                                    <content>
+                                        <VBox class="sapUiSmallMargin">
+                                            <!-- Context Tree Fragment -->
+                                            <Panel
+                                                expandable="true"
+                                                expanded="true"
+                                                headerText=""
+                                                class="sapUiSmallMarginBottom sapUiNoContentPadding"
+                                            >
+                                                <headerToolbar>
+                                                    <Toolbar
+                                                        style="Clear"
+                                                        height="3rem"
+                                                    >
+                                                        <Title
+                                                            text="Context Hierarchy"
+                                                            level="H4"
+                                                        />
+                                                        <ToolbarSpacer />
+                                                        <Button
+                                                            icon="sap-icon://add"
+                                                            tooltip="Add Context Node"
+                                                            type="Transparent"
+                                                            press="onCreateCNData"
+                                                        />
+                                                        <Button
+                                                            icon="sap-icon://delete"
+                                                            tooltip="Delete Context Node"
+                                                            type="Reject"
+                                                            press="onDeleteCNData"
+                                                        />
+                                                    </Toolbar>
+                                                </headerToolbar>
+                                                <content>
+                                                    <core:Fragment
+                                                        fragmentName="task-runtime.view.ContextTree"
+                                                        type="XML"
+                                                    />
+                                                </content>
+                                            </Panel>
 
-            <VBox width="50%">
-                <core:Fragment
-                    fragmentName="task-runtime.view.Content"
-                    type="XML"
-                />
-            </VBox>
+                                            <!-- Task Tree Fragment -->
+                                            <Panel
+                                                expandable="true"
+                                                expanded="true"
+                                                headerText=""
+                                                class="sapUiSmallMarginTop sapUiNoContentPadding"
+                                            >
+                                                <headerToolbar>
+                                                    <Toolbar
+                                                        style="Clear"
+                                                        height="3rem"
+                                                    >
+                                                        <Title
+                                                            text="Task List"
+                                                            level="H4"
+                                                        />
+                                                        <ToolbarSpacer />
+                                                    </Toolbar>
+                                                </headerToolbar>
+                                                <content>
+                                                    <VBox>
+                                                        <Toolbar
+                                                            style="Clear"
+                                                            height="3rem"
+                                                            class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                                                        >
+                                                            <Button
+                                                                icon="sap-icon://add"
+                                                                text="Task"
+                                                                tooltip="Create Task"
+                                                                type="Emphasized"
+                                                                press="onCreateSubTask"
+                                                                class="sapUiTinyMarginEnd"
+                                                            />
+                                                            <Button
+                                                                icon="sap-icon://add"
+                                                                text="Bot"
+                                                                tooltip="Create Bot"
+                                                                type="Emphasized"
+                                                                press="onCreateBotInstance"
+                                                            />
+                                                            <ToolbarSpacer />
+                                                            <Button
+                                                                icon="sap-icon://delete"
+                                                                text="Task"
+                                                                tooltip="Delete Task"
+                                                                type="Reject"
+                                                                press="onDeleteSubTask"
+                                                                class="sapUiTinyMarginEnd"
+                                                            />
+                                                            <Button
+                                                                icon="sap-icon://delete"
+                                                                text="Bot"
+                                                                tooltip="Delete Bot"
+                                                                type="Reject"
+                                                                press="onDeleteBotInstance"
+                                                            />
+                                                        </Toolbar>
 
-            <VBox width="25%">
-                <core:Fragment
-                    fragmentName="task-runtime.view.Details"
-                    type="XML"
-                />
-            </VBox>
-        </HBox>
-    </Page>
+                                                        <core:Fragment
+                                                            fragmentName="task-runtime.view.TaskTree"
+                                                            type="XML"
+                                                        />
+                                                    </VBox>
+                                                </content>
+                                            </Panel>
+                                        </VBox>
+                                    </content>
+                                </Page>
+                            </f:beginColumnPages>
+
+                            <!-- Mid Column (Content - 50%) -->
+                            <f:midColumnPages>
+                                <Page
+                                    id="midPage"
+                                    showHeader="true"
+                                    title="Content"
+                                    showNavButton="true"
+                                    navButtonPress="onNavToBeginColumn"
+                                    class="sapUiNoContentPadding"
+                                >
+                                    <headerContent>
+                                        <Button
+                                            icon="sap-icon://edit"
+                                            press=".onEditCNData"
+                                            tooltip="Edit"
+                                        />
+                                        <Button
+                                            icon="sap-icon://detail-view"
+                                            tooltip="Show Details"
+                                            press="onShowEndColumn"
+                                        />
+                                        <ToolbarSpacer />
+                                        <Button
+                                            icon="sap-icon://full-screen"
+                                            tooltip="Full Screen"
+                                            press="onMidColumnFullScreen"
+                                            visible="{= ${/layout} !== 'MidColumnFullScreen'}"
+                                        />
+                                        <Button
+                                            icon="sap-icon://exit-full-screen"
+                                            tooltip="Exit Full Screen"
+                                            press="onExitMidColumnFullScreen"
+                                            visible="{= ${/layout} === 'MidColumnFullScreen'}"
+                                        />
+                                    </headerContent>
+                                    <content>
+                                        <VBox class="sapUiSmallMargin">
+                                            <core:Fragment
+                                                fragmentName="task-runtime.view.Content"
+                                                type="XML"
+                                            />
+                                        </VBox>
+                                    </content>
+                                </Page>
+                            </f:midColumnPages>
+
+                            <!-- End Column (Details - 25%) -->
+                            <f:endColumnPages>
+                                <Page
+                                    id="endPage"
+                                    title="Details"
+                                    showHeader="true"
+                                    showNavButton="true"
+                                    navButtonPress="onNavToMidColumn"
+                                    class="sapUiNoContentPadding"
+                                >
+                                    <headerContent>
+                                        <Button
+                                            icon="sap-icon://full-screen"
+                                            tooltip="Full Screen"
+                                            press="onEndColumnFullScreen"
+                                            visible="{= ${/layout} !== 'EndColumnFullScreen'}"
+                                        />
+                                        <Button
+                                            icon="sap-icon://exit-full-screen"
+                                            tooltip="Exit Full Screen"
+                                            press="onExitEndColumnFullScreen"
+                                            visible="{= ${/layout} === 'EndColumnFullScreen'}"
+                                        />
+                                        <Button
+                                            icon="sap-icon://decline"
+                                            tooltip="Close"
+                                            press="onCloseEndColumn"
+                                        />
+                                    </headerContent>
+                                    <content>
+                                        <core:Fragment
+                                            fragmentName="task-runtime.view.Details"
+                                            type="XML"
+                                        />
+                                    </content>
+                                </Page>
+                            </f:endColumnPages>
+                        </f:FlexibleColumnLayout>
+                    </content>
+                </Page>
+            </pages>
+        </App>
+    </Shell>
 </mvc:View>

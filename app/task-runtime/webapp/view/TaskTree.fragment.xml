@@ -3,44 +3,13 @@
     xmlns:core="sap.ui.core"
 >
     <VBox height="50%">
-        <Toolbar>
-            <Title text="Task Tree" />
-        </Toolbar>
-        <Toolbar>
-            <Button
-                icon="sap-icon://add"
-                tooltip="Create Task"
-                press=".onCreateSubTask"
-                text="Task"
-            />
-            <Button
-                icon="sap-icon://add"
-                tooltip="Create Bot"
-                press=".onCreateBotInstance"
-                text="Bot"
-            />
-            <Button
-                icon="sap-icon://delete"
-                tooltip="Delete"
-                type="Reject"
-                press=".onDeleteSubTask"
-                text="Task"
-            />
-            <Button
-                icon="sap-icon://delete"
-                tooltip="Delete"
-                type="Reject"
-                press=".onDeleteBotInstance"
-                text="Bot"
-            />
-        </Toolbar>
         <ScrollContainer
             height="90%"
             vertical="true"
             horizontal="false"
         >
             <Tree
-                id="tree"
+                id="taskAndBotTree"
                 mode="SingleSelectMaster"
                 items="{path: 'taskTree>/'}"
                 itemPress=".onTaskSelect"

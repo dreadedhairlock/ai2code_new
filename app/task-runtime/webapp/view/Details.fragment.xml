@@ -3,10 +3,6 @@
     xmlns:core="sap.ui.core"
     xmlns:l="sap.ui.layout"
 >
-    <Toolbar>
-        <Title text="Details" />
-    </Toolbar>
-
     <!-- Use Flexible Box Layout for better control -->
     <l:VerticalLayout width="90%">
         <!-- Chat Section - Fixed Height -->

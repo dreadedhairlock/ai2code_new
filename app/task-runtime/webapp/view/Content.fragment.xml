@@ -3,18 +3,6 @@
     xmlns:forms="sap.ui.layout.form"
     xmlns:core="sap.ui.core"
 >
-    <Toolbar>
-        <Title text="Content" />
-        <ToolbarSpacer />
-        <!-- your new button -->
-        <Button
-            text="Edit"
-            icon="sap-icon://edit"
-            press=".onEditCNData"
-            tooltip="Edit"
-        />
-    </Toolbar>
-
     <forms:SimpleForm
         editable="false"
         layout="ResponsiveGridLayout"

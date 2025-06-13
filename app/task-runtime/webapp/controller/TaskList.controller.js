@@ -94,7 +94,7 @@ sap.ui.define(
               noDataText: "No task types found",
               title: "Select Task Type",
               items: {
-                path: "/TaskType",
+                path: "/TaskTypes",
                 template: new sap.m.StandardListItem({
                   title: "{name}",
                   description: "{description}",
