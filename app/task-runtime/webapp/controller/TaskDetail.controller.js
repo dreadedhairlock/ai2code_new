@@ -630,7 +630,7 @@ sap.ui.define(
 
       onDeleteSubTask: function () {},
 
-      // ---------------------------------------Chat Bot -------------------------------------
+            // ---------------------------------------Chat Bot -------------------------------------
       conversationHistory: [],
 
       parseAIResponse: function (response) {
