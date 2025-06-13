@@ -1250,7 +1250,130 @@ sap.ui.define(
           }
         }
       },
-      // ---------------------------------------Chat Bot -------------------------------------
+           // ---------------------------------------Chat Bot -------------------------------------
+      conversationHistory: [],
+
+      parseAIResponse: function (response) {
+        const parts = [];
+        const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```|`([^`]+)`/g;
+
+        let lastIndex = 0;
+        let match;
+        let partIndex = 0;
+
+        while ((match = codeBlockRegex.exec(response)) !== null) {
+          // Add text before the code block
+          if (match.index > lastIndex) {
+            const textBefore = response
+              .substring(lastIndex, match.index)
+              .trim();
+            if (textBefore) {
+              parts.push({
+                type: "text",
+                content: textBefore,
+                index: partIndex++,
+              });
+            }
+          }
+
+          // Add the code block
+          if (match[0].startsWith("```")) {
+            // Multi-line code block
+            parts.push({
+              type: "code_block",
+              language: match[1] || "text",
+              content: match[2] ? match[2].trim() : "",
+              raw: match[0],
+              index: partIndex++,
+            });
+          } else {
+            // Inline code
+            parts.push({
+              type: "inline_code",
+              content: match[3] || "",
+              raw: match[0],
+              index: partIndex++,
+            });
+          }
+
+          lastIndex = match.index + match[0].length;
+        }
+
+        // Add remaining text
+        if (lastIndex < response.length) {
+          const remainingText = response.substring(lastIndex).trim();
+          if (remainingText) {
+            parts.push({
+              type: "text",
+              content: remainingText,
+              index: partIndex++,
+            });
+          }
+        }
+
+        // If no matches found, return the entire response as text
+        if (parts.length === 0) {
+          parts.push({
+            type: "text",
+            content: response.trim(),
+            index: 0,
+          });
+        }
+
+        return parts;
+      },
+
+      // Helper function to convert parsed response back to plain text for history
+      parsedResponseToText: function (parsedResponse) {
+        if (typeof parsedResponse === "string") {
+          return parsedResponse;
+        }
+
+        if (Array.isArray(parsedResponse)) {
+          return parsedResponse
+            .map((part) => {
+              if (part.type === "text") {
+                return part.content;
+              } else if (part.type === "code_block") {
+                return `\`\`\`${part.language || ""}\n${part.content}\n\`\`\``;
+              } else if (part.type === "inline_code") {
+                return `\`${part.content}\``;
+              }
+              return part.content || "";
+            })
+            .join("");
+        }
+
+        return String(parsedResponse);
+      },
+
+      // Function to manage conversation history
+      addToHistory: function (role, content) {
+        // Convert parsed content to plain text for API
+        const textContent = this.parsedResponseToText(content);
+
+        this.conversationHistory.push({
+          role: role === "user" ? "user" : "model", // Gemini uses "model" instead of "assistant"
+          parts: [
+            {
+              text: textContent,
+            },
+          ],
+        });
+
+        // Optional: Limit history to prevent token overflow (keep last 20 exchanges)
+        const maxHistoryLength = 40; // 20 user + 20 AI messages
+        if (this.conversationHistory.length > maxHistoryLength) {
+          this.conversationHistory = this.conversationHistory.slice(
+            -maxHistoryLength
+          );
+        }
+      },
+
+      // Function to clear conversation history
+      clearHistory: function () {
+        this.conversationHistory = [];
+      },
 
       onSubmitQuery: async function () {
         var oInput = this.byId("chatInput");
@@ -1278,16 +1401,16 @@ sap.ui.define(
               this.conversationHistory
             );
 
-            const response = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(requestBody),
-              }
-            );
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
             console.log(response);
             const data = await response.json();
             console.log(data);
@@ -1392,38 +1515,39 @@ sap.ui.define(
                         </div>
                     </div>
                 `,
-        });
-        oChatBox.addItem(oHTML);
+            });
+            oChatBox.addItem(oHTML);
+          }
 
-        // Handle code blocks separately
-        if (codeBlocks.length > 0) {
-          var oCodeResultText = this.byId("codeResultText");
-          if (oCodeResultText) {
-            const codeSections = codeBlocks.map((block) => {
-              const language = block.language || "code";
-              const langLabel = `<div class="codeLangLabel">${language.toUpperCase()}</div>`;
-              const codeBlock = `
+          // Handle code blocks separately
+          if (codeBlocks.length > 0) {
+            var oCodeResultText = this.byId("codeResultText");
+            if (oCodeResultText) {
+              const codeSections = codeBlocks.map((block) => {
+                const language = block.language || "code";
+                const langLabel = `<div class="codeLangLabel">${language.toUpperCase()}</div>`;
+                const codeBlock = `
                         <div class="codeBlockWrapper">
                             ${langLabel}
                             <pre><code class="language-${language}">${this.escapeHtml(
-                block.content
-              )}</code></pre>
+                  block.content
+                )}</code></pre>
                         </div>
                     `;
-              return codeBlock;
-            });
-            oCodeResultText.setContent(codeSections.join("<br/>"));
+                return codeBlock;
+              });
+              oCodeResultText.setContent(codeSections.join("<br/>"));
+            }
           }
-        }
 
-        // If no text content and no code blocks, show the original message
-        if (!textContent.trim() && codeBlocks.length === 0) {
-          console.log("No content found, showing original message");
-          const originalMessage = sMessage
-            .map((part) => part.content || part.raw || "")
-            .join(" ");
-          var oHTML = new sap.ui.core.HTML({
-            content: `
+          // If no text content and no code blocks, show the original message
+          if (!textContent.trim() && codeBlocks.length === 0) {
+            console.log("No content found, showing original message");
+            const originalMessage = sMessage
+              .map((part) => part.content || part.raw || "")
+              .join(" ");
+            var oHTML = new sap.ui.core.HTML({
+              content: `
                     <div class="chatBubbleContainer ${sType}">
                         <div class="chatBubble ${sType}">
                             <div>${
@@ -1433,8 +1557,9 @@ sap.ui.define(
                         </div>
                     </div>
                 `,
-          });
-          oChatBox.addItem(oHTML);
+            });
+            oChatBox.addItem(oHTML);
+          }
         } else {
           // Handle regular string messages
           const messageContent =
@@ -1786,7 +1911,7 @@ sap.ui.define(
           this._oHistoryDialog = null;
         }
       },
-      // ---------------------------------------Chat Bot -------------------------------------
+            // ---------------------------------------Chat Bot -------------------------------------
     });
   }
 );
