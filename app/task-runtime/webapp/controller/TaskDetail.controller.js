@@ -1189,7 +1189,7 @@ sap.ui.define(
           }
         }
       },
-      // ---------------------------------------Chat Bot -------------------------------------
+       // ---------------------------------------Chat Bot -------------------------------------
       conversationHistory: [],
 
       parseAIResponse: function (response) {
@@ -1409,17 +1409,6 @@ sap.ui.define(
         // Update current chat session in history
         this._updateCurrentChatInHistory();
 
-        var oHTML = new sap.ui.core.HTML({
-          content: `
-            <div class="chatBubbleContainer ${sType}">
-                <div class="chatBubble ${sType}">
-                    <div>${sMessage}</div>
-                    <div class="chatTimestamp">${sTimestamp}</div>
-                </div>
-            </div>
-        `,
-        });
-
         // Handle parsed AI responses
         if (sType === "ai" && Array.isArray(sMessage)) {
           // Process parsed response parts
@@ -1447,13 +1436,13 @@ sap.ui.define(
           if (textContent.trim()) {
             var oHTML = new sap.ui.core.HTML({
               content: `
-                    <div class="chatBubbleContainer ${sType}">
-                        <div class="chatBubble ${sType}">
-                            <div>${textContent.trim()}</div>
-                            <div class="chatTimestamp">${sTimestamp}</div>
-                        </div>
-                    </div>
-                `,
+          <div class="chatBubbleContainer ${sType}">
+              <div class="chatBubble ${sType}">
+                  <div>${textContent.trim()}</div>
+                  <div class="chatTimestamp">${sTimestamp}</div>
+              </div>
+          </div>
+        `,
             });
             oChatBox.addItem(oHTML);
           }
@@ -1466,13 +1455,13 @@ sap.ui.define(
                 const language = block.language || "code";
                 const langLabel = `<div class="codeLangLabel">${language.toUpperCase()}</div>`;
                 const codeBlock = `
-                        <div class="codeBlockWrapper">
-                            ${langLabel}
-                            <pre><code class="language-${language}">${this.escapeHtml(
+            <div class="codeBlockWrapper">
+                ${langLabel}
+                <pre><code class="language-${language}">${this.escapeHtml(
                   block.content
                 )}</code></pre>
-                        </div>
-                    `;
+            </div>
+          `;
                 return codeBlock;
               });
               oCodeResultText.setContent(codeSections.join("<br/>"));
@@ -1487,15 +1476,13 @@ sap.ui.define(
               .join(" ");
             var oHTML = new sap.ui.core.HTML({
               content: `
-                    <div class="chatBubbleContainer ${sType}">
-                        <div class="chatBubble ${sType}">
-                            <div>${
-                              originalMessage || "AI response received"
-                            }</div>
-                            <div class="chatTimestamp">${sTimestamp}</div>
-                        </div>
-                    </div>
-                `,
+          <div class="chatBubbleContainer ${sType}">
+              <div class="chatBubble ${sType}">
+                  <div>${originalMessage || "AI response received"}</div>
+                  <div class="chatTimestamp">${sTimestamp}</div>
+              </div>
+          </div>
+        `,
             });
             oChatBox.addItem(oHTML);
           }
@@ -1506,23 +1493,15 @@ sap.ui.define(
 
           var oHTML = new sap.ui.core.HTML({
             content: `
-                <div class="chatBubbleContainer ${sType}">
-                    <div class="chatBubble ${sType}">
-                        <div>${messageContent}</div>
-                        <div class="chatTimestamp">${sTimestamp}</div>
-                    </div>
-                </div>
-            `,
+        <div class="chatBubbleContainer ${sType}">
+            <div class="chatBubble ${sType}">
+                <div>${messageContent}</div>
+                <div class="chatTimestamp">${sTimestamp}</div>
+            </div>
+        </div>
+      `,
           });
           oChatBox.addItem(oHTML);
-
-          // For backward compatibility with non-parsed responses
-          if (sType === "ai" && typeof sMessage === "string") {
-            var oCodeResultText = this.byId("codeResultText");
-            if (oCodeResultText) {
-              oCodeResultText.setText(sMessage);
-            }
-          }
         }
 
         // Scroll to bottom
@@ -1773,41 +1752,27 @@ sap.ui.define(
         }
       },
 
-      // Enhanced onHistoryPress function
+      // Enhanced onHistoryPress function with better error handling
       onHistoryPress: async function () {
-        // Load history from storage
-        this._loadHistoryFromStorage();
+        try {
+          // Load history from storage
+          this._loadHistoryFromStorage();
 
-        if (!this._oHistoryDialog) {
-          this._oHistoryDialog = await Fragment.load({
-            id: this.getView().getId(),
-            name: "task-runtime.view.ChatHistory",
-            controller: this,
-          });
-        }
+          if (!this._oHistoryDialog) {
+            this._oHistoryDialog = await Fragment.load({
+              id: this.getView().getId(),
+              name: "task-runtime.view.ChatHistory",
+              controller: this,
+            });
+            this.getView().addDependent(this._oHistoryDialog);
+          }
 
-        // Bind history data to the dialog
-        this._bindHistoryData();
-        this._oHistoryDialog.open();
-      },
-
-      // Function to bind history data to the dialog
-      _bindHistoryData: function () {
-        var oHistoryList = this.byId("chatHistoryList");
-        if (oHistoryList && this._chatHistory.length > 0) {
-          var oModel = new sap.ui.model.json.JSONModel({
-            chatHistory: this._chatHistory,
-          });
-          oHistoryList.setModel(oModel);
-          oHistoryList.bindItems({
-            path: "/chatHistory",
-            template: new sap.m.StandardListItem({
-              title: "{title}",
-              description: "Messages: {/messages/length} • {createdAt}",
-              type: "Active",
-              press: this.onHistoryItemPress.bind(this),
-            }),
-          });
+          // Bind history data to the dialog
+          this._bindHistoryData();
+          this._oHistoryDialog.open();
+        } catch (error) {
+          console.error("Error opening chat history:", error);
+          sap.m.MessageToast.show("Error loading chat history");
         }
       },
 
@@ -1836,7 +1801,179 @@ sap.ui.define(
           this._oHistoryDialog = null;
         }
       },
-      // ---------------------------------------Chat Bot -------------------------------------
+
+      // Enhanced _bindHistoryData function to include selection change handler
+      _bindHistoryData: function () {
+        var oHistoryList = this.byId("chatHistoryList");
+        if (oHistoryList && this._chatHistory.length > 0) {
+          var oModel = new sap.ui.model.json.JSONModel({
+            chatHistory: this._chatHistory,
+          });
+          oHistoryList.setModel(oModel);
+
+          // Clear any existing selection
+          oHistoryList.removeSelections();
+
+          // Bind items with selection change handler
+          oHistoryList.bindItems({
+            path: "/chatHistory",
+            template: new sap.m.StandardListItem({
+              title: "{title}",
+              description: {
+                parts: [{ path: "messages" }, { path: "createdAt" }],
+                formatter: function (aMessages, sCreatedAt) {
+                  var messageCount = aMessages ? aMessages.length : 0;
+                  var dateStr = new Date(sCreatedAt).toLocaleDateString();
+                  return "Messages: " + messageCount + " • " + dateStr;
+                },
+              },
+              type: "Active",
+              press: this.onHistoryItemPress.bind(this),
+            }),
+          });
+
+          // Attach selection change event
+          oHistoryList.attachSelectionChange(
+            this.onChatHistorySelectionChange.bind(this)
+          );
+        } else {
+          // Clear the list if no history
+          if (oHistoryList) {
+            oHistoryList.unbindItems();
+            var oDeleteButton = this.byId("deleteChatButton");
+            if (oDeleteButton) {
+              oDeleteButton.setEnabled(false);
+            }
+          }
+        }
+      },
+
+      // Function to handle selection change in chat history list
+      onChatHistorySelectionChange: function (oEvent) {
+        var oList = oEvent.getSource();
+        var aSelectedItems = oList.getSelectedItems();
+        var oDeleteButton = this.byId("deleteChatButton");
+
+        // Enable/disable delete button based on selection
+        if (oDeleteButton) {
+          oDeleteButton.setEnabled(aSelectedItems.length > 0);
+        }
+      },
+
+      // Function to handle delete selected chat history
+      onDeleteChatHistory: function () {
+        var oList = this.byId("chatHistoryList");
+        var aSelectedItems = oList.getSelectedItems();
+
+        if (aSelectedItems.length === 0) {
+          sap.m.MessageToast.show("Please select a chat to delete");
+          return;
+        }
+
+        // Show confirmation dialog
+        var that = this;
+        sap.m.MessageBox.confirm(
+          "Are you sure you want to delete the selected chat(s)? This action cannot be undone.",
+          {
+            title: "Delete Chat History",
+            onClose: function (oAction) {
+              if (oAction === sap.m.MessageBox.Action.OK) {
+                that._deleteSelectedChats(aSelectedItems);
+              }
+            },
+          }
+        );
+      },
+
+      // Private function to delete selected chats
+      _deleteSelectedChats: function (aSelectedItems) {
+        var aSelectedChatIds = [];
+        var bCurrentChatDeleted = false;
+
+        // Collect chat IDs to delete
+        aSelectedItems.forEach(
+          function (oItem) {
+            var oContext = oItem.getBindingContext();
+            if (oContext) {
+              var oChatData = oContext.getObject();
+              aSelectedChatIds.push(oChatData.id);
+
+              // Check if current active chat is being deleted
+              if (oChatData.id === this._currentChatId) {
+                bCurrentChatDeleted = true;
+              }
+            }
+          }.bind(this)
+        );
+
+        // Remove selected chats from history
+        this._chatHistory = this._chatHistory.filter(function (chat) {
+          return aSelectedChatIds.indexOf(chat.id) === -1;
+        });
+
+        // Save updated history to storage
+        this._saveHistoryToStorage();
+
+        // If current chat was deleted, start a new chat
+        if (bCurrentChatDeleted) {
+          this.startNewChat();
+        }
+
+        // Refresh the history dialog
+        this._bindHistoryData();
+
+        // Disable delete button
+        var oDeleteButton = this.byId("deleteChatButton");
+        if (oDeleteButton) {
+          oDeleteButton.setEnabled(false);
+        }
+
+        // Show success message
+        var sMessage =
+          aSelectedChatIds.length === 1
+            ? "Chat deleted successfully"
+            : aSelectedChatIds.length + " chats deleted successfully";
+        sap.m.MessageToast.show(sMessage);
+      },
+
+      // Function to delete all chat history (optional additional feature)
+      onDeleteAllChatHistory: function () {
+        if (this._chatHistory.length === 0) {
+          sap.m.MessageToast.show("No chat history to delete");
+          return;
+        }
+
+        var that = this;
+        sap.m.MessageBox.confirm(
+          "Are you sure you want to delete ALL chat history? This action cannot be undone.",
+          {
+            title: "Delete All Chat History",
+            onClose: function (oAction) {
+              if (oAction === sap.m.MessageBox.Action.OK) {
+                that._deleteAllChats();
+              }
+            },
+          }
+        );
+      },
+
+      // Private function to delete all chats
+      _deleteAllChats: function () {
+        // Clear all history
+        this._chatHistory = [];
+
+        // Save empty history to storage
+        this._saveHistoryToStorage();
+
+        // Start new chat
+        this.startNewChat();
+
+        // Close history dialog
+        this.onCloseChatHistory();
+
+        sap.m.MessageToast.show("All chat history deleted successfully");
+      },
+            // ---------------------------------------Chat Bot -------------------------------------
     });
   }
 );

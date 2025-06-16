@@ -1,39 +1,54 @@
-<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
-    <Dialog id="chatHistoryDialog" 
-            title="Chat History" 
-            contentWidth="600px" 
-            contentHeight="500px"
-            resizable="true"
-            draggable="true">
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    <Dialog
+        id="chatHistoryDialog"
+        title="Chat History"
+        contentWidth="600px"
+        contentHeight="500px"
+        resizable="true"
+        draggable="true"
+    >
         <content>
             <VBox class="sapUiMediumMargin">
-                <HBox justifyContent="SpaceBetween" alignItems="Center" class="sapUiSmallMarginBottom">
-                    <Text text="Your chat sessions:" class="sapUiMediumMarginBottom"/>
-                    <Button text="New Chat" 
-                            icon="sap-icon://add" 
+                <Toolbar style="Clear">
+                    <content>
+                        <Title text="Recent Chats" />
+                        <ToolbarSpacer ></ToolbarSpacer>
+                        <Button
+                            text="New Chat"
+                            icon="sap-icon://add"
                             type="Emphasized"
-                            press="startNewChat"/>
-                </HBox>
-                
-                <List id="chatHistoryList" 
-                      mode="SingleSelect"
-                      noDataText="No chat history found"
-                      class="sapUiResponsiveMargin">
+                            press="startNewChat"
+                        />
+                    </content>
+                </Toolbar>
+
+                <List
+                    id="chatHistoryList"
+                    mode="SingleSelect"
+                    noDataText="No chat history found"
+                >
                     <!-- Items will be bound dynamically -->
                 </List>
             </VBox>
         </content>
         <beginButton>
-            <Button text="Close" 
-                    press="onCloseChatHistory" 
-                    type="Transparent"/>
+            <Button
+                text="Close"
+                press="onCloseChatHistory"
+                type="Transparent"
+            />
         </beginButton>
         <endButton>
-            <Button text="Delete Selected" 
-                    press="onDeleteChatHistory" 
-                    type="Reject"
-                    enabled="false"
-                    id="deleteChatButton"/>
+            <Button
+                text="Delete Selected"
+                press="onDeleteChatHistory"
+                type="Reject"
+                enabled="false"
+                id="deleteChatButton"
+            />
         </endButton>
     </Dialog>
 </core:FragmentDefinition>
