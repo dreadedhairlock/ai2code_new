@@ -20,7 +20,6 @@ import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
 
-import cds.gen.ai.orchestration.BotInstance;
 import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.BotTypes_;
 import cds.gen.mainservice.BotInstances;
@@ -38,13 +37,13 @@ public class adoptHandler implements EventHandler {
     @Autowired
     private PersistenceService db;
 
-    @Before(event = BotMessagesAdoptContext.CDS_NAME)
-    public void beforeExecute(BotMessagesAdoptContext context, BotInstance botInstance) {
+    @Before(event = BotMessagesAdoptContext.CDS_NAME, entity = BotMessages_.CDS_NAME)
+    public void beforeAdopt(BotMessagesAdoptContext context) {
     }
 
-@On(event = BotMessagesAdoptContext.CDS_NAME, entity = BotMessages_.CDS_NAME)
-    public void onAdopt(BotMessagesAdoptContext context) {
-        List<ContextNodes> resultNodes = new ArrayList<>();
+    @On(event = BotMessagesAdoptContext.CDS_NAME, entity = BotMessages_.CDS_NAME)
+        public void onAdopt(BotMessagesAdoptContext context) {
+            List<ContextNodes> resultNodes = new ArrayList<>();
         
         try {
             // Get the CQN from context to identify which BotMessages to process
@@ -53,11 +52,14 @@ public class adoptHandler implements EventHandler {
             // 1. Get the current BotMessages entries
             Result botMessagesResult = db.run(selectQuery);
             
-            for (Object row : botMessagesResult) {
-                BotMessages botMessage = (BotMessages) row;
-                String botInstanceId = botMessage.getBotInstanceId();
-                
-                try {
+            botMessagesResult.stream().forEach(
+                row -> {
+                    System.out.println(row);
+                    String botInstanceId = row.getPath("botInstance_ID");
+                    String botMessageId = row.getPath("ID");
+                    System.out.println(botInstanceId);
+                    String botMessage = row.getPath("message");
+                    try {
                     // 2. Get BotInstances entry according to BotMessages.botInstance
                     CqnSelect selectBotInstance = Select.from(BotInstances_.CDS_NAME)
                             .columns(BotInstances_.ID, BotInstances_.TYPE_ID)
@@ -70,11 +72,11 @@ public class adoptHandler implements EventHandler {
                     
                     BotInstances botInstance = botInstanceResult.single(BotInstances.class);
                     String botTypeId = botInstance.getTypeId();
-                    
+                    System.out.println(botTypeId);
                     // 3. Get BotTypes entries based on BotInstances.type
                     CqnSelect selectBotType = Select.from(BotTypes_.CDS_NAME)
                             .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE)
-                            .byId(botTypeId);
+                            .where(b -> b.get("ID").eq(botTypeId));
                     Result botTypeResult = db.run(selectBotType);
                     
                     if (botTypeResult.rowCount() == 0) {
@@ -90,13 +92,13 @@ public class adoptHandler implements EventHandler {
                         contextNode.setPath(botType.getOutputContextPath());
                         
                         // Label: using bot message content as label
-                        contextNode.setLabel(botMessage.getMessage());
+                        contextNode.setLabel(botMessage);
                         
                         // Type: contextType set according to BotTypes
                         contextNode.setType(botType.getContextTypeCode());
                         
                         // Value: BotMessages.message/Convert to the corresponding format according to the AI function call
-                        String messageValue = processMessageValue(botMessage.getMessage(), botType.getContextType());
+                        String messageValue = processMessageValue(botMessage, botType.getContextType());
                         contextNode.setValue(messageValue);
                     
                     // Set task ID from bot instance
@@ -115,7 +117,7 @@ public class adoptHandler implements EventHandler {
                             .data(BotInstances.STATUS_CODE, "S");
                     db.run(updateBotInstance);
                     
-                    System.out.println("Successfully processed BotMessage ID: " + botMessage.getId() + 
+                    System.out.println("Successfully processed BotMessage ID: " + botMessageId + 
                                      " for BotInstance ID: " + botInstanceId);
                     
                 } catch (Exception e) {
@@ -133,8 +135,8 @@ public class adoptHandler implements EventHandler {
                     }
                     
                 }
-            }
-            
+                }
+            );
             // 6. Returns the ContextNodes entries
             context.setResult(resultNodes);
             
@@ -152,8 +154,8 @@ public class adoptHandler implements EventHandler {
         return message;
     }
 
-    @After(event = BotMessagesAdoptContext.CDS_NAME)
-    public void afterExecute(BotMessagesAdoptContext context) {
+    @After(event = BotMessagesAdoptContext.CDS_NAME, entity = BotMessages_.CDS_NAME)
+    public void afterAdopt(BotMessagesAdoptContext context) {
 
     }
 
