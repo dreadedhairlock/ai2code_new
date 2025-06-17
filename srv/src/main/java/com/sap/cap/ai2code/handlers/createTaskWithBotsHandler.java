@@ -40,7 +40,9 @@ public class createTaskWithBotsHandler implements EventHandler {
                 + context.getDescription() + ", "
                 + context.getTypeId());
         
-        CqnSelect select = Select.from(TaskTypes_.CDS_NAME).columns(TaskTypes_.ID).byId(context.getTypeId());
+        CqnSelect select = Select.from(TaskTypes_.CDS_NAME)
+                            .columns(TaskTypes_.ID)
+                            .where(t -> t.get("ID").eq(context.getTypeId()));
         Result result = db.run(select);
         if (result.rowCount() == 0) {
             throw new IllegalArgumentException("Task type with ID " + context.getTypeId() + " not found.");

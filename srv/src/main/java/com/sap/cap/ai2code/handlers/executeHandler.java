@@ -22,7 +22,7 @@ import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
 
-import cds.gen.ai.orchestration.BotInstance;
+// import cds.gen.ai.orchestration.BotInstance;
 import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.BotTypes_;
 import cds.gen.mainservice.BotInstances;
@@ -39,79 +39,79 @@ public class executeHandler implements EventHandler {
     private PersistenceService db;
 
     @Before(event = BotInstancesExecuteContext.CDS_NAME)
-    public void beforeExecute(BotInstancesExecuteContext context, BotInstance botInstance) {
-        System.out.println("Preparing to execute bot instance");
+    public void beforeExecute(BotInstancesExecuteContext context) {
+        // System.out.println("Preparing to execute bot instance");
         
-        // Validate the CQN select query if provided
-        if (context.getCqn() != null) {
-            System.out.println("Validating CQN query: " + context.getCqn().toString());
-        }
+        // // Validate the CQN select query if provided
+        // if (context.getCqn() != null) {
+        //     System.out.println("Validating CQN query: " + context.getCqn().toString());
+        // }
     }
 
     @On(event = BotInstancesExecuteContext.CDS_NAME)
     public void onExecute(BotInstancesExecuteContext context) {
-        System.out.println("Executing bot instance with context: " + context.toString());
+        // System.out.println("Executing bot instance with context: " + context.toString());
 
-        Collection<ContextNodes> resultNodes = new ArrayList<>();
+        // Collection<ContextNodes> resultNodes = new ArrayList<>();
 
-        try {
-            // Execute the CQN query to get bot instances
-            if (context.getCqn() != null) {
-                Result queryResult = db.run(context.getCqn());
+        // try {
+        //     // Execute the CQN query to get bot instances
+        //     if (context.getCqn() != null) {
+        //         Result queryResult = db.run(context.getCqn());
                 
-                queryResult.stream().forEach(row -> {
-                    try {
-                        BotInstances botInstance = BotInstances.of(row);
-                        String botInstanceId = botInstance.getId();
+        //         queryResult.stream().forEach(row -> {
+        //             try {
+        //                 BotInstances botInstance = BotInstances.of(row);
+        //                 String botInstanceId = botInstance.getId();
                         
-                        // Set status to Running
-                        updateBotInstanceStatus(botInstanceId, "R");
+        //                 // Set status to Running
+        //                 updateBotInstanceStatus(botInstanceId, "R");
                         
-                        // Get bot type information
-                        BotTypes botType = getBotType(botInstance.getTypeId());
+        //                 // Get bot type information
+        //                 BotTypes botType = getBotType(botInstance.getTypeId());
                         
-                        String executionResult = "";
-                        List<String> taskIds = new ArrayList<>();
+        //                 String executionResult = "";
+        //                 List<String> taskIds = new ArrayList<>();
                         
-                        if ("F".equals(botType.getTaskType())) {
-                            // F type BotInstance - Function call
-                            executionResult = executeFunctionCallBot(botInstance, botType);
-                        } else if ("C".equals(botType.getTaskType())) {
-                            // C type BotInstance - Custom implementation
-                            executionResult = executeCustomBot(botInstance, botType);
-                        }
+        //                 if ("F".equals(botType.getTaskType())) {
+        //                     // F type BotInstance - Function call
+        //                     executionResult = executeFunctionCallBot(botInstance, botType);
+        //                 } else if ("C".equals(botType.getTaskType())) {
+        //                     // C type BotInstance - Custom implementation
+        //                     executionResult = executeCustomBot(botInstance, botType);
+        //                 }
                         
-                        // Update bot instance with result
-                        updateBotInstanceResult(botInstanceId, executionResult);
+        //                 // Update bot instance with result
+        //                 updateBotInstanceResult(botInstanceId, executionResult);
                         
-                        // Create context nodes from result
-                        ContextNodes contextNode = createContextNode(botInstance, executionResult);
-                        if (contextNode != null) {
-                            resultNodes.add(contextNode);
-                        }
+        //                 // Create context nodes from result
+        //                 ContextNodes contextNode = createContextNode(botInstance, executionResult);
+        //                 if (contextNode != null) {
+        //                     resultNodes.add(contextNode);
+        //                 }
                         
-                        // Set status to Success
-                        updateBotInstanceStatus(botInstanceId, "S");
+        //                 // Set status to Success
+        //                 updateBotInstanceStatus(botInstanceId, "S");
                         
-                        // Notify frontend (placeholder for actual implementation)
-                        notifyFrontend(botInstance);
+        //                 // Notify frontend (placeholder for actual implementation)
+        //                 notifyFrontend(botInstance);
                         
-                    } catch (Exception e) {
-                        System.err.println("Error executing bot instance: " + e.getMessage());
-                        // Set status to Failed
-                        BotInstances botInstance = BotInstances.of(row);
-                        updateBotInstanceStatus(botInstance.getId(), "F");
-                        throw new RuntimeException("Bot execution failed", e);
-                    }
-                });
-            }
+        //             } catch (Exception e) {
+        //                 System.err.println("Error executing bot instance: " + e.getMessage());
+        //                 // Set status to Failed
+        //                 BotInstances botInstance = BotInstances.of(row);
+        //                 updateBotInstanceStatus(botInstance.getId(), "F");
+        //                 throw new RuntimeException("Bot execution failed", e);
+        //             }
+        //         });
+        //     }
             
-            context.setResult((BotInstancesExecuteContext.ReturnType) resultNodes);
+        //     context.setResult((BotInstancesExecuteContext.ReturnType) resultNodes);
             
-        } catch (Exception e) {
-            System.err.println("Error in bot execution: " + e.getMessage());
-            throw new RuntimeException("Bot execution process failed", e);
-        }
+        // } catch (Exception e) {
+        //     System.err.println("Error in bot execution: " + e.getMessage());
+        //     throw new RuntimeException("Bot execution process failed", e);
+        // }
 
         
     }
@@ -247,19 +247,19 @@ public class executeHandler implements EventHandler {
 
     @After(event = BotInstancesExecuteContext.CDS_NAME)
     public void afterExecute(BotInstancesExecuteContext context) {
-        System.out.println("Bot instance execution completed");
+        // System.out.println("Bot instance execution completed");
         
-        BotInstancesExecuteContext.ReturnType results = context.getResult();
-        if (results != null && results instanceof Collection<?>) {
-            Collection<?> collection = (Collection<?>) results;
-            System.out.println("Created " + collection.size() + " context nodes");
-            collection.forEach(node -> {
-                if (node instanceof ContextNodes) {
-                    ContextNodes contextNode = (ContextNodes) node;
-                    System.out.println("Context node: " + contextNode.getPath() + " = " + contextNode.getValue());
-                }
-            });
-        }
+        // BotInstancesExecuteContext.ReturnType results = context.getResult();
+        // if (results != null && results instanceof Collection<?>) {
+        //     Collection<?> collection = (Collection<?>) results;
+        //     System.out.println("Created " + collection.size() + " context nodes");
+        //     collection.forEach(node -> {
+        //         if (node instanceof ContextNodes) {
+        //             ContextNodes contextNode = (ContextNodes) node;
+        //             System.out.println("Context node: " + contextNode.getPath() + " = " + contextNode.getValue());
+        //         }
+        //     });
+        // }
     }
 
 }
