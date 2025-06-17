@@ -1,0 +1,19 @@
+POST http://localhost:8080/odata/v4/MainService/getContextNodesTree
+Content-Type: application/json
+
+{
+    "taskId": "550e8400-e29b-41d4-a716-446655440100"
+}
+
+#######
+
+POST http://localhost:8080/odata/v4/MainService/ContextNodes
+Content-Type: application/json
+
+{
+    "path": "test.node1",
+    "label": "bbb",
+    "type": "bbb",
+    "value": "bbb",
+    "task_ID": "550e8400-e29b-41d4-a716-446655440100"
+}

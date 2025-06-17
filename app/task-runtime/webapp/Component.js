@@ -39,7 +39,7 @@ sap.ui.define(
         if (sRoute === "RouteTaskDetail" && oArgs.taskId) {
           // reuse loader
           this._loadMainTasks(oArgs.taskId);
-          this._loadContextNodes(oArgs.taskId);
+          // this._loadContextNodes(oArgs.taskId);
         }
       },
 
@@ -61,93 +61,95 @@ sap.ui.define(
           });
       },
 
-      _loadContextNodes: function (taskId) {
-        return this.getModel()
-          .bindList("/Tasks('" + taskId + "')/contextNodes")
-          .requestContexts()
-          .then((aCtx) => {
-            const items = aCtx.map((c) => c.getObject());
+      // _loadContextNodes: function (taskId) {
+      //   return this.getModel()
+      //     .bindList("/Tasks('" + taskId + "')/contextNodes")
+      //     .requestContexts()
+      //     .then((aCtx) => {
+      //       const items = aCtx.map((c) => c.getObject());
 
-            // Group items berdasarkan path hierarchy
-            const treeMap = {};
+      //       // Group items berdasarkan path hierarchy
+      //       const treeMap = {};
 
-            items.forEach((item) => {
-              // Split path menggunakan dot notation
-              const pathParts = item.path
-                .split(".")
-                .filter((part) => part !== "");
-              let currentPath = "";
+      //       items.forEach((item) => {
+      //         // Split path menggunakan dot notation
+      //         const pathParts = item.path
+      //           .split(".")
+      //           .filter((part) => part !== "");
+      //         let currentPath = "";
 
-              // Buat hierarchy untuk setiap level
-              pathParts.forEach((part, index) => {
-                const previousPath = currentPath;
-                currentPath = currentPath ? currentPath + "." + part : part;
+      //         // Buat hierarchy untuk setiap level
+      //         pathParts.forEach((part, index) => {
+      //           const previousPath = currentPath;
+      //           currentPath = currentPath ? currentPath + "." + part : part;
 
-                // Buat node jika belum ada
-                if (!treeMap[currentPath]) {
-                  treeMap[currentPath] = {
-                    path: currentPath,
-                    label: part,
-                    children: [],
-                    isFolder: true,
-                  };
-                }
+      //           // Buat node jika belum ada
+      //           if (!treeMap[currentPath]) {
+      //             treeMap[currentPath] = {
+      //               path: currentPath,
+      //               label: part,
+      //               children: [],
+      //               isFolder: true,
+      //             };
+      //           }
 
-                // Link dengan parent
-                if (previousPath && treeMap[previousPath]) {
-                  const parent = treeMap[previousPath];
-                  const current = treeMap[currentPath];
+      //           // Link dengan parent
+      //           if (previousPath && treeMap[previousPath]) {
+      //             const parent = treeMap[previousPath];
+      //             const current = treeMap[currentPath];
 
-                  if (
-                    !parent.children.find(
-                      (child) => child.path === current.path
-                    )
-                  ) {
-                    parent.children.push(current);
-                  }
-                }
-              });
+      //             if (
+      //               !parent.children.find(
+      //                 (child) => child.path === current.path
+      //               )
+      //             ) {
+      //               parent.children.push(current);
+      //             }
+      //           }
+      //         });
 
-              // Tambahkan item data ke node terakhir
-              const finalPath = item.path;
-              if (treeMap[finalPath]) {
-                treeMap[finalPath].children.push({
-                  ID: item.ID,
-                  path: item.path,
-                  type: item.type,
-                  label: item.label,
-                  value: item.value,
-                  children: [],
-                  isFolder: false,
-                });
-              }
-            });
+      //         // Tambahkan item data ke node terakhir
+      //         const finalPath = item.path;
+      //         if (treeMap[finalPath]) {
+      //           treeMap[finalPath].children.push({
+      //             ID: item.ID,
+      //             path: item.path,
+      //             type: item.type,
+      //             label: item.label,
+      //             value: item.value,
+      //             children: [],
+      //             isFolder: false,
+      //           });
+      //         }
+      //       });
 
-            // Ambil root nodes
-            const rootNodes = Object.values(treeMap).filter((node) => {
-              const parentPath = node.path.includes(".")
-                ? node.path.substring(0, node.path.lastIndexOf("."))
-                : "";
-              return parentPath === "" || !treeMap[parentPath];
-            });
+      //       // Ambil root nodes
+      //       const rootNodes = Object.values(treeMap).filter((node) => {
+      //         const parentPath = node.path.includes(".")
+      //           ? node.path.substring(0, node.path.lastIndexOf("."))
+      //           : "";
+      //         return parentPath === "" || !treeMap[parentPath];
+      //       });
 
-            // Sort secara rekursif
-            const sortChildren = (node) => {
-              if (node.children && node.children.length > 0) {
-                node.children.sort((a, b) => {
-                  if (a.isFolder !== b.isFolder) {
-                    return a.isFolder ? -1 : 1;
-                  }
-                  return a.label.localeCompare(b.label);
-                });
-                node.children.forEach((child) => sortChildren(child));
-              }
-            };
+      //       // Sort secara rekursif
+      //       const sortChildren = (node) => {
+      //         if (node.children && node.children.length > 0) {
+      //           node.children.sort((a, b) => {
+      //             if (a.isFolder !== b.isFolder) {
+      //               return a.isFolder ? -1 : 1;
+      //             }
+      //             return a.label.localeCompare(b.label);
+      //           });
+      //           node.children.forEach((child) => sortChildren(child));
+      //         }
+      //       };
 
-            rootNodes.forEach((rootNode) => sortChildren(rootNode));
-            this.getModel("contextNodes").setData({ nodes: rootNodes });
-          });
-      },
+      //       rootNodes.forEach((rootNode) => sortChildren(rootNode));
+      //       this.getModel("contextNodes").setData({ nodes: rootNodes });
+      //       // const debug = this.getModel("contextNodes").getData();
+      //       // console.log(debug);
+      //     });
+      // },
     });
   }
 );
