@@ -4,8 +4,8 @@ using ai.orchestration.config as config from '../db/orchestration-config-model';
 service MainService {
     entity Tasks        as projection on db.Task;
     entity ContextNodes as projection on db.ContextNode;
-    entity TaskTypes     as projection on config.TaskType;
-    entity BotTypes      as projection on config.BotType;
+    entity TaskTypes    as projection on config.TaskType;
+    entity BotTypes     as projection on config.BotType;
 
     //entity SubTasks      as projection on db.SubTask;
     entity BotInstances as projection on db.BotInstance
@@ -27,6 +27,22 @@ service MainService {
     // Unbound actions
     action createTaskWithBots(name : String,
                               description : String,
-                              typeId : UUID) returns Tasks;
+                              typeId : UUID)  returns Tasks;
+
+
+    action getContextNodesTree(taskId : UUID) returns {
+        nodes : array of {
+            NodeID         : Integer;
+            HierarchyLevel : Integer;
+            ParentNodeID   : Integer;
+            DrillState     : String;
+            ID             : UUID null; // Optional for folder
+            path           : String;
+            label          : String; // Show the label in the tree
+            type           : String;
+            value          : String null; // Optional for folder
+            isFolder       : Boolean;
+        }
+    }
 
 }

@@ -1,0 +1,59 @@
+[
+  {
+    "path": "documents",
+    "isFolder": true,
+    "children": [
+      {
+        "path": "documents.section1",
+        "isFolder": true,
+        "children": [
+          {
+            "path": "documents.section1",
+            "isFolder": false,
+            "children": [],
+            "ID": "660e8400-e29b-41d4-a716-446655440200",
+            "label": "title",
+            "type": "text",
+            "value": "Invoice Q1"
+          },
+          {
+            "path": "documents.section1",
+            "isFolder": false,
+            "children": [],
+            "ID": "660e8400-e29b-41d4-a716-446655440201",
+            "label": "date",
+            "type": "text",
+            "value": "2024-03-31"
+          },
+          {
+            "path": "documents.section1.path",
+            "isFolder": true,
+            "children": [
+              {
+                "path": "documents.section1.path",
+                "isFolder": false,
+                "children": [],
+                "ID": "15438c90-cf97-4343-ba36-f73ff2e0b53b",
+                "label": "aaa",
+                "type": "String",
+                "value": "aaaa"
+              }
+            ],
+            "ID": null,
+            "label": "path",
+            "type": null,
+            "value": null
+          }
+        ],
+        "ID": null,
+        "label": "section1",
+        "type": null,
+        "value": null
+      }
+    ],
+    "ID": null,
+    "label": "documents",
+    "type": null,
+    "value": null
+  }
+]

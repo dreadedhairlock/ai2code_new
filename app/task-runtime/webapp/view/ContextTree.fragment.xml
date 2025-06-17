@@ -12,12 +12,14 @@
                 id="contextTree"
                 mode="SingleSelectMaster"
                 items="{
-          path: 'contextNodes>/nodes'
+          path: 'contextNodes>/rootNodes',
+          parameters:{numberOfExpandedLevels: 1}
         }"
                 itemPress=".onCNItemPress"
             >
                 <StandardTreeItem
                     title="{contextNodes>label}"
+                    icon="{= ${contextNodes>isFolder} ? 'sap-icon://folder' : 'sap-icon://document-text' }"
                     type="Active"
                 />
             </Tree>

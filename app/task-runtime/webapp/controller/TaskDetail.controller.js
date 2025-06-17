@@ -55,6 +55,9 @@ sap.ui.define(
         oRouter.attachRouteMatched(
           function (oEvent) {
             this._sTaskId = oEvent.getParameter("arguments").taskId;
+
+            // load context tree
+            this.loadContextNodesTree();
             oModel.refresh();
           }.bind(this)
         );
@@ -64,6 +67,138 @@ sap.ui.define(
         this._currentChatId = null;
         this._loadHistoryFromStorage();
         this.startNewChat();
+
+        // Initialize view model for tree data
+        var oViewModel = new JSONModel({
+          rootNodes: [],
+          selectedNode: null,
+        });
+        this.getView().setModel(oViewModel, "contextNodes");
+      },
+
+      loadContextNodesTree: function () {
+        // Retrieve the main OData model from the component
+        const oModel = this.getOwnerComponent().getModel();
+        // Access the view's JSON model for context nodes
+        const oViewModel = this.getView().getModel("contextNodes");
+
+        // Create an unbound action binding for getContextNodesTree
+        const oContextBinding = oModel.bindContext("/getContextNodesTree(...)");
+
+        // Set the input parameter for the action
+        oContextBinding.setParameter("taskId", this._sTaskId);
+
+        // Execute the action and handle the result
+        oContextBinding
+          .execute()
+          .then((oContext) => {
+            // Try to extract the response object from the context
+            let finalResult;
+
+            if (oContext) {
+              try {
+                finalResult = oContext.getObject();
+              } catch (e) {
+                console.warn("Error retrieving result from context object:", e);
+              }
+            }
+
+            // Fallback: try to get the result from the bound context if main context fails
+            if (!finalResult) {
+              const boundContext = oContextBinding.getBoundContext();
+              if (boundContext) {
+                finalResult = boundContext.getObject();
+              }
+            }
+
+            return finalResult;
+          })
+          .then((result) => {
+            // Normalize the returned data into a flat node array
+            let nodes = [];
+
+            if (result && result.nodes) {
+              // Case 1: Expected format { nodes: [...] }
+              nodes = result.nodes;
+            } else if (result && Array.isArray(result)) {
+              // Case 2: Direct array
+              nodes = result;
+            } else if (result && typeof result === "object") {
+              // Case 3: Try to find an array within any property
+              Object.keys(result).forEach((key) => {
+                if (Array.isArray(result[key])) {
+                  nodes = result[key];
+                }
+              });
+            }
+
+            // Update the tree model if nodes exist
+            if (nodes && nodes.length > 0) {
+              // Convert flat node data into hierarchical tree structure
+              const hierarchicalData = this._convertFlatToHierarchical(nodes);
+
+              // Update the JSON view model with structured nodes
+              if (oViewModel) {
+                oViewModel.setProperty("/rootNodes", hierarchicalData);
+              }
+            } else {
+              // No valid node data found; fallback to empty structure
+              console.warn("No nodes data found");
+              if (oViewModel) {
+                oViewModel.setProperty("/rootNodes", []);
+              }
+            }
+          })
+          .catch((oError) => {
+            // Handle any errors that occur during action execution
+            console.error("Action failed:", oError);
+            MessageToast.show("Error loading tree data");
+          });
+      },
+
+      /**
+       * Converts a flat array of nodes into a hierarchical structure
+       * suitable for display in a Tree control.
+       *
+       * @param {Array} flatNodes - The flat list of nodes with parent references
+       * @returns {Array} Hierarchical array of root nodes with nested children
+       */
+      _convertFlatToHierarchical: function (flatNodes) {
+        if (!flatNodes || flatNodes.length === 0) {
+          return [];
+        }
+
+        // Create a map for quick node lookups by NodeID
+        var nodesMap = {};
+        flatNodes.forEach(function (node) {
+          // Shallow copy to avoid mutating original data
+          var nodeCopy = Object.assign({}, node);
+          // Initialize an empty children array
+          nodeCopy.nodes = [];
+          // Store in map using NodeID as the key
+          nodesMap[node.NodeID] = nodeCopy;
+        });
+
+        // Build the hierarchical tree structure
+        var rootNodes = [];
+        flatNodes.forEach(function (node) {
+          var nodeWithChildren = nodesMap[node.NodeID];
+
+          if (node.ParentNodeID === null) {
+            // Node has no parent; it's a root node
+            rootNodes.push(nodeWithChildren);
+          } else {
+            // Node has a parent; append to parent's children array
+            var parent = nodesMap[node.ParentNodeID];
+            if (parent) {
+              parent.nodes.push(nodeWithChildren);
+            } else {
+              // Log warning if parent node is missing
+              console.warn("Parent not found for node:", node);
+            }
+          }
+        });
+        return rootNodes;
       },
 
       onToggleBeginColumn: function () {
@@ -126,6 +261,7 @@ sap.ui.define(
 
         // Get node data from the context
         const oNode = oCtx.getObject();
+        console.log(oNode);
 
         // Store the selected node's attributes
         this._selectedNodePath = oNode.path;
@@ -275,7 +411,8 @@ sap.ui.define(
         await oBinding.create(oNew).created();
         MessageToast.show("Context Node created");
 
-        await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+        // await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+        this.loadContextNodesTree();
         this.oCreateDialog.close();
       },
 
@@ -318,9 +455,7 @@ sap.ui.define(
                     await oBoundContext.delete();
                     MessageToast.show("Context node deleted successfully.");
 
-                    await this.getOwnerComponent()._loadContextNodes(
-                      this._sTaskId
-                    );
+                    this.loadContextNodesTree();
                   } else {
                     MessageToast.show("Could not find context with ID: " + sID);
                   }
@@ -456,7 +591,7 @@ sap.ui.define(
 
           MessageToast.show("Context Node updated");
           this.oEditDialog.close();
-          await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
+          this.loadContextNodesTree();
           this._refreshCNContent();
         } catch (err) {
           console.error("Update error:", err);
@@ -1314,7 +1449,7 @@ sap.ui.define(
         this.conversationHistory = [];
       },
 
-      onSubmitQuery: async function () {
+      Query: async function () {
         var oInput = this.byId("chatInput");
         var sMessage = oInput.getValue().trim();
         if (sMessage) {
@@ -1328,7 +1463,7 @@ sap.ui.define(
           // Simulate AI response (replace with your actual AI call)
           try {
             const API_KEY = "AIzaSyDyE_D4ej7SljvLAV5vWMmkQxg5OjGv5r4";
-            const model = "gemini-2.0-flash";
+            const modelonSubmit = "gemini-2.0-flash";
 
             // Prepare the request with full conversation history
             const requestBody = {
