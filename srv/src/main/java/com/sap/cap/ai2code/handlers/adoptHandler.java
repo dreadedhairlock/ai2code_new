@@ -64,7 +64,7 @@ public class adoptHandler implements EventHandler {
                     try {
                     // 2. Get BotInstances entry according to BotMessages.botInstance
                     CqnSelect selectBotInstance = Select.from(BotInstances_.CDS_NAME)
-                              .columns(BotInstances_.ID, BotInstances_.TYPE_ID)
+                              .columns(BotInstances_.ID, BotInstances_.TYPE_ID, BotInstances_.TASK_ID)
                               .byId(botInstanceId);
                     Result botInstanceResult = db.run(selectBotInstance);
 
@@ -79,7 +79,7 @@ public class adoptHandler implements EventHandler {
 
                     // 3. Get BotTypes entries based on BotInstances.type
                     CqnSelect selectBotType = Select.from(BotTypes_.CDS_NAME)
-                              .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE)
+                    .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE, BotTypes.OUTPUT_CONTEXT_PATH, BotTypes_.TASK_TYPE_ID)
                               .where(b -> b.get("ID").eq(botTypeId));
                     Result botTypeResult = db.run(selectBotType);
 
