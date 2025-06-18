@@ -7,9 +7,11 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.coyote.http11.filters.VoidOutputFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,11 +29,11 @@ import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
 
-import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstancesChatCompletionContext;
 import cds.gen.mainservice.BotInstances_;
 import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessages_;
+import cds.gen.mainservice.PromptText_;
 
 @Component
 @ServiceName("MainService")
@@ -53,18 +55,20 @@ public class chatCompletionHandler implements EventHandler {
     public void handleChatCompletion(BotInstancesChatCompletionContext context) {
         String content = context.getContent();
         String aiResponse;
-        BotMessages aiResponseFinal = null;
+        String botTypeId;
         String botInstanceId = null;
+        BotMessages aiResponseFinal = null;
 
         try {
             // 1. Set BotInstance status to Running
-            botInstanceId = getBotInstanceAndSetRunning(context);
+            Map<String, String> info = getBotInstanceAndSetRunning(context);
+            botTypeId = info.get("botTypeId");
+            botInstanceId = info.get("botInstanceId");
 
-            // 2. Check if first conversation or continuing conversation
-            List<BotMessages> messageHistory = getMessageHistory(botInstanceId);
+            List<BotMessages> messageHistory = getMessageHistory(botInstanceId, botTypeId);
             boolean isFirstConversation = messageHistory.isEmpty();
 
-            // 3. Build message context (history + user for continuing, just user for first)
+            // 3. Build message context (history + user)
             List<Map<String, String>> conversationContext = buildConversationContext(
                     messageHistory, content, isFirstConversation);
 
@@ -95,11 +99,13 @@ public class chatCompletionHandler implements EventHandler {
      * Sets the status of a bot instance to "Running" and returns the
      * botInstanceId
      */
-    private String getBotInstanceAndSetRunning(BotInstancesChatCompletionContext context) {
+    private Map<String, String> getBotInstanceAndSetRunning(BotInstancesChatCompletionContext context) {
         // retrieving a query context
         CqnSelect selectQuery = context.getCqn();
         Result botInstanceResult = db.run(selectQuery);
+        System.out.println("selectQuery" + selectQuery);
         String botInstanceId = botInstanceResult.single().get("ID").toString();
+        String botTypeid = botInstanceResult.single().get("type_ID").toString();
 
         // Update status to Running
         CqnUpdate updateQuery = Update.entity(BotInstances_.class)
@@ -108,22 +114,71 @@ public class chatCompletionHandler implements EventHandler {
         db.run(updateQuery);
 
         System.out.println("Set Bot Instance " + botInstanceId + " to Running status");
-        return botInstanceId;
+
+        Map<String, String> result = new HashMap<>();
+        result.put("botTypeId", botTypeid);
+        result.put("botInstanceId", botInstanceId);
+        return result;
     }
 
     /**
      * Gets message history for the bot instance
      */
-    private List<BotMessages> getMessageHistory(String botInstanceId) {
+    private List<BotMessages> getMessageHistory(String botInstanceId, String botTypeId) {
+
+        List<BotMessages> messageHistory;
+
+        // Get previous messages for this bot instance
         CqnSelect getMessages = Select.from(BotMessages_.class)
                 .where(m -> m.botInstance().ID().eq(botInstanceId))
                 .orderBy(m -> m.createdAt().asc());
-
         Result messagesResult = db.run(getMessages);
-        List<BotMessages> messageHistory = messagesResult.listOf(BotMessages.class);
 
-        System.out.println("Found " + messageHistory.size() + " previous messages");
+        if (messagesResult.list().isEmpty()) {
+            // If no previous messages, fallback to system prompt
+            messageHistory = getSystemPrompt(botInstanceId, botTypeId);
+            System.out.println("No previous messages found. Loaded system prompt.");
+        } else {
+            // If messages found, use them
+            messageHistory = messagesResult.listOf(BotMessages.class);
+            System.out.println("Found " + messageHistory.size() + " previous messages.");
+        }
+
         return messageHistory;
+    }
+
+    private List<BotMessages> getSystemPrompt(String botInstanceId, String botTypeId) {
+        CqnSelect getPromptText = Select.from(PromptText_.class)
+                .columns("name", "content")
+                .where(p -> p.botType_ID().eq(botTypeId).and(p.lang_code().eq("en")));
+
+        Result promptTextResult = db.run(getPromptText);
+
+        List<BotMessages> systemPrompts = new ArrayList<>();
+
+        if (!promptTextResult.list().isEmpty()) {
+            promptTextResult.list().forEach(row -> {
+                String name = row.get("name") != null ? row.get("name").toString() : "";
+                String content = row.get("content") != null ? row.get("content").toString() : "";
+
+                BotMessages promptMessage = BotMessages.create();
+                promptMessage.setBotInstanceId(botInstanceId);
+                promptMessage.setRole("system");
+                promptMessage.setMessage(name + ": " + content);
+                systemPrompts.add(promptMessage);
+
+                CqnInsert insertMessages = Insert.into(BotMessages_.class).entries(systemPrompts);
+                db.run(insertMessages);
+
+                System.out.println("System prompt for botTypeId: " + botTypeId + " > " + systemPrompts);
+
+            });
+        } else {
+            System.out.println("No prompt text found for botTypeId: " + botTypeId);
+        }
+
+        return systemPrompts;
+
     }
 
     /**
