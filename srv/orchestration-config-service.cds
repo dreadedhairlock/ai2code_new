@@ -1,7 +1,6 @@
 using ai.orchestration.config as cfg from '../db/orchestration-config-model';
 
 service ConfigService {
-  entity TaskTypes            as projection on cfg.TaskType;
   //entity TaskBotSequences     as projection on cfg.TaskBotSequence;
   entity BotTypes             as projection on cfg.BotType;
   entity ModelConfigs         as projection on cfg.ModelConfig;
@@ -12,5 +11,3 @@ service ConfigService {
   //entity RagFunctions         as projection on cfg.RagFunction;
   entity ContextTypes         as projection on cfg.ContextType;
 }
-
-annotate ConfigService.TaskTypes with @odata.draft.enabled ;

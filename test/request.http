@@ -1,0 +1,11 @@
+### Adopt BotMessages (Custom Action)
+GET http://localhost:8080/api/MainService/BotMessages/adoptContext
+Content-Type: application/json
+
+{
+  "IDs": [
+    "your-botmessage-id-here"
+  ]
+}
+
+GET http://localhost:8080/api/MainService/BotMessages
