@@ -33,7 +33,7 @@
                 "subTitle": "{{appSubTitle}}",
                 "icon": "sap-icon://add-activity",
                 "indicatorDataSource": {
-                    "dataSource": "ConfigService",
+                    "dataSource": "MainService",
                     "path": "TaskTypes/$count",
                     "refresh": 1800
                 }

@@ -1,3 +1,3 @@
 using from '../../srv/index';
 
-annotate cds.UUID with  @Core.Computed  @odata.Type: 'Edm.String';
+annotate cds.UUID with  @odata.Type: 'Edm.String';
