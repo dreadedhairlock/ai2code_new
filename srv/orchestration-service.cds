@@ -24,9 +24,9 @@ service MainService {
         }
 
     // Unbound actions
-    action createTaskWithBots(name : String,
+    action createTaskWithBots(name : String @mandatory,
                               description : String,
-                              typeId : UUID) returns Tasks;
+                              typeId : UUID @mandatory) returns Tasks;
 
 }
 
