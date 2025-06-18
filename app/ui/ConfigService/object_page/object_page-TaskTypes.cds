@@ -1,7 +1,7 @@
 using from '../../../../srv/index';
 using from '../../../index';
 
-annotate ConfigService.TaskTypes with @(UI: {
+annotate MainService.TaskTypes with @(UI: {
     HeaderInfo             : {
         TypeName      : '{i18n>TaskName}',
         TypeNamePlural: '{i18n>TaskPlural}',
