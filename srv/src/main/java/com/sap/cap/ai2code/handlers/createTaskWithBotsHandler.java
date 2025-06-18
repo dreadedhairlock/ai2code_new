@@ -16,7 +16,7 @@ import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
 
 import static cds.gen.configservice.ConfigService_.BOT_TYPES;
-import cds.gen.configservice.TaskTypes_;
+import cds.gen.mainservice.TaskTypes_;
 import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstances_;
 import cds.gen.mainservice.ContextNodes;
@@ -34,16 +34,12 @@ public class createTaskWithBotsHandler implements EventHandler {
 
     @Before(event = CreateTaskWithBotsContext.CDS_NAME)
     public void beforeCreateTaskWithBots(CreateTaskWithBotsContext context) {
-
-        System.out.println("Preparing to create task with bots: "
-                + context.getName() + ", "
-                + context.getDescription() + ", "
-                + context.getTypeId());
-        
+        // 1. Query the entries in the TaskTypes table in ConfigService and its botTypes according to typeId
         CqnSelect select = Select.from(TaskTypes_.CDS_NAME)
                             .columns(TaskTypes_.ID)
                             .where(t -> t.get("ID").eq(context.getTypeId()));
         Result result = db.run(select);
+
         if (result.rowCount() == 0) {
             throw new IllegalArgumentException("Task type with ID " + context.getTypeId() + " not found.");
         }
@@ -51,71 +47,89 @@ public class createTaskWithBotsHandler implements EventHandler {
 
     @On(event = CreateTaskWithBotsContext.CDS_NAME)
     public void onCreateTaskWithBots(CreateTaskWithBotsContext context) {
-        // Implement the logic to handle the creation of a task with bots
-        // This method will be triggered when a CreateTaskWithBots event occurs
-        // You can access the context to get details about the task being created
-        System.out.println("Creating task with bots: "
-                + context.getName() + ", "
-                + context.getDescription() + ", "
-                + context.getTypeId());
-        
-        // 创建一条目MainService.Tasks。
+        // 2. Create an entry MainService.Tasks.
         Tasks task = Tasks.create();
-        // Type 设置为typeId查找到的TaskType
+
+        System.out.println("Creating task with bots: "
+                            + context.getName() + ", "
+                            + context.getDescription() + ", "
+                            + context.getTypeId()); 
+
+        // Type is set to the TaskType found by typeId
         task.setTypeId(context.getTypeId());
         // Name
         task.setName(context.getName());
         // Description
         task.setDescription(context.getDescription());
-        // 将isMain设置为true
+        // Set isMain to true 
         task.setIsMain(true);
-        // contextPath设置为空
+        // Set contextPath to empty
         task.setContextPath(null);
-        // sequence设置为空或0
+        // Set the sequence to empty or 0
         task.setSequence(0);
 
+        // insert task
         CqnInsert insert = Insert.into(Tasks_.CDS_NAME).entry(task);
         Result result = db.run(insert);
+        
+        // 5. Return the created Tasks entry to the front end
         context.setResult(result.single(Tasks.class));
+
+        System.out.println("Task created successfully: "
+        + context.getResult().getName() + ", "
+        + context.getResult().getDescription() + ", "
+        + context.getResult().getTypeId());
     }
 
     @After(event = CreateTaskWithBotsContext.CDS_NAME)
     public void afterCreateTaskWithBots(CreateTaskWithBotsContext context) {
-        // Implement any post-processing logic after creating a task with bots
-        // This method will be triggered after the CreateTaskWithBots event occurs
-        // You can log the created task or perform additional actions here
-        System.out.println("Task created successfully: "
-                + context.getResult().getName() + ", "
-                + context.getResult().getDescription() + ", "
-                + context.getResult().getTypeId());
+        
         String TaskID = context.getResult().getId();
-        CqnSelect select = Select.from(BOT_TYPES).where(b -> b.taskType_ID().eq(context.getResult().getTypeId()));
+        // Get Type ID from Bot Types
+        CqnSelect select = Select.from(BOT_TYPES)
+                        .where(b -> b.taskType_ID()
+                        .eq(context.getResult()
+                        .getTypeId()));
         Result selectResult = db.run(select);
         System.out.println("Bot types: " + selectResult.toJson());
-        // 根据ConfigService.TaskTypes.botTypes的条目数，创建相应条目数的MainService.BotInstances。
+        
+        
+        // 3. Create the corresponding number of MainService.BotInstances 
         selectResult.stream().forEach(
             row -> {
                 BotInstances botInstance = BotInstances.create();
-                // Sequence 设置为 ConfigService.BotTypes.sequence
+                // Sequence is set to ConfigService.BotTypes.sequence
                 botInstance.setSequence(row.getPath("sequence"));
-                // Type 设置为ConfigService.BotTypes
+                // Type is set to ConfigService.BotTypes
                 botInstance.setTypeId(row.getPath("ID"));
-                // status设置为BotInstanceStatus.code.C (Created)
+                // status is set to BotInstanceStatus.code.C (Created)
                 botInstance.setStatusCode("C");
+                // taskID is set
                 botInstance.setTaskId(TaskID);
-                CqnInsert insertBot = Insert.into(BotInstances_.CDS_NAME).entry(botInstance);
+                CqnInsert insertBot = Insert.into(BotInstances_.CDS_NAME)
+                                    .entry(botInstance);
                 Result insertBotResult = db.run(insertBot);
+                System.out.println("BotInstance Result: " + insertBotResult);
             }
         );
 
-        // 将description和第二步得到的Tasks.Id，创建一条MainService.ContextNodes。
+        // 4. Create a new MainService.ContextNodes
             ContextNodes contextNode = ContextNodes.create();
+            // task
             contextNode.setTaskId(TaskID);
+            // path
             contextNode.setPath(context.getResult().getDescription());
+            // label
             contextNode.setLabel(context.getResult().getDescription());
+            // type
+            contextNode.setType(context.getResult().getDescription());
+            // value
             contextNode.setValue(context.getResult().getDescription());
-            CqnInsert insertContextNode = Insert.into(ContextNodes_.CDS_NAME).entry(contextNode);
-            Result insertBotResult = db.run(insertContextNode);
+
+            CqnInsert insertContextNode = Insert.into(ContextNodes_.CDS_NAME)
+                                            .entry(contextNode);
+            Result insertContextNodeResult = db.run(insertContextNode);
+            System.out.println("ContextNode Result: " + insertContextNodeResult);
     }
 
 }

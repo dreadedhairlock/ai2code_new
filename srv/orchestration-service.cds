@@ -29,5 +29,4 @@ service MainService {
                               typeId : UUID @mandatory) returns Tasks;
 
 }
-
 annotate MainService.TaskTypes with @odata.draft.enabled ;

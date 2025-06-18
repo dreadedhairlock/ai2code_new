@@ -43,10 +43,10 @@ public class adoptHandler implements EventHandler {
 
     @On(event = BotMessagesAdoptContext.CDS_NAME, entity = BotMessages_.CDS_NAME)
         public void onAdopt(BotMessagesAdoptContext context) {
-            List<ContextNodes> resultNodes = new ArrayList<>();
+            List<ContextNodes> resultNodes = new ArrayList<>(); //set array
         
         try {
-            // Get the CQN from context to identify which BotMessages to process
+            // Get BotMessage information
             CqnSelect selectQuery = context.getCqn();
             
             // 1. Get the current BotMessages entries
@@ -54,29 +54,33 @@ public class adoptHandler implements EventHandler {
             
             botMessagesResult.stream().forEach(
                 row -> {
-                    System.out.println(row);
+                    System.out.println("Row: " + row);
                     String botInstanceId = row.getPath("botInstance_ID");
-                    String botMessageId = row.getPath("ID");
-                    System.out.println(botInstanceId);
-                    String botMessage = row.getPath("message");
+                    String botMessageId  = row.getPath("ID");
+                    String botMessage    = row.getPath("message");
+                    System.out.println("BotInstance with ID: " + botInstanceId);
+                    System.out.println("BotMessage with ID: " + botMessageId);
+
                     try {
                     // 2. Get BotInstances entry according to BotMessages.botInstance
                     CqnSelect selectBotInstance = Select.from(BotInstances_.CDS_NAME)
-                            .columns(BotInstances_.ID, BotInstances_.TYPE_ID)
-                            .byId(botInstanceId);
+                              .columns(BotInstances_.ID, BotInstances_.TYPE_ID)
+                              .byId(botInstanceId);
                     Result botInstanceResult = db.run(selectBotInstance);
                     
                     if (botInstanceResult.rowCount() == 0) {
                         throw new IllegalArgumentException("BotInstance with ID " + botInstanceId + " not found.");
                     }
                     
+                    //select single BotInstance
                     BotInstances botInstance = botInstanceResult.single(BotInstances.class);
                     String botTypeId = botInstance.getTypeId();
-                    System.out.println(botTypeId);
+                    System.out.println("BotType with ID: " + botTypeId);
+
                     // 3. Get BotTypes entries based on BotInstances.type
                     CqnSelect selectBotType = Select.from(BotTypes_.CDS_NAME)
-                            .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE)
-                            .where(b -> b.get("ID").eq(botTypeId));
+                              .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE)
+                              .where(b -> b.get("ID").eq(botTypeId));
                     Result botTypeResult = db.run(selectBotType);
                     
                     if (botTypeResult.rowCount() == 0) {
@@ -116,9 +120,7 @@ public class adoptHandler implements EventHandler {
                             .byId(botInstanceId)
                             .data(BotInstances.STATUS_CODE, "S");
                     db.run(updateBotInstance);
-                    
-                    System.out.println("Successfully processed BotMessage ID: " + botMessageId + 
-                                     " for BotInstance ID: " + botInstanceId);
+                    System.out.println("Successfully processed BotInstance ID: " + botInstanceId);
                     
                 } catch (Exception e) {
                     // Error handling: Set the status field of BotInstances to F (Failed)
@@ -139,6 +141,7 @@ public class adoptHandler implements EventHandler {
             );
             // 6. Returns the ContextNodes entries
             context.setResult(resultNodes);
+            System.out.println("Result Nodes: " + resultNodes);
             
         } catch (Exception e) {
             System.err.println("Error in adopt handler: " + e.getMessage());
