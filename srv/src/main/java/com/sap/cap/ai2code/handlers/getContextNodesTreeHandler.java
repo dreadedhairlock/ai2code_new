@@ -1,7 +1,6 @@
 package com.sap.cap.ai2code.handlers;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,7 +25,6 @@ import cds.gen.mainservice.GetContextNodesTreeContext;
 
 @Component
 @ServiceName("MainService")
-
 public class getContextNodesTreeHandler implements EventHandler {
 
     private final PersistenceService db;
@@ -38,20 +36,21 @@ public class getContextNodesTreeHandler implements EventHandler {
     @On(event = GetContextNodesTreeContext.CDS_NAME)
     public void onGetContextNodesTree(GetContextNodesTreeContext context) {
 
-        // Get the ID from the parameter
+        // Retrieve the taskId parameter from the action context
         String taskId = context.getTaskId();
 
-        // Create CQN query for get the Context node related to the taskId
+        // Build a CQN query to fetch context nodes associated with the task ID
         CqnSelect query = Select.from(ContextNodes_.class)
                 .where(cn -> cn.get("task_ID").eq(taskId));
 
-        // Execute query
+        // Execute the query
         Result result_db = db.run(query);
 
-        // print for debug only
+        // Debug logs to verify input and result
         System.out.println("UUID: " + taskId);
         System.out.println("Result: " + result_db);
 
+        // Map the result rows to a list of simplified objects
         List<Map<String, Object>> items = result_db.stream()
                 .map(row -> {
                     Map<String, Object> item = new HashMap<>();
@@ -64,44 +63,45 @@ public class getContextNodesTreeHandler implements EventHandler {
                 })
                 .collect(Collectors.toList());
 
-        System.out.println("Items: " + items);
-
-        // Konversi ke struktur flat
+        // Convert the items into a flat hierarchical structure
         List<Map<String, Object>> flatNodes = convertToFlatStructure(items);
 
-        // Response
+        // Wrap the result into a response object
         Map<String, Object> response = new HashMap<>();
         response.put("nodes", flatNodes);
 
+        // Set the response on the action context
         GetContextNodesTreeContext.ReturnType result = GetContextNodesTreeContext.ReturnType.of(response);
         context.setResult(result);
-        System.out.println("Flat nodes: " + flatNodes);
+
     }
 
+    /**
+     * Converts a list of items with dot-separated paths into a flat hierarchical
+     * structure
+     * containing folders and leaf nodes for use in tree-like UIs.
+     */
     private List<Map<String, Object>> convertToFlatStructure(List<Map<String, Object>> items) {
-        // Hasil akhir
         List<Map<String, Object>> flatNodes = new ArrayList<>();
-        int nodeId = 1; // Counter untuk penomoran node
+        int nodeId = 1; // Unique identifier for each node
 
-        // Struktur bantuan
         Map<String, Integer> pathToNodeId = new HashMap<>();
         Set<String> processedFolderPaths = new HashSet<>();
 
-        // LANGKAH 1: Ekstrak dan proses semua folder path unik dari items
+        // STEP 1: Collect all unique folder paths from item paths
         Set<String> folderPaths = new LinkedHashSet<>();
 
-        // Tambahkan semua path dan ekstrak root folders secara otomatis
         for (Map<String, Object> item : items) {
             String path = (String) item.get("path");
             if (path != null && !path.isEmpty()) {
                 String[] parts = path.split("\\.");
 
-                // Tambahkan root folder (elemen pertama dari path)
+                // Add top-level folder
                 if (parts.length > 0) {
                     folderPaths.add(parts[0]);
                 }
 
-                // Tambahkan semua segmen path
+                // Add nested folder paths incrementally
                 StringBuilder currentPath = new StringBuilder();
                 for (String part : parts) {
                     if (currentPath.length() > 0) {
@@ -113,34 +113,26 @@ public class getContextNodesTreeHandler implements EventHandler {
             }
         }
 
-        // LANGKAH 2: Buat folder nodes dalam urutan hierarki
+        // STEP 2: Create folder nodes in order from root to leaves
         List<String> sortedFolderPaths = new ArrayList<>(folderPaths);
-        // Urutkan berdasarkan panjang path (jumlah segmen) untuk memastikan parent
-        // dibuat terlebih dahulu
-        Collections.sort(sortedFolderPaths, Comparator.comparingInt(p -> ((String) p).split("\\.").length));
+        sortedFolderPaths.sort(Comparator.comparingInt(p -> p.split("\\.").length));
 
         for (String folderPath : sortedFolderPaths) {
-            if (processedFolderPaths.contains(folderPath)) {
+            if (processedFolderPaths.contains(folderPath))
                 continue;
-            }
 
             String[] parts = folderPath.split("\\.");
             String folderName = parts[parts.length - 1];
             String parentPath = parts.length > 1 ? folderPath.substring(0, folderPath.lastIndexOf(".")) : null;
+            Integer parentNodeId = parentPath != null ? pathToNodeId.get(parentPath) : null;
 
-            Integer parentNodeId = null;
-            if (parentPath != null) {
-                parentNodeId = pathToNodeId.get(parentPath);
-            }
+            int level = parts.length - 1;
 
-            int level = parts.length - 1; // Root level = 0
-
-            // Buat folder node dengan properti minimal yang diperlukan
             Map<String, Object> folderNode = new HashMap<>();
             folderNode.put("NodeID", nodeId);
             folderNode.put("HierarchyLevel", level);
             folderNode.put("ParentNodeID", parentNodeId);
-            folderNode.put("DrillState", "expanded"); // Default, akan diubah nanti
+            folderNode.put("DrillState", "expanded"); // Folders are expanded by default
             folderNode.put("path", folderPath);
             folderNode.put("label", folderName);
             folderNode.put("type", "folder");
@@ -152,29 +144,24 @@ public class getContextNodesTreeHandler implements EventHandler {
             nodeId++;
         }
 
-        // LANGKAH 3: Tambahkan semua item data sebagai leaf nodes
+        // STEP 3: Add leaf nodes representing the actual data items
         for (Map<String, Object> item : items) {
             String path = (String) item.get("path");
             String label = (String) item.get("label");
 
-            // Parent akan selalu berupa folder path
             Integer parentNodeId = pathToNodeId.get(path);
             if (parentNodeId == null) {
-                // Jika parent folder belum dibuat, coba gunakan level atas terakhir
                 int lastDotIndex = path.lastIndexOf(".");
                 if (lastDotIndex > 0) {
                     String parentPath = path.substring(0, lastDotIndex);
                     parentNodeId = pathToNodeId.get(parentPath);
                 }
-
-                // Jika masih tidak ada parent, lewati item ini
                 if (parentNodeId == null) {
                     System.out.println("Warning: No parent found for path: " + path + ", item: " + label);
                     continue;
                 }
             }
 
-            // Tentukan level berdasarkan parent
             int parentLevel = -1;
             for (Map<String, Object> node : flatNodes) {
                 if (node.get("NodeID").equals(parentNodeId)) {
@@ -184,7 +171,6 @@ public class getContextNodesTreeHandler implements EventHandler {
             }
             int level = parentLevel + 1;
 
-            // Buat item node dengan properti yang diperlukan
             Map<String, Object> itemNode = new HashMap<>();
             itemNode.put("NodeID", nodeId);
             itemNode.put("HierarchyLevel", level);
@@ -201,14 +187,12 @@ public class getContextNodesTreeHandler implements EventHandler {
             nodeId++;
         }
 
-        // LANGKAH 4: Update DrillState untuk folder berdasarkan apakah mereka memiliki
-        // children
+        // STEP 4: Adjust folder nodes' DrillState if they have no children
         for (Map<String, Object> node : flatNodes) {
             if ((Boolean) node.get("isFolder")) {
                 Integer currentNodeId = (Integer) node.get("NodeID");
                 boolean hasChildren = flatNodes.stream()
                         .anyMatch(child -> currentNodeId.equals(child.get("ParentNodeID")));
-
                 if (!hasChildren) {
                     node.put("DrillState", "leaf");
                 }
@@ -218,29 +202,34 @@ public class getContextNodesTreeHandler implements EventHandler {
         return flatNodes;
     }
 
-    private String getParentPath(String path) {
-        int lastDotIndex = path.lastIndexOf(".");
-        return lastDotIndex > 0 ? path.substring(0, lastDotIndex) : null;
-    }
+    // /**
+    // * Returns the parent path of a given dot-separated path.
+    // */
+    // private String getParentPath(String path) {
+    // int lastDotIndex = path.lastIndexOf(".");
+    // return lastDotIndex > 0 ? path.substring(0, lastDotIndex) : null;
+    // }
 
-    // Helper class untuk menangani pasangan nilai dalam BFS
-    class Pair<K, V> {
-        private K key;
-        private V value;
+    // /**
+    // * Simple generic pair class to assist with traversals or mappings.
+    // */
+    // class Pair<K, V> {
+    // private K key;
+    // private V value;
 
-        public Pair(K key, V value) {
-            this.key = key;
-            this.value = value;
-        }
+    // public Pair(K key, V value) {
+    // this.key = key;
+    // this.value = value;
+    // }
 
-        public K getKey() {
-            return key;
-        }
+    // public K getKey() {
+    // return key;
+    // }
 
-        public V getValue() {
-            return value;
-        }
-    }
+    // public V getValue() {
+    // return value;
+    // }
+    // }
 
     // // Ganti seluruh logika tree building Anda dengan ini:
 
