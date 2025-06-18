@@ -40,7 +40,7 @@ public class chatCompletionHandler implements EventHandler {
     @Autowired
     private PersistenceService db;
 
-    private final String apiKey = "AIzaSyDyE_D4ej7SljvLAV5vWMmkQxg5OjGv5r4";
+    private final String apiKey = "AIzaSyBnUu21XsdzPYDgBN0OzzoQmFNrK0QTYi0";
     private final String model = "gemini-2.0-flash";
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -53,6 +53,7 @@ public class chatCompletionHandler implements EventHandler {
     public void handleChatCompletion(BotInstancesChatCompletionContext context) {
         String content = context.getContent();
         String aiResponse;
+        BotMessages aiResponseFinal = null;
         String botInstanceId = null;
 
         try {
@@ -70,8 +71,8 @@ public class chatCompletionHandler implements EventHandler {
             // 4. Call AI API with proper context
             aiResponse = callGeminiAPIWithContext(conversationContext);
 
-            // 5. Persist messages to database
-            persistMessages(botInstanceId, content, aiResponse);
+            // 5. Save messages to database
+            aiResponseFinal = saveMessages(botInstanceId, content, aiResponse);
 
             // 6. Update status to Success
             updateBotInstanceStatus(botInstanceId, "S");
@@ -86,14 +87,8 @@ public class chatCompletionHandler implements EventHandler {
             }
         }
 
-        // Create and return BotMessages response
-        BotMessages response = BotMessages.create();
-        response.setRole("assistant");
-        response.setMessage(aiResponse);
-        response.setRagData("AI response from Gemini API");
-
         System.out.println("Gemini Response: " + aiResponse);
-        context.setResult(response);
+        context.setResult(aiResponseFinal);
     }
 
     /**
@@ -101,6 +96,7 @@ public class chatCompletionHandler implements EventHandler {
      * botInstanceId
      */
     private String getBotInstanceAndSetRunning(BotInstancesChatCompletionContext context) {
+        // retrieving a query context
         CqnSelect selectQuery = context.getCqn();
         Result botInstanceResult = db.run(selectQuery);
         String botInstanceId = botInstanceResult.single().get("ID").toString();
@@ -131,8 +127,8 @@ public class chatCompletionHandler implements EventHandler {
     }
 
     /**
-     * Builds conversation context - SIMPLIFIED VERSION: - First conversation:
-     * just user message - Continuing conversation: history + user message
+     * Builds conversation context: system prompt + history + recent user
+     * message
      */
     private List<Map<String, String>> buildConversationContext(
             List<BotMessages> messageHistory, String userMessage, boolean isFirstConversation) {
@@ -233,11 +229,14 @@ public class chatCompletionHandler implements EventHandler {
     }
 
     /**
-     * Persists messages to database message + assistant response
+     * Save messages to database message + assistant response
      */
-    private void persistMessages(String botInstanceId, String userMessage, String aiResponse) {
+    private BotMessages saveMessages(String botInstanceId, String userMessage, String aiResponse) {
         List<BotMessages> messagesToInsert = new ArrayList<>();
+        // Timestamp for user message
         Instant now = Instant.now();
+        // Timestamp for AI response (better result when sort by createdAt)
+        Instant delayedNow = now.plusMillis(1000);
 
         // Add user message
         BotMessages userMsg = BotMessages.create();
@@ -253,8 +252,10 @@ public class chatCompletionHandler implements EventHandler {
         assistantMsg.setBotInstanceId(botInstanceId);
         assistantMsg.setRole("assistant");
         assistantMsg.setMessage(aiResponse);
-        assistantMsg.setCreatedAt(now);
+        assistantMsg.setCreatedAt(delayedNow);
         assistantMsg.setCreatedBy("system");
+        assistantMsg.setModifiedAt(delayedNow);
+        assistantMsg.setModifiedBy("anonymous");
         messagesToInsert.add(assistantMsg);
 
         // Batch insert all messages
@@ -263,6 +264,8 @@ public class chatCompletionHandler implements EventHandler {
             db.run(insertMessages);
             System.out.println("Persisted " + messagesToInsert.size() + " messages");
         }
+
+        return assistantMsg;
     }
 
     /**
@@ -278,6 +281,7 @@ public class chatCompletionHandler implements EventHandler {
 
             db.run(updateQuery);
 
+            // TO DO: get status code list directly from db
             String statusName = switch (statusCode) {
                 case "R" ->
                     "RUNNING";
