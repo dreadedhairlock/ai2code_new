@@ -1510,7 +1510,7 @@ sap.ui.define(
 
             // // Parsing dan tampilkan response
             // const parsedResponse = this.parseAIResponse(reply);
-            this.addChatMessage(reply, "ai");
+            this.addChatMessage(reply, "assistant");
 
             // Tambahkan ke history lokal
             // this.addToHistory("ai", parsedResponse);
@@ -1591,7 +1591,7 @@ sap.ui.define(
         // Clear existing messages
         this.byId("chatMessagesBox").removeAllItems();
 
-        // Gunakan endpoint OData standard dengan filter
+        // filter based on the botInstance
         var url = `/odata/v4/MainService/BotMessages?$filter=botInstance_ID eq '${botInstanceId}'&$orderby=createdAt asc`;
 
         fetch(url, {
@@ -1616,8 +1616,6 @@ sap.ui.define(
             }
           })
           .catch(function (error) {
-            // Hide busy indicator
-
             console.error("Error loading chat history:", error);
             that.addChatMessage(
               "error",
