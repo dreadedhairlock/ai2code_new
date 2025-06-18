@@ -81,7 +81,7 @@
   justify-content: flex-end;
 }
 
-.chatBubbleContainer.ai {
+.chatBubbleContainer.assistant {
   justify-content: flex-start;
 }
 
@@ -100,7 +100,7 @@
   border-bottom-right-radius: 4px;
 }
 
-.chatBubble.ai {
+.chatBubble.assistant {
   background-color: #f1f1f1;
   color: #333;
   border-bottom-left-radius: 4px;
@@ -121,7 +121,7 @@
   margin-bottom: -8px;
 }
 
-.chatBubble.ai::after {
+.chatBubble.assistant::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -145,7 +145,7 @@
   text-align: right;
 }
 
-.chatBubbleContainer.ai .chatTimestamp {
+.chatBubbleContainer.assistant .chatTimestamp {
   color: #888;
   text-align: left;
 }

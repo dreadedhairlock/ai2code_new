@@ -672,6 +672,9 @@ sap.ui.define(
               }.bind(this)
             );
         } else if (sType === "bot") {
+          this._selectedBotInstanceId = sID;
+
+          this._loadChatHistory();
           oModel
             .bindList("/BotInstances('" + sID + "')/tasks")
             .requestContexts()
@@ -1453,6 +1456,12 @@ sap.ui.define(
         var oInput = this.byId("chatInput");
         var sMessage = oInput.getValue().trim();
 
+        if (!this._selectedBotInstanceId) {
+          MessageToast.show("Select bot instance first!");
+          return;
+        }
+        const botInstanceId = `'${this._selectedBotInstanceId}'`;
+
         if (sMessage) {
           try {
             // Tampilkan pesan pengguna
@@ -1467,7 +1476,7 @@ sap.ui.define(
             // Tandai sedang loading
             // this.getView().getModel("ui").setProperty("/busy", true);
             // ID Bot Instance (ganti dengan cara mendapatkan ID yang sesuai)
-            const botInstanceId = "'880e8400-e29b-41d4-a716-446655440500'"; // Ganti dengan ID yang valid
+            // Ganti dengan ID yang valid
 
             // Panggil backend CAP Java
             const response = await fetch(
@@ -1485,8 +1494,8 @@ sap.ui.define(
               }
             );
 
-            const resData = await response.json();
-            const reply = resData.value;
+            const resData = await response.text();
+            const reply = JSON.parse(resData).message;
 
             // Matikan loading
             // this.getView().getModel("ui").setProperty("/busy", false);
@@ -1540,7 +1549,7 @@ sap.ui.define(
         });
 
         //   // Handle parsed AI responses
-        if (sType === "ai" && Array.isArray(sMessage)) {
+        if (sType === "assistant" && Array.isArray(sMessage)) {
           // Handle regular string messages
           const messageContent =
             typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
@@ -1573,6 +1582,48 @@ sap.ui.define(
           });
           oChatBox.addItem(oHTML);
         }
+      },
+
+      _loadChatHistory: function () {
+        var that = this;
+        var botInstanceId = this._selectedBotInstanceId;
+
+        // Clear existing messages
+        this.byId("chatMessagesBox").removeAllItems();
+
+        // Gunakan endpoint OData standard dengan filter
+        var url = `/odata/v4/MainService/BotMessages?$filter=botInstance_ID eq '${botInstanceId}'&$orderby=createdAt asc`;
+
+        fetch(url, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error("HTTP error " + response.status);
+            }
+            return response.json();
+          })
+          .then(function (data) {
+            // Check if we got messages
+            if (data && data.value && Array.isArray(data.value)) {
+              // Loop through messages and add to chat
+              data.value.forEach(function (response) {
+                that.addChatMessage(response.message, response.role);
+              });
+            }
+          })
+          .catch(function (error) {
+            // Hide busy indicator
+
+            console.error("Error loading chat history:", error);
+            that.addChatMessage(
+              "error",
+              "Error loading chat history: " + error.message
+            );
+          });
       },
 
       // // Helper function to generate unique message IDs
