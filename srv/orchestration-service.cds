@@ -1,7 +1,9 @@
 using ai.orchestration as db from '../db/orchestration-model';
+using ai.orchestration.config as cfg from '../db/orchestration-config-model';
 
 service MainService {
     entity Tasks        as projection on db.Task;
+    entity TaskTypes    as projection on cfg.TaskType;
     entity ContextNodes as projection on db.ContextNode;
 
     //entity SubTasks      as projection on db.SubTask;
@@ -27,3 +29,5 @@ service MainService {
                               typeId : UUID) returns Tasks;
 
 }
+
+annotate MainService.TaskTypes with @odata.draft.enabled ;
