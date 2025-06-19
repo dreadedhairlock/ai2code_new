@@ -82,6 +82,7 @@ public class adoptHandler implements EventHandler {
                                     .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE, BotTypes.OUTPUT_CONTEXT_PATH,
                                             BotTypes_.TASK_TYPE_ID)
                                     .where(b -> b.get("ID").eq(botTypeId));
+                                    
                             Result botTypeResult = db.run(selectBotType);
 
                             if (botTypeResult.rowCount() == 0) {

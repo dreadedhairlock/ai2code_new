@@ -74,6 +74,130 @@ sap.ui.define(
           selectedNode: null,
         });
         this.getView().setModel(oViewModel, "contextNodes");
+        // Create context menu programmatically if it doesn't exist
+        if (!this._oContextMenu) {
+          this._oContextMenu = new sap.m.Menu({
+            items: [
+              new sap.m.MenuItem({
+                text: "Create file",
+                icon: "sap-icon://create",
+                press: this.onCreateFile.bind(this),
+              }),
+              new sap.m.MenuItem({
+                text: "Create new folder",
+                icon: "sap-icon://add-folder",
+                press: this.onCreateFolder.bind(this),
+              }),
+            ],
+          });
+
+          // Add the menu to the view
+          this.getView().addDependent(this._oContextMenu);
+        }
+
+        // Get reference to the tree
+        var oTree = this.byId("contextTree");
+
+        // Attach browser's contextmenu event to the tree
+        oTree.attachBrowserEvent("contextmenu", this._onContextMenu.bind(this));
+      },
+
+      /**
+       * Store reference to the clicked item for later use in menu handlers
+       *
+       * @param {Event} oEvent - Browser event from right-click
+       */
+      _storeClickedItem: function (oEvent) {
+        // Get the DOM element that was right-clicked
+        var oElement = oEvent.target;
+
+        // Find the tree item from the DOM element
+        while (oElement && oElement.id) {
+          var oControl = sap.ui.getCore().byId(oElement.id);
+          // Check if we found a tree item
+          if (oControl instanceof sap.m.StandardTreeItem) {
+            this._clickedItem = oControl;
+            console.log("Right-clicked on: " + oControl.getTitle());
+            return;
+          }
+          oElement = oElement.parentNode;
+        }
+
+        // If we get here, we didn't click directly on a tree item
+        this._clickedItem = null;
+      },
+
+      /**
+       * Handle context menu event (right-click)
+       * Uses more basic positioning approach to avoid jQuery issues
+       *
+       * @param {Event} oEvent - Browser event from right-click
+       */
+      _onContextMenu: function (oEvent) {
+        // Prevent default browser context menu
+        oEvent.preventDefault();
+
+        // Store the clicked item
+        this._storeClickedItem(oEvent);
+
+        // Simple approach: use the DOM event target directly
+        try {
+          console.log("Opening menu using DOM element");
+          this._oContextMenu.openBy(oEvent.target);
+        } catch (oError) {
+          // If openBy with target fails, try with current tree item
+          console.log("Fallback: opening menu using tree item", oError);
+          if (this._clickedItem) {
+            this._oContextMenu.openBy(this._clickedItem);
+          } else {
+            // Last resort: try placing menu near the cursor
+            console.log("Last resort: placing menu using viewport coordinates");
+
+            // Create a temporary span element at cursor position
+            var oTempSpan = document.createElement("span");
+            oTempSpan.style.position = "fixed";
+            oTempSpan.style.left = (oEvent.clientX || 0) + "px";
+            oTempSpan.style.top = (oEvent.clientY || 0) + "px";
+            oTempSpan.style.zIndex = -1;
+            oTempSpan.className = "sapUiHidden";
+            document.body.appendChild(oTempSpan);
+
+            // Open menu by the temporary element and remove it afterward
+            this._oContextMenu.openBy(oTempSpan);
+            setTimeout(function () {
+              if (document.body.contains(oTempSpan)) {
+                document.body.removeChild(oTempSpan);
+              }
+            }, 100);
+          }
+        }
+      },
+
+      /**
+       * Handler for Create File menu item press
+       */
+      onCreateFile: function () {
+        this.onCreateCNData();
+      },
+
+      /**
+       * Handler for Create Folder menu item press
+       */
+      onCreateFolder: function () {
+        // Get the clicked item
+        var oItem = this._clickedItem;
+
+        if (oItem) {
+          var sItemText = oItem.getTitle();
+          console.log("Create folder action for: " + sItemText);
+
+          // Here you would implement the actual folder creation
+          // For now, just show a message
+          MessageToast.show("Creating folder under " + sItemText);
+        } else {
+          console.log("Create folder action (no specific item)");
+          MessageToast.show("Creating folder at root level");
+        }
       },
 
       loadContextNodesTree: function () {
@@ -1554,12 +1678,6 @@ sap.ui.define(
       // _currentMessages: [], // Current chat messages
 
       // // Modified addChatMessage function
-      /**
-       * Menambahkan pesan chat ke VBox dengan tombol Adopt pada pesan assistant
-       * @param {string|object} sMessage - Konten pesan
-       * @param {string} sType - Tipe pesan ('user' atau 'assistant')
-       * @param {string} [sMessageId] - ID pesan di database (opsional)
-       */
       addChatMessage: function (sMessage, sType, sMessageId) {
         var oChatBox = this.byId("chatMessagesBox");
         var sTimestamp = new Date().toLocaleTimeString([], {
@@ -1574,6 +1692,9 @@ sap.ui.define(
         // Base HTML content
         var sHtmlContent = "";
 
+        // Generate unique ID for the button
+        var buttonId = "adoptBtn_" + sMessageId + "_" + new Date().getTime();
+
         if (sType === "assistant" && sMessageId) {
           // Untuk pesan assistant dengan ID, tambahkan tombol Adopt
           sHtmlContent = `
@@ -1581,8 +1702,8 @@ sap.ui.define(
                 <div class="chatBubble ${sType}">
                     <div>${messageContent}</div>
                     <div class="chatTimestamp">${sTimestamp}</div>
-                    <button id="adoptBtn_${sMessageId}" class="adoptButton">
-                      <span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopt
+                    <button id="${buttonId}" class="adoptButton" data-message-id="${sMessageId}">
+                        <span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopt
                     </button>
                 </div>
             </div>
@@ -1604,19 +1725,13 @@ sap.ui.define(
           content: sHtmlContent,
           afterRendering: function (oEvent) {
             if (sType === "assistant" && sMessageId) {
-              // Tambahkan event handler untuk tombol Adopt
-              var adoptBtn = document.getElementById("adoptBtn_" + sMessageId);
+              var adoptBtn = document.getElementById(buttonId);
               if (adoptBtn) {
-                // Hapus handler yang mungkin sudah ada untuk mencegah duplikasi
-                adoptBtn.removeEventListener(
-                  "click",
-                  this._createAdoptClickHandler(sMessageId)
-                );
-
-                // Tambahkan handler baru
+                // Use simple once-attached click handler with debouncing
                 adoptBtn.addEventListener(
                   "click",
-                  this._createAdoptClickHandler(sMessageId).bind(this)
+                  this._handleAdoptClick.bind(this),
+                  { once: false }
                 );
               }
             }
@@ -1627,63 +1742,75 @@ sap.ui.define(
         oChatBox.addItem(oHTML);
       },
 
-      /**
-       * Membuat handler untuk klik tombol adopt
-       * @param {string} sMessageId - ID pesan
-       * @returns {function} Event handler function
-       */
-      _createAdoptClickHandler: function (sMessageId) {
-        return function (oEvent) {
-          // Mencegah event bubbling
-          oEvent.stopPropagation();
+      // Centralized handler for adopt clicks with debounce mechanism
+      _handleAdoptClick: function (event) {
+        // Get message ID from data attribute
+        var messageId = event.currentTarget.getAttribute("data-message-id");
+        if (!messageId) return;
 
-          // Panggil fungsi adopt
-          this.onAdoptMessage(sMessageId);
-        }.bind(this);
+        // Prevent bubbling
+        event.stopPropagation();
+
+        // Temporary disable button during operation to prevent multi-clicks
+        var button = event.currentTarget;
+        if (button._isProcessing) return; // Skip if already processing
+
+        button._isProcessing = true;
+        var originalText = button.innerHTML;
+        button.innerHTML =
+          '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopting...';
+
+        // Call adopt function
+        this.onAdoptMessage(messageId)
+          .then(function () {
+            // Show success indicator briefly
+            button.innerHTML =
+              '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopted!';
+
+            // Reset button after a short delay to show the success state
+            setTimeout(function () {
+              button.innerHTML = originalText;
+              button._isProcessing = false;
+            }, 1000);
+          })
+          .catch(function (error) {
+            // Show error state briefly
+            button.innerHTML =
+              '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Failed!';
+            console.error("Error adopting message:", error);
+
+            // Reset button after a short delay
+            setTimeout(function () {
+              button.innerHTML = originalText;
+              button._isProcessing = false;
+            }, 1000);
+          });
       },
 
-      /**
-       * Memanggil action adopt() pada entity BotMessages
-       * @param {string} sMessageId - ID pesan yang akan diadopsi
-       * @param {HTMLElement} adoptBtn - Tombol yang diklik
-       * @param {string} originalHTML - HTML asli tombol
-       */
       onAdoptMessage: function (sMessageId) {
-        // Dapatkan model OData V4
-        var oModel = this.getOwnerComponent().getModel();
+        // Return a promise that can be awaited by the caller
+        return new Promise((resolve, reject) => {
+          // Dapatkan model OData V4
+          var oModel = this.getOwnerComponent().getModel();
 
-        // Binding context for action
-        var sPath = "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
-        var oOperation = oModel.bindContext(sPath);
+          // Binding context for action
+          var sPath = "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
+          var oOperation = oModel.bindContext(sPath);
 
-        // Buat flag khusus untuk mencegah multiple invocation pada message yang sama
-        var invocationKey = "_invoking_adopt_" + sMessageId;
-
-        // Set flag bahwa adopt sedang dipanggil untuk message ini
-        this[invocationKey] = true;
-
-        // execute action
-        oOperation
-          .invoke()
-          .then(
-            function (oResult) {
+          // execute action
+          oOperation
+            .invoke()
+            .then((oResult) => {
               MessageToast.show("Message adopted successfully");
-
               // Load context tree
               this.loadContextNodesTree();
-            }.bind(this)
-          )
-          .catch(
-            function (oError) {
+              resolve(oResult);
+            })
+            .catch((oError) => {
               MessageToast.show("Error: " + oError.message);
-              console.error("Error adopting message:", oError);
-            }.bind(this)
-          )
-          .finally(
-            function () {
-              delete this[invocationKey];
-            }.bind(this)
-          );
+              reject(oError);
+            });
+        });
       },
 
       _loadChatHistory: function () {
