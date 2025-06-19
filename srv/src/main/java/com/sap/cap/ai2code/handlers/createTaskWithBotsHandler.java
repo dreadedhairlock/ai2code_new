@@ -71,7 +71,7 @@ public class createTaskWithBotsHandler implements EventHandler {
         // insert task
         CqnInsert insert = Insert.into(Tasks_.CDS_NAME).entry(task);
         Result result = db.run(insert);
-        
+
         // 5. Return the created Tasks entry to the front end
         context.setResult(result.single(Tasks.class));
 
@@ -83,7 +83,7 @@ public class createTaskWithBotsHandler implements EventHandler {
 
     @After(event = CreateTaskWithBotsContext.CDS_NAME)
     public void afterCreateTaskWithBots(CreateTaskWithBotsContext context) {
-        
+
         String TaskID = context.getResult().getId();
         // Get Type ID from Bot Types
         CqnSelect select = Select.from(BOT_TYPES)
@@ -92,8 +92,8 @@ public class createTaskWithBotsHandler implements EventHandler {
                         .getTypeId()));
         Result selectResult = db.run(select);
         System.out.println("Bot types: " + selectResult.toJson());
-        
-        
+
+
         // 3. Create the corresponding number of MainService.BotInstances 
         selectResult.stream().forEach(
             row -> {
