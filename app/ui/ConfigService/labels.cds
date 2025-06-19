@@ -1,6 +1,6 @@
 using from '../../../srv/index';
 
-annotate ConfigService.TaskTypes with @title: '{i18n>TaskTypes}' {
+annotate MainService.TaskTypes with @title: '{i18n>TaskTypes}' {
     name        @Common.Label               : '{i18n>TaskName}';
     description @Common.Label               : '{i18n>Description}';
     autoRun     @Common.Label               : '{i18n>TaskAutoRun}';

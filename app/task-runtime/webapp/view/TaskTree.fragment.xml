@@ -16,14 +16,9 @@
                 selectionChange=".onTaskSelect"
             >
                 <StandardTreeItem
-                    title="{=
-    ${taskTree>type}
-    + ' : '
-    + ( ${taskTree>name}
-        ? ${taskTree>name}
-        : ${taskTree>ID}
-      )
-  }"
+                    title="{= ${taskTree>type} === 'bot' 
+            ? 'Bot : ' + (${taskTree>botTypeName} ? ${taskTree>botTypeName} + ' #' + ${taskTree>sequence} : 'Bot #' + ${taskTree>sequence})
+            : ${taskTree>type} + ' : ' + (${taskTree>name} ? ${taskTree>name} : ${taskTree>ID})}"
                 />
             </Tree>
         </ScrollContainer>

@@ -1,10 +1,8 @@
 using ai.orchestration.config as cfg from '../db/orchestration-config-model';
 
 service ConfigService {
-  @odata.draft.enabled
-  entity TaskTypes           as projection on cfg.TaskType;
-
   //entity TaskBotSequences     as projection on cfg.TaskBotSequence;
+  entity TaskTypes           as projection on cfg.TaskType;
   entity BotTypes            as projection on cfg.BotType;
   entity ModelConfigs        as projection on cfg.ModelConfig;
   entity PromptTexts         as projection on cfg.PromptText;

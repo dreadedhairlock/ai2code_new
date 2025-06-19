@@ -4,20 +4,21 @@
 
 /*PANELS*/
 .topPanel {
-    border-bottom: 1px solid #dcdcdc;
+  border-bottom: 1px solid #dcdcdc;
 }
 
 .bottomPanel {
-    border-top: 1px solid #dcdcdc;
+  border-top: 1px solid #dcdcdc;
 }
 
 /*BOX*/
-.topSection, .bottomSection {
+.topSection,
+.bottomSection {
   padding: 1rem;
   border: 1px solid #dcdcdc;
   border-radius: 8px;
   background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
 }
@@ -26,7 +27,8 @@
   overflow-y: auto;
 }
 
-.aiChatTitle, .codeResultTitle{
+.aiChatTitle,
+.codeResultTitle {
   text-align: center;
   width: 100%;
   display: block;
@@ -34,22 +36,22 @@
 }
 
 .aiChatTitle {
-    vertical-align: middle;
-    line-height: 2.75rem; /* aligns visually with Button */
+  vertical-align: middle;
+  line-height: 2.75rem; /* aligns visually with Button */
 }
 
 .chatHistoryButton {
-    margin-left: 0.5rem;
-    vertical-align: middle;
+  margin-left: 0.5rem;
+  vertical-align: middle;
 }
 
 .chatHistoryTitle {
-    font-weight: bold;
-    margin-bottom: 0.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
 }
 
 .chatHistoryBox {
-    padding: 1rem;
+  padding: 1rem;
 }
 
 /*CHAT MESSAGES AREA*/
@@ -91,7 +93,7 @@
   border-radius: 18px;
   word-wrap: break-word;
   position: relative;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .chatBubble.user {
@@ -199,7 +201,7 @@
 .codeResultContent pre {
   margin: 0;
   padding: 0.75rem;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 0.9rem;
   background-color: #ffffff;
   border: 1px solid #ddd;
@@ -210,4 +212,44 @@
 
 .codeResultContent code {
   display: block;
+}
+
+css
+
+/* Styling untuk tombol Adopt */
+.adoptButton {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  background-color: #007bff;
+  color: #0854a0;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0; /* Tersembunyi secara default */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  font-family: "72", "72full", Arial, Helvetica, sans-serif;
+  outline: none;
+}
+
+/* Munculkan tombol saat hover di chat bubble */
+.chatBubble.assistant:hover .adoptButton {
+  opacity: 0.9;
+}
+
+.adoptButton:hover {
+  background-color: #fafafa;
+  color: #0a6ed1;
+  border-color: #d0d0d0;
+  opacity: 1 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.adoptButton:active {
+  background-color: #e8e8e8;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset;
+  transform: translateY(1px);
 }
