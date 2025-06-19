@@ -94,7 +94,12 @@ public class adoptHandler implements EventHandler {
                             ContextNodes contextNode = ContextNodes.create();
 
                             // Path: outputContextPath set according to BotTypes
-                            contextNode.setPath(botType.getOutputContextPath());
+                            String path = botType.getOutputContextPath();
+                            System.out.println("path: " + path);
+                            String cleanedPath = path.contains("SubContext:") ? path.replaceFirst("SubContext:", "")
+                                    : path;
+                            System.out.println("path: " + cleanedPath);
+                            contextNode.setPath(cleanedPath);
 
                             // Label: using bot message content as label
                             String labelValue = botMessage != null && botMessage.length() > 200
