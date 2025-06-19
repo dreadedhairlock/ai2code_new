@@ -1,4 +1,6 @@
-// package com.sap.cap.ai2code.service;
+package com.sap.cap.ai2code.service;
+
+import cds.gen.mainservice.BotMessagesAdoptContext;
 
 // import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -8,7 +10,7 @@
 // import cds.gen.mainservice.BotInstancesExecuteContext;
 // import cds.gen.mainservice.BotMessagesAdoptContext;
 
-// public interface BotService {
+public interface BotService {
 //     public Bot getCurrentBot(String botInstanceId);
 //     public Bot getCurrentBot(String taskId, int sequence);
 
@@ -23,6 +25,6 @@
 //     public BotInstancesExecuteContext.ReturnType execute(BotInstancesExecuteContext context);
 //     public BotInstancesExecuteContext.ReturnType execute(String botInstanceId);
 
-//     public void adopt(BotMessagesAdoptContext context);
-//     public void adopt(String botInstanceId, String messageId);
-// }
+    public void adopt(BotMessagesAdoptContext context);
+    public void adopt(String botInstanceId, String messageId);
+}
