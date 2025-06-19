@@ -1,8 +1,8 @@
 //UNCHECKED
 package com.sap.cap.ai2code.handlers;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +22,13 @@ import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
 
-// import cds.gen.ai.orchestration.BotInstance;
+import cds.gen.ai.orchestration.config.PromptText;
 import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.BotTypes_;
+import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstancesExecuteContext;
+import cds.gen.mainservice.BotInstancesExecuteContext.ReturnType;
 import cds.gen.mainservice.BotInstances_;
 import cds.gen.mainservice.ContextNodes;
 import cds.gen.mainservice.ContextNodes_;
@@ -40,81 +42,70 @@ public class executeHandler implements EventHandler {
 
     @Before(event = BotInstancesExecuteContext.CDS_NAME)
     public void beforeExecute(BotInstancesExecuteContext context) {
-        // System.out.println("Preparing to execute bot instance");
+         System.out.println("Preparing to execute bot instance");
         
-        // // Validate the CQN select query if provided
-        // if (context.getCqn() != null) {
-        //     System.out.println("Validating CQN query: " + context.getCqn().toString());
-        // }
+        // Validate the CQN select query if provided
+        if (context.getCqn() != null) {
+            System.out.println("Validating CQN query: " + context.getCqn().toString());
+        }
     }
 
     @On(event = BotInstancesExecuteContext.CDS_NAME)
     public void onExecute(BotInstancesExecuteContext context) {
-        // System.out.println("Executing bot instance with context: " + context.toString());
+        System.out.println("Executing bot instance with context: " + context.toString());
 
-        // Collection<ContextNodes> resultNodes = new ArrayList<>();
-
-        // try {
-        //     // Execute the CQN query to get bot instances
-        //     if (context.getCqn() != null) {
-        //         Result queryResult = db.run(context.getCqn());
+        try {
+            // Execute the CQN query to get bot instances
+            if (context.getCqn() != null) {
+                Result queryResult = db.run(context.getCqn());
                 
-        //         queryResult.stream().forEach(row -> {
-        //             try {
-        //                 BotInstances botInstance = BotInstances.of(row);
-        //                 String botInstanceId = botInstance.getId();
+                queryResult.stream().forEach(row -> {
+                    try {
+                        BotInstances botInstance = BotInstances.of(row);
+                        String botInstanceId = botInstance.getId();
                         
-        //                 // Set status to Running
-        //                 updateBotInstanceStatus(botInstanceId, "R");
-                        
-        //                 // Get bot type information
-        //                 BotTypes botType = getBotType(botInstance.getTypeId());
-                        
-        //                 String executionResult = "";
-        //                 List<String> taskIds = new ArrayList<>();
-                        
-        //                 if ("F".equals(botType.getTaskType())) {
-        //                     // F type BotInstance - Function call
-        //                     executionResult = executeFunctionCallBot(botInstance, botType);
-        //                 } else if ("C".equals(botType.getTaskType())) {
-        //                     // C type BotInstance - Custom implementation
-        //                     executionResult = executeCustomBot(botInstance, botType);
-        //                 }
-                        
-        //                 // Update bot instance with result
-        //                 updateBotInstanceResult(botInstanceId, executionResult);
-                        
-        //                 // Create context nodes from result
-        //                 ContextNodes contextNode = createContextNode(botInstance, executionResult);
-        //                 if (contextNode != null) {
-        //                     resultNodes.add(contextNode);
-        //                 }
-                        
-        //                 // Set status to Success
-        //                 updateBotInstanceStatus(botInstanceId, "S");
-                        
-        //                 // Notify frontend (placeholder for actual implementation)
-        //                 notifyFrontend(botInstance);
-                        
-        //             } catch (Exception e) {
-        //                 System.err.println("Error executing bot instance: " + e.getMessage());
-        //                 // Set status to Failed
-        //                 BotInstances botInstance = BotInstances.of(row);
-        //                 updateBotInstanceStatus(botInstance.getId(), "F");
-        //                 throw new RuntimeException("Bot execution failed", e);
-        //             }
-        //         });
-        //     }
-            
-        //     context.setResult((BotInstancesExecuteContext.ReturnType) resultNodes);
-            
-        // } catch (Exception e) {
-        //     System.err.println("Error in bot execution: " + e.getMessage());
-        //     throw new RuntimeException("Bot execution process failed", e);
-        // }
+                        // 将BotInstances的status字段设置为R(Running)。
+                        updateBotInstanceStatus(botInstanceId, "R");
 
-        
+                        // Get botInstance's BotType
+                        String botInstanceType = botInstance.getTypeId();
+
+                        BotTypes botType = getBotType(botInstanceType);
+                        
+                        String executionResult = "";
+                        List<String> taskIds = new ArrayList<>();
+                        
+                        // F type BotInstance - Function call
+                        if ("F".equals(botInstanceType)) executionResult = executeFunctionCallBot(botInstance, botType);
+                        // C type BotInstance - Code
+                        else if ("C".equals(botInstanceType)) executionResult = executeCodeBot(botInstance, botType);
+                        
+                        // Update bot instance with result
+                        updateBotInstanceResult(botInstanceId, executionResult);
+                        
+                        // 将BotInstances.Status设置为S(Success)。
+                        updateBotInstanceStatus(botInstanceId, "S");
+                        
+                    } catch (Exception e) {
+                        System.err.println("Error executing bot instance: " + e.getMessage());
+                        // Set status to Failed
+                        BotInstances botInstance = BotInstances.of(row);
+                        updateBotInstanceStatus(botInstance.getId(), "F");
+                        throw new RuntimeException("Bot execution failed", e);
+                    }
+                });
+            }
+
+            ReturnType returnResult = null;
+            
+            context.setResult(returnResult);
+            
+        } catch (Exception e) {
+            System.err.println("Error in bot execution: " + e.getMessage());
+            throw new RuntimeException("Bot execution process failed", e);
+        }
     }
+
    private BotTypes getBotType(String typeId) {
         CqnSelect select = Select.from(BotTypes_.CDS_NAME).byId(typeId);
         Result result = db.run(select);
@@ -129,25 +120,45 @@ public class executeHandler implements EventHandler {
         
         try {
             // Get the prompts for maintenance
-            // String prompts = botTypes.getPrompts();
-            // System.out.println("Using prompts: " + prompts);
+            List<PromptTexts> prompts = botType.getPrompts();
+            System.out.println("Using prompts: " + prompts);
             
             // Get implementation class
-            String implementationClass = botType.getImplementationClass();
-            if (implementationClass == null || implementationClass.isEmpty()) {
+            String implementationClassFromBotType = botType.getImplementationClass();
+
+            if (implementationClassFromBotType == null || implementationClassFromBotType.isEmpty()) {
                 throw new IllegalArgumentException("Implementation class not specified for bot type");
             }
+
+            // Get the implementationClass
+            Class<?> implementationClass = Class.forName(implementationClassFromBotType);
+            System.out.println("Class Name: " + implementationClass.getName());
+
+            // Get all methods
+            Method[] methods = implementationClass.getDeclaredMethods();
+            // Check if there exists a method called execute in the class
+            Boolean methodExists = false;
+            for(Method method : methods) {
+                if ("execute".equals(method.getName())) {
+                    methodExists = true;
+                    break;
+                }
+            }
+
+            if(methodExists == false) throw new IllegalArgumentException("No method called execute found in the class");
             
             // Call the AI Function call and execute method
-            String result = executeImplementationClass(implementationClass, botInstance , null);
-            
+            Object implementationInstance = implementationClass.getDeclaredConstructor().newInstance();
+            Method executeMethod = implementationClass.getMethod("execute", Object.class);
+            Object executionResult = executeMethod.invoke(implementationInstance);
+
             // Write to ContextNodes entry through outputContextPath
-            String outputContextPath = botType.getOutputContextPath();
-            if (outputContextPath != null && !outputContextPath.isEmpty()) {
-                writeToContextPath(botInstance, outputContextPath, result);
-            }
+            // String outputContextPath = botType.getOutputContextPath();
+            // if (outputContextPath != null && !outputContextPath.isEmpty()) {
+            //     writeToContextPath(botInstance, outputContextPath, result);
+            // }
             
-            return result;
+            return executionResult.toString();
             
         } catch (Exception e) {
             System.err.println("Error executing F type bot: " + e.getMessage());
@@ -155,20 +166,47 @@ public class executeHandler implements EventHandler {
         }
     }
 
-    private String executeCustomBot(BotInstances botInstance, BotTypes botType) {
+    private String executeCodeBot(BotInstances botInstance, BotTypes botType) {
         System.out.println("Executing C type bot instance: " + botInstance.getId());
         
         try {
             // Get implementation class
-            String implementationClass = botType.getImplementationClass();
-            if (implementationClass == null || implementationClass.isEmpty()) {
+            String implementationClassFromBotType = botType.getImplementationClass();
+
+            if (implementationClassFromBotType == null || implementationClassFromBotType.isEmpty()) {
                 throw new IllegalArgumentException("Implementation class not specified for bot type");
             }
+
+            // Get the implementationClass
+            Class<?> implementationClass = Class.forName(implementationClassFromBotType);
+            System.out.println("Class Name: " + implementationClass.getName());
+
+            // Get all methods
+            Method[] methods = implementationClass.getDeclaredMethods();
+            // Check if there exists a method called execute in the class
+            Boolean methodExists = false;
+            for(Method method : methods) {
+                if ("execute".equals(method.getName())) {
+                    methodExists = true;
+                    break;
+                }
+            }
+
+            if(methodExists == false) throw new IllegalArgumentException("No method called execute found in the class");
             
-            // Execute the execute method in the implementation class
-            String result = executeImplementationClass(implementationClass, botInstance, null);
+            // Call the AI Function call and execute method
+            Object implementationInstance = implementationClass.getDeclaredConstructor().newInstance();
+            Method executeMethod = implementationClass.getMethod("execute", Object.class);
+            Object executionResult = executeMethod.invoke(implementationInstance);
+            // 结果存储在BotInstances.result字段中。
+            updateBotInstanceResult(botInstance.getId(), executionResult.toString());
+            // Write to ContextNodes entry through outputContextPath
+            // String outputContextPath = botType.getOutputContextPath();
+            // if (outputContextPath != null && !outputContextPath.isEmpty()) {
+            //     writeToContextPath(botInstance, outputContextPath, result);
+            // }
             
-            return result;
+            return executionResult.toString();
             
         } catch (Exception e) {
             System.err.println("Error executing C type bot: " + e.getMessage());
@@ -194,32 +232,6 @@ public class executeHandler implements EventHandler {
         return "Execution result from " + implementationClass;
     }
 
-    private void writeToContextPath(BotInstances botInstance, String outputContextPath, String result) {
-        System.out.println("Writing to context path: " + outputContextPath);
-        
-        ContextNodes contextNode = ContextNodes.create();
-        contextNode.setTaskId(botInstance.getTaskId());
-        contextNode.setPath(outputContextPath);
-        contextNode.setLabel("Bot Result");
-        contextNode.setValue(result);
-        
-        CqnInsert insert = Insert.into(ContextNodes_.CDS_NAME).entry(contextNode);
-        db.run(insert);
-    }
-
-    private ContextNodes createContextNode(BotInstances botInstance, String result) {
-        ContextNodes contextNode = ContextNodes.create();
-        contextNode.setTaskId(botInstance.getTaskId());
-        contextNode.setPath("bot_result_" + botInstance.getId());
-        contextNode.setLabel("Bot Execution Result");
-        contextNode.setValue(result);
-        
-        CqnInsert insert = Insert.into(ContextNodes_.CDS_NAME).entry(contextNode);
-        Result insertResult = db.run(insert);
-        
-        return insertResult.single(ContextNodes.class);
-    }
-
     private void updateBotInstanceStatus(String botInstanceId, String statusCode) {
         CqnUpdate update = Update.entity(BotInstances_.CDS_NAME)
             .byId(botInstanceId)
@@ -236,13 +248,6 @@ public class executeHandler implements EventHandler {
         db.run(update);
         
         System.out.println("Updated bot instance " + botInstanceId + " result: " + result);
-    }
-
-    private void notifyFrontend(BotInstances botInstance) {
-        // Placeholder for frontend notification
-        // In a real implementation, this might use WebSocket, Server-Sent Events, or other notification mechanisms
-        System.out.println("Notifying frontend of updates for bot instance: " + botInstance.getId());
-        System.out.println("Frontend should update ContextNode and Task/Instance tree");
     }
 
     @After(event = BotInstancesExecuteContext.CDS_NAME)
