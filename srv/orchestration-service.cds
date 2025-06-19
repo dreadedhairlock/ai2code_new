@@ -19,10 +19,10 @@ service MainService {
             action chatCompletion(content: LargeString) returns BotMessages;
         }
 
-    entity BotMessages  as projection on db.BotMessage
-        actions {
-            action adopt() returns array of ContextNodes;
-        }
+        entity BotMessages  as projection on db.BotMessage
+            actions {
+                action adopt() returns array of ContextNodes;
+            }
 
     // Unbound actions
     action createTaskWithBots(name : String @mandatory,

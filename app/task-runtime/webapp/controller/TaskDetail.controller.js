@@ -90,7 +90,7 @@ sap.ui.define(
 
         // Execute the action and handle the result
         oContextBinding
-          .execute()
+          .invoke()
           .then((oContext) => {
             // Try to extract the response object from the context
             let finalResult;
@@ -643,12 +643,19 @@ sap.ui.define(
 
         if (sType === "task") {
           oModel
-            .bindList("/Tasks('" + sID + "')/botInstances")
+            .bindList("/Tasks('" + sID + "')/botInstances", null, null, null, {
+              $expand: "type",
+            })
             .requestContexts()
             .then(
               function (aContexts) {
                 var aData = aContexts.map(function (oContext) {
                   var oObj = oContext.getObject();
+                  // Simpan nama BotType ke property botTypeName
+                  if (oObj.type) {
+                    oObj.botTypeName = oObj.type.name;
+                  }
+                  // Set type ke 'bot' untuk keperluan tree
                   oObj.type = "bot";
                   oObj.nodes = [];
                   return oObj;
@@ -674,7 +681,6 @@ sap.ui.define(
         } else if (sType === "bot") {
           this._selectedBotInstanceId = sID;
 
-          this._loadChatHistory();
           oModel
             .bindList("/BotInstances('" + sID + "')/tasks")
             .requestContexts()
@@ -702,6 +708,9 @@ sap.ui.define(
                 // Refresh tree
                 this.getOwnerComponent().getModel("taskTree").updateBindings();
                 oTree.expand(iItemIndex);
+
+                this.oFlexibleColumnLayout.setLayout("ThreeColumnsEndExpanded");
+                this._loadChatHistory();
               }.bind(this)
             );
         }
@@ -1238,19 +1247,32 @@ sap.ui.define(
         }
 
         var oTreeModel = this.getOwnerComponent().getModel("taskTree");
-
         this.getView().setBusy(true);
 
         try {
           var oModel = this.getOwnerComponent().getModel();
 
+          // Tambahkan parameter $expand untuk mengambil data type (BotType)
           oModel
-            .bindList("/Tasks('" + sTaskId + "')/botInstances")
+            .bindList(
+              "/Tasks('" + sTaskId + "')/botInstances",
+              null,
+              null,
+              null,
+              {
+                $expand: "type",
+              }
+            )
             .requestContexts()
             .then(
               function (aContexts) {
                 var aBotInstances = aContexts.map(function (oContext) {
                   var oBot = oContext.getObject();
+                  // Simpan nama BotType ke property botTypeName
+                  if (oBot.type) {
+                    oBot.botTypeName = oBot.type.name;
+                  }
+                  // Set type ke 'bot' untuk keperluan tree
                   oBot.type = "bot";
                   oBot.nodes = [];
                   return oBot;
@@ -1263,9 +1285,7 @@ sap.ui.define(
                 );
 
                 oTreeModel.refresh(true);
-
                 this._expandTaskNode(sTaskId);
-
                 this.getView().setBusy(false);
               }.bind(this)
             )
@@ -1496,6 +1516,9 @@ sap.ui.define(
 
             const resData = await response.text();
             const reply = JSON.parse(resData).message;
+            const debug = JSON.parse(resData);
+            const messageId = JSON.parse(resData).ID;
+            console.log(debug);
 
             // Matikan loading
             // this.getView().getModel("ui").setProperty("/busy", false);
@@ -1510,7 +1533,8 @@ sap.ui.define(
 
             // // Parsing dan tampilkan response
             // const parsedResponse = this.parseAIResponse(reply);
-            this.addChatMessage(reply, "assistant");
+            this.addChatMessage(reply, "assistant", messageId);
+            // this._onAdopt();
 
             // Tambahkan ke history lokal
             // this.addToHistory("ai", parsedResponse);
@@ -1530,58 +1554,136 @@ sap.ui.define(
       // _currentMessages: [], // Current chat messages
 
       // // Modified addChatMessage function
-      addChatMessage: function (sMessage, sType) {
+      /**
+       * Menambahkan pesan chat ke VBox dengan tombol Adopt pada pesan assistant
+       * @param {string|object} sMessage - Konten pesan
+       * @param {string} sType - Tipe pesan ('user' atau 'assistant')
+       * @param {string} [sMessageId] - ID pesan di database (opsional)
+       */
+      addChatMessage: function (sMessage, sType, sMessageId) {
         var oChatBox = this.byId("chatMessagesBox");
         var sTimestamp = new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         });
 
-        var oHTML = new sap.ui.core.HTML({
-          content: `
+        // Tentukan konten pesan
+        var messageContent =
+          typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
+
+        // Base HTML content
+        var sHtmlContent = "";
+
+        if (sType === "assistant" && sMessageId) {
+          // Untuk pesan assistant dengan ID, tambahkan tombol Adopt
+          sHtmlContent = `
             <div class="chatBubbleContainer ${sType}">
                 <div class="chatBubble ${sType}">
-                    <div>${sMessage}</div>
+                    <div>${messageContent}</div>
+                    <div class="chatTimestamp">${sTimestamp}</div>
+                    <button id="adoptBtn_${sMessageId}" class="adoptButton">
+                      <span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopt
+                    </button>
+                </div>
+            </div>
+        `;
+        } else {
+          // Untuk pesan user atau assistant tanpa ID
+          sHtmlContent = `
+            <div class="chatBubbleContainer ${sType}">
+                <div class="chatBubble ${sType}">
+                    <div>${messageContent}</div>
                     <div class="chatTimestamp">${sTimestamp}</div>
                 </div>
             </div>
-        `,
+        `;
+        }
+
+        // Buat HTML control
+        var oHTML = new sap.ui.core.HTML({
+          content: sHtmlContent,
+          afterRendering: function (oEvent) {
+            if (sType === "assistant" && sMessageId) {
+              // Tambahkan event handler untuk tombol Adopt
+              var adoptBtn = document.getElementById("adoptBtn_" + sMessageId);
+              if (adoptBtn) {
+                // Hapus handler yang mungkin sudah ada untuk mencegah duplikasi
+                adoptBtn.removeEventListener(
+                  "click",
+                  this._createAdoptClickHandler(sMessageId)
+                );
+
+                // Tambahkan handler baru
+                adoptBtn.addEventListener(
+                  "click",
+                  this._createAdoptClickHandler(sMessageId).bind(this)
+                );
+              }
+            }
+          }.bind(this),
         });
 
-        //   // Handle parsed AI responses
-        if (sType === "assistant" && Array.isArray(sMessage)) {
-          // Handle regular string messages
-          const messageContent =
-            typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
-          // create chat bubble if there's text content
-          var oHTML = new sap.ui.core.HTML({
-            content: `
-                    <div class="chatBubbleContainer ${sType}">
-                        <div class="chatBubble ${sType}">
-                            <div>${messageContent}</div>
-                            <div class="chatTimestamp">${sTimestamp}</div>
-                        </div>
-                    </div>
-                `,
-          });
-          oChatBox.addItem(oHTML);
-        } else {
-          // Handle regular string messages
-          const messageContent =
-            typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
+        // Tambahkan ke chat box
+        oChatBox.addItem(oHTML);
+      },
 
-          var oHTML = new sap.ui.core.HTML({
-            content: `
-                <div class="chatBubbleContainer ${sType}">
-                    <div class="chatBubble ${sType}">
-                        <div>${messageContent}</div>
-                        <div class="chatTimestamp">${sTimestamp}</div>
-                    </div>
-                </div>
-            `,
-          });
-          oChatBox.addItem(oHTML);
-        }
+      /**
+       * Membuat handler untuk klik tombol adopt
+       * @param {string} sMessageId - ID pesan
+       * @returns {function} Event handler function
+       */
+      _createAdoptClickHandler: function (sMessageId) {
+        return function (oEvent) {
+          // Mencegah event bubbling
+          oEvent.stopPropagation();
+
+          // Panggil fungsi adopt
+          this.onAdoptMessage(sMessageId);
+        }.bind(this);
+      },
+
+      /**
+       * Memanggil action adopt() pada entity BotMessages
+       * @param {string} sMessageId - ID pesan yang akan diadopsi
+       * @param {HTMLElement} adoptBtn - Tombol yang diklik
+       * @param {string} originalHTML - HTML asli tombol
+       */
+      onAdoptMessage: function (sMessageId) {
+        // Dapatkan model OData V4
+        var oModel = this.getOwnerComponent().getModel();
+
+        // Binding context for action
+        var sPath = "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
+        var oOperation = oModel.bindContext(sPath);
+
+        // Buat flag khusus untuk mencegah multiple invocation pada message yang sama
+        var invocationKey = "_invoking_adopt_" + sMessageId;
+
+        // Set flag bahwa adopt sedang dipanggil untuk message ini
+        this[invocationKey] = true;
+
+        // execute action
+        oOperation
+          .invoke()
+          .then(
+            function (oResult) {
+              MessageToast.show("Message adopted successfully");
+
+              // Load context tree
+              this.loadContextNodesTree();
+            }.bind(this)
+          )
+          .catch(
+            function (oError) {
+              MessageToast.show("Error: " + oError.message);
+              console.error("Error adopting message:", oError);
+            }.bind(this)
+          )
+          .finally(
+            function () {
+              delete this[invocationKey];
+            }.bind(this)
+          );
       },
 
       _loadChatHistory: function () {
@@ -1611,7 +1713,11 @@ sap.ui.define(
             if (data && data.value && Array.isArray(data.value)) {
               // Loop through messages and add to chat
               data.value.forEach(function (response) {
-                that.addChatMessage(response.message, response.role);
+                that.addChatMessage(
+                  response.message,
+                  response.role,
+                  response.ID
+                );
               });
             }
           })
@@ -1623,6 +1729,28 @@ sap.ui.define(
             );
           });
       },
+
+      // _onAdopt: function () {
+      //   // get odata model
+      //   const that = this;
+      //   var oModel = this.getOwnerComponent().getModel();
+      //   const sMessageId = "7e0fc434-7077-4c5a-b894-0a06a11ecfca";
+
+      //   // Binding context for action
+      //   var sPath = "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
+      //   var oOperation = oModel.bindContext(sPath);
+
+      //   // execute action
+      //   oOperation
+      //     .execute()
+      //     .then(function (oResult) {
+      //       MessageToast.show("Message adopted successfully");
+      //       that.loadContextNodesTree();
+      //     })
+      //     .catch(function (oError) {
+      //       MessageToast.show("Error: " + oError.message);
+      //     });
+      // },
 
       // // Helper function to generate unique message IDs
       // _generateMessageId: function () {

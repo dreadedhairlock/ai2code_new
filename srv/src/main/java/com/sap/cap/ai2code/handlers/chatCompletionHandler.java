@@ -58,6 +58,9 @@ public class chatCompletionHandler implements EventHandler {
         String botInstanceId = null;
         BotMessages aiResponseFinal = null;
 
+        // DEBUG
+        System.out.println("====================Handler Start!====================");
+
         try {
             // 1. Set BotInstance status to Running
             Map<String, String> info = getBotInstanceAndSetRunning(context);
@@ -102,7 +105,6 @@ public class chatCompletionHandler implements EventHandler {
         // retrieving a query context
         CqnSelect selectQuery = context.getCqn();
         Result botInstanceResult = db.run(selectQuery);
-        System.out.println("selectQuery" + selectQuery);
         String botInstanceId = botInstanceResult.single().get("ID").toString();
         String botTypeid = botInstanceResult.single().get("type_ID").toString();
 
@@ -117,6 +119,11 @@ public class chatCompletionHandler implements EventHandler {
         Map<String, String> result = new HashMap<>();
         result.put("botTypeId", botTypeid);
         result.put("botInstanceId", botInstanceId);
+
+        // DEBUG
+        System.out.println("botTypeid: " + botTypeid);
+        System.out.println("botInstanceId: " + botInstanceId);
+
         return result;
     }
 
@@ -142,6 +149,10 @@ public class chatCompletionHandler implements EventHandler {
             messageHistory = messagesResult.listOf(BotMessages.class);
             System.out.println("Found " + messageHistory.size() + " previous messages.");
         }
+
+        // DEBUG
+        System.out.println("Initial Chat: " + messagesResult.list().isEmpty());
+        System.out.println("messageHistory: " + messageHistory);
 
         return messageHistory;
     }
@@ -203,12 +214,31 @@ public class chatCompletionHandler implements EventHandler {
                 "role", "user",
                 "content", userMessage));
 
+        // DEBUG
+        System.out.println("Context for AI: " + context);
+
         return context;
     }
 
     /**
      * Calls Gemini API with conversation context
      */
+    // curl
+    // "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=GEMINI_API_KEY"
+    // \
+    // -H 'Content-Type: application/json' \
+    // -X POST \
+    // -d '{
+    // "contents": [
+    // {
+    // "parts": [
+    // {
+    // "text": "Explain how AI works in a few words"
+    // }
+    // ]
+    // }
+    // ]
+    // }'
     private String callGeminiAPIWithContext(List<Map<String, String>> conversationContext) throws Exception {
         String url = String.format(
                 "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s",
@@ -238,6 +268,9 @@ public class chatCompletionHandler implements EventHandler {
         contentsBuilder.append("]");
 
         String requestBody = "{" + contentsBuilder.toString() + "}";
+
+        // DEBUG
+        System.out.println("AI Request Body: " + requestBody);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -313,10 +346,19 @@ public class chatCompletionHandler implements EventHandler {
         if (!messagesToInsert.isEmpty()) {
             CqnInsert insertMessages = Insert.into(BotMessages_.class).entries(messagesToInsert);
             db.run(insertMessages);
-            System.out.println("Persisted " + messagesToInsert.size() + " messages");
+            System.out.println("Saved " + messagesToInsert.size() + " messages");
         }
 
-        return assistantMsg;
+        // DEBUG
+        System.out.println("AI Response: " + assistantMsg.getMessage());
+
+        // Return botmessage with ID as API response
+        CqnSelect aiResponseWithId = Select.from(BotMessages_.class)
+                .where(m -> m.message().eq(aiResponse))
+                .orderBy(m -> m.createdAt().asc());
+        Result finalAiResponse = db.run(aiResponseWithId);
+
+        return finalAiResponse.first(BotMessages.class).orElse(null);
     }
 
     /**
