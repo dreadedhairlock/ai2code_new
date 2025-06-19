@@ -14,11 +14,11 @@ spring:
       mode: never
       platform: sqlite
       schema-locations: classpath:schema-sqlite.sql
-# cds:
-#   odata-v4:
-#     endpoint:
-#       path: /api
-#     lazy-i18n:
-#       enabled: true
+  cds:
+    odata-v4:
+#      endpoint:
+#        path: /api
+      lazy-i18n:
+        enabled: true
 cds:
   data-source.auto-config.enabled: false
