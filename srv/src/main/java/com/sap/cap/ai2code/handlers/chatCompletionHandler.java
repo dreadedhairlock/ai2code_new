@@ -353,7 +353,13 @@ public class chatCompletionHandler implements EventHandler {
         //DEBUG
         System.out.println("AI Response: " + assistantMsg.getMessage());
 
-        return assistantMsg;
+        //Return botmessage with ID as API response
+        CqnSelect aiResponseWithId = Select.from(BotMessages_.class)
+                .where(m -> m.message().eq(aiResponse))
+                .orderBy(m -> m.createdAt().asc());
+        Result finalAiResponse = db.run(aiResponseWithId);
+
+        return finalAiResponse.first(BotMessages.class).orElse(null);
     }
 
     /**
