@@ -1,3 +1,10 @@
 ID,name,description,contextPath,sequence,isMain,botInstance_ID,createdAt,createdBy,modifiedAt,modifiedBy
-550e8400-e29b-41d4-a716-446655440100,Document Classification,Classify PDF files,/documents/section1,1,true,880e8400-e29b-41d4-a716-446655440500,2024-06-01T10:00:00Z,system,2024-06-01T10:10:00Z,system
-550e8400-e29b-41d4-a716-446655440101,Text Extraction,Extract info from PDF,/documents/section2,2,false,880e8400-e29b-41d4-a716-446655440501,2024-06-01T11:00:00Z,system,2024-06-01T11:10:00Z,system
+98eb493f-02fa-42cd-9f7d-1741c4575aec,FirstRAPReport,The first AI code rap report,,,true,,,,,
+a1b2c3d4-5e6f-7890-abcd-ef1234567890,Data Analysis SubTask,Analyze data from previous step,,,false,ef941e16-5a0d-4856-a8da-ff3585356447,,,,
+b2c3d4e5-6f78-9012-bcde-f23456789012,Report Generation SubTask,Generate detailed report,,,false,ef941e16-5a0d-4856-a8da-ff3585356447,,,,
+c3d4e5f6-7890-1234-cdef-345678901234,Data Validation SubTask,Validate processed data,,,false,b631b9de-24ba-439c-afb3-f6a8002ddc9c,,,,
+d4e5f617-8901-2345-def0-456789012345,Quality Assurance SubTask,Perform quality checks,,,false,19ed1a3d-2054-4345-bc73-42502aedc648,,,,
+e5f6a718-9012-3456-ef01-567890123456,Documentation SubTask,Create process documentation,,,false,19ed1a3d-2054-4345-bc73-42502aedc648,,,,
+f7a8b910-1234-5678-9012-345678901234,Data Processing Detail,Process individual data records,,,false,f1a2b3c4-5d6e-7f89-0123-456789abcdef,,,,
+a8b9c011-2345-6789-0123-456789012345,Statistical Analysis,Perform statistical calculations,,,false,a2b3c4d5-6e7f-8901-2345-6789abcdef01,,,,
+b9c0d112-3456-7890-1234-567890123456,Content Review,Review generated content,,,false,b3c4d5e6-7f89-0123-4567-89abcdef0123,,,,
