@@ -1,7 +1,7 @@
 {
-    "name": "tasksruntime",
+    "name": "botsruntime",
     "version": "0.0.1",
-    "description": "Manage the AI tasks in runtime",
+    "description": "Manage the bot instances",
     "keywords": [
         "ui5",
         "openui5",
@@ -13,4 +13,3 @@
     },
     "devDependencies": {}
 }
-

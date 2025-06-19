@@ -1,7 +1,7 @@
 using from '../../../../srv/index';
 using from '../../../index';
 
-annotate ConfigService.TaskTypes with @(UI: {
+annotate MainService.TaskTypes with @(UI: {
     SelectionFields: [
         name,
         isMain,

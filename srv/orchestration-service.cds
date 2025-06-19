@@ -14,9 +14,9 @@ service MainService {
                 result : String;
                 tasks  : array of UUID;
             };
-            action executeAsync()                        returns Boolean; //用于自动运行, web socket
-
-            action chatCompletion(content : LargeString) returns BotMessages;
+            action executeAsync() returns Boolean; //用于自动运行, web socket
+            
+            action chatCompletion(content: LargeString) returns BotMessages;
         }
 
     entity BotMessages  as projection on db.BotMessage
@@ -25,7 +25,7 @@ service MainService {
         }
 
     // Unbound actions
-    action createTaskWithBots(name : String,
+    action createTaskWithBots(name : String @mandatory,
                               description : String,
                               typeId : UUID)  returns Tasks;
 
@@ -46,3 +46,5 @@ service MainService {
     }
 
 }
+
+annotate MainService.TaskTypes with @odata.draft.enabled ;
