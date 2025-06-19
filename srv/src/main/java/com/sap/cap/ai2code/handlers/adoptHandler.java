@@ -82,6 +82,7 @@ public class adoptHandler implements EventHandler {
                                     .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE, BotTypes.OUTPUT_CONTEXT_PATH,
                                             BotTypes_.TASK_TYPE_ID)
                                     .where(b -> b.get("ID").eq(botTypeId));
+                                    
                             Result botTypeResult = db.run(selectBotType);
 
                             if (botTypeResult.rowCount() == 0) {
@@ -94,7 +95,12 @@ public class adoptHandler implements EventHandler {
                             ContextNodes contextNode = ContextNodes.create();
 
                             // Path: outputContextPath set according to BotTypes
-                            contextNode.setPath(botType.getOutputContextPath());
+                            String path = botType.getOutputContextPath();
+                            System.out.println("path: " + path);
+                            String cleanedPath = path.contains("SubContext:") ? path.replaceFirst("SubContext:", "")
+                                    : path;
+                            System.out.println("path: " + cleanedPath);
+                            contextNode.setPath(cleanedPath);
 
                             // Label: using bot message content as label
                             String labelValue = botMessage != null && botMessage.length() > 200
