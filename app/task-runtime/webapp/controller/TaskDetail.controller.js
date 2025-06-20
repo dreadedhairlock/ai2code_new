@@ -1597,6 +1597,7 @@ sap.ui.define(
       // },
 
       onSubmitQuery: async function () {
+        var that = this;
         var oInput = this.byId("chatInput");
         var sMessage = oInput.getValue().trim();
 
@@ -1623,26 +1624,50 @@ sap.ui.define(
             // Ganti dengan ID yang valid
 
             // Panggil backend CAP Java
-            const response = await fetch(
-              `/odata/v4/MainService/BotInstances(${botInstanceId})/MainService.chatCompletion`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  // Tambahkan CSRF token jika diperlukan
-                  // "X-CSRF-Token": csrfToken
-                },
-                body: JSON.stringify({
-                  content: sMessage,
-                }),
-              }
-            );
+            const oModel = this.getOwnerComponent().getModel();
 
-            const resData = await response.text();
-            const reply = JSON.parse(resData).message;
-            const debug = JSON.parse(resData);
-            const messageId = JSON.parse(resData).ID;
-            console.log(debug);
+            const sPath =
+              "/BotInstances(" +
+              botInstanceId +
+              ")/MainService.chatCompletion(...)";
+
+            const oBinding = oModel.bindContext(sPath);
+
+            oBinding.setParameter("content", sMessage);
+
+            oBinding
+              .invoke()
+              .then((oResult) => {
+                that._reply = oBinding.getBoundContext().getProperty("message");
+                that._messageId = oBinding.getBoundContext().getProperty("ID");
+                that.addChatMessage(that._reply, "assistant", that._messageId);
+              })
+              .catch((oError) => {
+                MessageToast.show("Error: " + oError.message);
+              });
+
+            // const response = await fetch(
+            //   `/odata/v4/MainService/BotInstances(${botInstanceId})/MainService.chatCompletion`,
+            //   {
+            //     method: "POST",
+            //     headers: {
+            //       "Content-Type": "application/json",
+            //       // Tambahkan CSRF token jika diperlukan
+            //       // "X-CSRF-Token": csrfToken
+            //     },
+            //     body: JSON.stringify({
+            //       content: sMessage,
+            //     }),
+            //   }
+            // );
+
+            // const resData = await response.text();
+            // const reply = JSON.parse(resData).message;
+            // const debug = JSON.parse(resData);
+            // const messageId = JSON.parse(resData).ID;
+            // console.log(debug);
+            // console.log(messageId);
+            // console.log(reply);
 
             // Matikan loading
             // this.getView().getModel("ui").setProperty("/busy", false);
@@ -1657,7 +1682,6 @@ sap.ui.define(
 
             // // Parsing dan tampilkan response
             // const parsedResponse = this.parseAIResponse(reply);
-            this.addChatMessage(reply, "assistant", messageId);
             // this._onAdopt();
 
             // Tambahkan ke history lokal
@@ -1708,7 +1732,7 @@ sap.ui.define(
                 </div>
             </div>
         `;
-        } else {
+        } else if (sType === "user") {
           // Untuk pesan user atau assistant tanpa ID
           sHtmlContent = `
             <div class="chatBubbleContainer ${sType}">
@@ -1794,7 +1818,8 @@ sap.ui.define(
           var oModel = this.getOwnerComponent().getModel();
 
           // Binding context for action
-          var sPath = "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
+          var sPath =
+            "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
           var oOperation = oModel.bindContext(sPath);
 
           // execute action
@@ -1820,39 +1845,42 @@ sap.ui.define(
         // Clear existing messages
         this.byId("chatMessagesBox").removeAllItems();
 
-        // filter based on the botInstance
-        var url = `/odata/v4/MainService/BotMessages?$filter=botInstance_ID eq '${botInstanceId}'&$orderby=createdAt asc`;
+        // Get the OData V4 model from the view
+        var oModel = this.getOwnerComponent().getModel();
 
-        fetch(url, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        })
-          .then(function (response) {
-            if (!response.ok) {
-              throw new Error("HTTP error " + response.status);
-            }
-            return response.json();
+        // Create a list binding for BotMessages
+        var oListBinding = oModel.bindList(
+          "/BotMessages",
+          null,
+          null,
+          [
+            new sap.ui.model.Filter(
+              "botInstance_ID",
+              sap.ui.model.FilterOperator.EQ,
+              botInstanceId
+            ),
+          ],
+          {
+            $orderby: "createdAt asc",
+          }
+        );
+
+        // Request data from the server
+        oListBinding
+          .requestContexts(0, 1000)
+          .then(function (aContexts) {
+            // Process the returned contexts
+            aContexts.forEach(function (oContext) {
+              // Get the message data for this context
+              var oMessage = oContext.getObject();
+              that.addChatMessage(oMessage.message, oMessage.role, oMessage.ID);
+            });
           })
-          .then(function (data) {
-            // Check if we got messages
-            if (data && data.value && Array.isArray(data.value)) {
-              // Loop through messages and add to chat
-              data.value.forEach(function (response) {
-                that.addChatMessage(
-                  response.message,
-                  response.role,
-                  response.ID
-                );
-              });
-            }
-          })
-          .catch(function (error) {
-            console.error("Error loading chat history:", error);
+          .catch(function (oError) {
+            console.error("Error loading chat history:", oError);
             that.addChatMessage(
-              "error",
-              "Error loading chat history: " + error.message
+              "Error loading chat history: " + (oError.message || oError),
+              "error"
             );
           });
       },
