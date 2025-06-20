@@ -14,7 +14,6 @@ import com.sap.cds.ql.Update;
 import com.sap.cds.ql.cqn.CqnSelect;
 import com.sap.cds.ql.cqn.CqnUpdate;
 import com.sap.cds.services.handler.EventHandler;
-import com.sap.cds.services.handler.annotations.After;
 import com.sap.cds.services.handler.annotations.Before;
 import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
@@ -74,12 +73,10 @@ public class executeHandler implements EventHandler {
                         if ("F".equals(botInstanceType)) executionResult = executeFunctionCallBot(botInstance, botType);
                         // C type BotInstance - Code
                         else if ("C".equals(botInstanceType)) executionResult = executeCodeBot(botInstance, botType);
-
+                        // Set the result to be the executionResult string
                         returnResult.setResult(executionResult);
-
                         // Update bot instance with result
                         updateBotInstanceResult(botInstanceId, executionResult);
-                        
                         // 将BotInstances.Status设置为S(Success)。
                         updateBotInstanceStatus(botInstanceId, "S");
                         
@@ -226,10 +223,6 @@ public class executeHandler implements EventHandler {
         db.run(update);
         
         System.out.println("Updated bot instance " + botInstanceId + " result: " + result);
-    }
-
-    @After(event = BotInstancesExecuteContext.CDS_NAME)
-    public void afterExecute(BotInstancesExecuteContext context) {
     }
 
 }
