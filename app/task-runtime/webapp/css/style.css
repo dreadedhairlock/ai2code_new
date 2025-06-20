@@ -98,8 +98,13 @@
 
 .chatBubble.user {
   background-color: #007bff;
-  color: white;
+  color: #ffffff;
   border-bottom-right-radius: 4px;
+}
+
+.userText {
+  color: #ffffff !important;
+
 }
 
 .chatBubble.assistant {

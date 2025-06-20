@@ -1689,100 +1689,128 @@ sap.ui.define(
         var messageContent =
           typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
 
-        // Base HTML content
-        var sHtmlContent = "";
-
         // Generate unique ID for the button
         var buttonId = "adoptBtn_" + sMessageId + "_" + new Date().getTime();
 
+        var oMessageContainer;
+
         if (sType === "assistant" && sMessageId) {
           // Untuk pesan assistant dengan ID, tambahkan tombol Adopt
-          sHtmlContent = `
-            <div class="chatBubbleContainer ${sType}">
-                <div class="chatBubble ${sType}">
-                    <div>${messageContent}</div>
-                    <div class="chatTimestamp">${sTimestamp}</div>
-                    <button id="${buttonId}" class="adoptButton" data-message-id="${sMessageId}">
-                        <span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopt
-                    </button>
-                </div>
-            </div>
-        `;
+          var oBubble = new sap.m.VBox({
+            items: [
+              new sap.m.Text({
+                text: messageContent,
+              }),
+              new sap.m.Text({
+                text: sTimestamp,
+              }),
+              new sap.m.Button({
+                id: buttonId,
+                text: "Adopt",
+                press: this._handleAdoptClick.bind(this),
+              }),
+            ],
+          });
+          oBubble.addStyleClass("chatBubble assistant");
+
+          oMessageContainer = new sap.m.VBox({
+            alignItems: "Start",
+            items: [oBubble],
+          });
+          oMessageContainer.addStyleClass("chatBubbleContainer assistant");
+        } else if (sType === "user") {
+          // Untuk pesan user
+          var oBubble = new sap.m.VBox({
+            items: [
+              new sap.m.Text({
+                text: messageContent,
+              }).addStyleClass("userText"),
+              new sap.m.Text({
+                text: sTimestamp,
+              }),
+            ],
+          });
+          oBubble.addStyleClass("chatBubble user");
+
+          oMessageContainer = new sap.m.VBox({
+            alignItems: "End",
+            items: [oBubble],
+          });
+          oMessageContainer.addStyleClass("chatBubbleContainer user");
         } else {
-          // Untuk pesan user atau assistant tanpa ID
-          sHtmlContent = `
-            <div class="chatBubbleContainer ${sType}">
-                <div class="chatBubble ${sType}">
-                    <div>${messageContent}</div>
-                    <div class="chatTimestamp">${sTimestamp}</div>
-                </div>
-            </div>
-        `;
+          // Assistant message without ID
+          var oBubble = new sap.m.VBox({
+            items: [
+              new sap.m.Text({
+                text: messageContent,
+              }),
+              new sap.m.Text({
+                text: sTimestamp,
+              }),
+            ],
+          });
+          oBubble.addStyleClass("chatBubble assistant");
+
+          oMessageContainer = new sap.m.VBox({
+            alignItems: "Start",
+            items: [oBubble],
+          });
+          oMessageContainer.addStyleClass("chatBubbleContainer assistant");
         }
 
-        // Buat HTML control
-        var oHTML = new sap.ui.core.HTML({
-          content: sHtmlContent,
-          afterRendering: function (oEvent) {
-            if (sType === "assistant" && sMessageId) {
-              var adoptBtn = document.getElementById(buttonId);
-              if (adoptBtn) {
-                // Use simple once-attached click handler with debouncing
-                adoptBtn.addEventListener(
-                  "click",
-                  this._handleAdoptClick.bind(this),
-                  { once: false }
-                );
-              }
-            }
-          }.bind(this),
-        });
+        // Add timestamp styling
+        var aTextControls = oBubble.getItems();
+        if (aTextControls.length > 1) {
+          aTextControls[1].addStyleClass("chatTimestamp");
+        }
+
+        // Add adopt button styling
+        if (sType === "assistant" && sMessageId) {
+          var aItems = oBubble.getItems();
+          if (aItems.length > 2) {
+            aItems[2].addStyleClass("adoptButton");
+          }
+        }
 
         // Tambahkan ke chat box
-        oChatBox.addItem(oHTML);
+        oChatBox.addItem(oMessageContainer);
       },
 
       // Centralized handler for adopt clicks with debounce mechanism
       _handleAdoptClick: function (event) {
-        // Get message ID from data attribute
-        var messageId = event.currentTarget.getAttribute("data-message-id");
+        var oButton = event.getSource(); // UI5 Button
+        var buttonId = oButton.getId();
+        var messageId = buttonId.replace("adoptBtn__", "");
+
         if (!messageId) return;
 
-        // Prevent bubbling
-        event.stopPropagation();
+        // Prevent multiple clicks using custom property
+        if (oButton._isProcessing) return;
+        oButton._isProcessing = true;
 
-        // Temporary disable button during operation to prevent multi-clicks
-        var button = event.currentTarget;
-        if (button._isProcessing) return; // Skip if already processing
-
-        button._isProcessing = true;
-        var originalText = button.innerHTML;
-        button.innerHTML =
-          '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopting...';
+        var originalText = oButton.getText();
+        oButton.setText("Adopting...");
+        oButton.setEnabled(false); // Disable the button during processing
 
         // Call adopt function
         this.onAdoptMessage(messageId)
           .then(function () {
-            // Show success indicator briefly
-            button.innerHTML =
-              '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopted!';
+            oButton.setText("Adopted!");
 
-            // Reset button after a short delay to show the success state
             setTimeout(function () {
-              button.innerHTML = originalText;
-              button._isProcessing = false;
+              oButton.setText(originalText);
+              oButton.setEnabled(true);
+              oButton._isProcessing = false;
             }, 1000);
           })
           .catch(function (error) {
-            // Show error state briefly
-            button.innerHTML =
-              '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Failed!';
+            oButton.setText("Failed!");
             console.error("Error adopting message:", error);
 
-            // Reset button after a short delay
             setTimeout(function () {
-              button.innerHTML = originalText;
-              button._isProcessing = false;
+              oButton.setText(originalText);
+              oButton.setEnabled(true);
+              oButton._isProcessing = false;
             }, 1000);
           });
       },
@@ -1794,7 +1822,8 @@ sap.ui.define(
           var oModel = this.getOwnerComponent().getModel();
 
           // Binding context for action
-          var sPath = "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
+          var sPath =
+            "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
           var oOperation = oModel.bindContext(sPath);
 
           // execute action
