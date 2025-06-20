@@ -1774,26 +1774,49 @@ sap.ui.define(
           typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
 
         // Generate unique ID for the button
-        var buttonId = "adoptBtn_" + sMessageId + "_" + new Date().getTime();
+        var buttonId = "adoptBtn_" + sMessageId;
 
         var oMessageContainer;
 
         if (sType === "assistant" && sMessageId) {
-          // Untuk pesan assistant dengan ID, tambahkan tombol Adopt
-          var oBubble = new sap.m.VBox({
+          // Buat container untuk konten pesan
+          var oContentBox = new sap.m.VBox({
+            width: "100%",
             items: [
               new sap.m.Text({
                 text: messageContent,
               }),
-              new sap.m.Text({
-                text: sTimestamp,
-              }),
-              new sap.m.Button({
-                id: buttonId,
-                text: "Adopt",
-                press: this._handleAdoptClick.bind(this),
+              // Berikan margin-bottom cukup untuk memberikan ruang antara konten dan footer
+              new sap.m.HBox({
+                height: "12px", // Ruang kosong antara konten dan footer
               }),
             ],
+          });
+
+          // Buat container footer dengan timestamp dan button
+          var oFooterBox = new sap.m.HBox({
+            justifyContent: "SpaceBetween",
+            alignItems: "Center",
+            width: "100%",
+            items: [
+              new sap.m.Text({
+                text: sTimestamp,
+              }).addStyleClass("chatTimestamp"),
+              new sap.m.Button({
+                id: buttonId,
+                icon: "sap-icon://thumb-up",
+                text: "Adopt",
+                type: "Emphasized",
+                press: function (oEvent) {
+                  this._handleAdoptClick(oEvent, sMessageId);
+                }.bind(this),
+              }).addStyleClass("adoptButton"),
+            ],
+          });
+
+          // Gabungkan ke dalam bubble
+          var oBubble = new sap.m.VBox({
+            items: [oContentBox, oFooterBox],
           });
           oBubble.addStyleClass("chatBubble assistant");
 
@@ -1811,7 +1834,7 @@ sap.ui.define(
               }).addStyleClass("userText"),
               new sap.m.Text({
                 text: sTimestamp,
-              }),
+              }).addStyleClass("chatTimestamp"),
             ],
           });
           oBubble.addStyleClass("chatBubble user");
@@ -1830,7 +1853,7 @@ sap.ui.define(
               }),
               new sap.m.Text({
                 text: sTimestamp,
-              }),
+              }).addStyleClass("chatTimestamp"),
             ],
           });
           oBubble.addStyleClass("chatBubble assistant");
@@ -1842,29 +1865,15 @@ sap.ui.define(
           oMessageContainer.addStyleClass("chatBubbleContainer assistant");
         }
 
-        // Add timestamp styling
-        var aTextControls = oBubble.getItems();
-        if (aTextControls.length > 1) {
-          aTextControls[1].addStyleClass("chatTimestamp");
-        }
-
-        // Add adopt button styling
-        if (sType === "assistant" && sMessageId) {
-          var aItems = oBubble.getItems();
-          if (aItems.length > 2) {
-            aItems[2].addStyleClass("adoptButton");
-          }
-        }
-
         // Tambahkan ke chat box
         oChatBox.addItem(oMessageContainer);
       },
 
       // Centralized handler for adopt clicks with debounce mechanism
-      _handleAdoptClick: function (event) {
-        var oButton = event.getSource(); // UI5 Button
-        var buttonId = oButton.getId();
-        var messageId = buttonId.replace("adoptBtn__", "");
+      _handleAdoptClick: function (oEvent, messageId) {
+        var oButton = oEvent.getSource(); // UI5 Button
+
+        console.log(messageId);
 
         if (!messageId) return;
 
