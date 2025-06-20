@@ -35,6 +35,9 @@ import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessages_;
 import cds.gen.mainservice.PromptText_;
 
+// import io.github.cdimascio.dotenv.Dotenv;
+import com.sap.cap.ai2code.handlers.envLoader;
+
 @Component
 @ServiceName("MainService")
 public class chatCompletionHandler implements EventHandler {
@@ -42,8 +45,8 @@ public class chatCompletionHandler implements EventHandler {
     @Autowired
     private PersistenceService db;
 
-    private final String apiKey = "AIzaSyBnUu21XsdzPYDgBN0OzzoQmFNrK0QTYi0";
-    private final String model = "gemini-2.0-flash";
+    private final String apiKey = envLoader.getRequired("API_KEY_GEMINI");
+    private final String model = envLoader.getRequired("MODEL_GEMINI");
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
