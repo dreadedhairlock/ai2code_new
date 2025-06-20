@@ -35,7 +35,6 @@ public class getContextNodesTreeHandler implements EventHandler {
 
     @On(event = GetContextNodesTreeContext.CDS_NAME)
     public void onGetContextNodesTree(GetContextNodesTreeContext context) {
-
         // Retrieve the taskId parameter from the action context
         String taskId = context.getTaskId();
 
@@ -63,145 +62,86 @@ public class getContextNodesTreeHandler implements EventHandler {
                 })
                 .collect(Collectors.toList());
 
-        // Convert the items into a flat hierarchical structure
-        List<Map<String, Object>> flatNodes = convertToFlatStructure(items);
+        // Convert items to flat list of nodes using path as key
+        List<Map<String, Object>> nodes = createFlatNodesUsingPath(items);
 
         // Wrap the result into a response object
         Map<String, Object> response = new HashMap<>();
-        response.put("nodes", flatNodes);
+        response.put("nodes", nodes);
 
         // Set the response on the action context
         GetContextNodesTreeContext.ReturnType result = GetContextNodesTreeContext.ReturnType.of(response);
         context.setResult(result);
-
     }
 
     /**
-     * Converts a list of items with dot-separated paths into a flat hierarchical
-     * structure
-     * containing folders and leaf nodes for use in tree-like UIs.
+     * Creates a flat list of nodes (both folders and data items) using path as the
+     * key.
+     * The output conforms to the revised action schema without unnecessary
+     * attributes.
      */
-    private List<Map<String, Object>> convertToFlatStructure(List<Map<String, Object>> items) {
-        List<Map<String, Object>> flatNodes = new ArrayList<>();
-        int nodeId = 1; // Unique identifier for each node
-
-        Map<String, Integer> pathToNodeId = new HashMap<>();
+    private List<Map<String, Object>> createFlatNodesUsingPath(List<Map<String, Object>> items) {
+        List<Map<String, Object>> nodes = new ArrayList<>();
         Set<String> processedFolderPaths = new HashSet<>();
 
-        // STEP 1: Collect all unique folder paths from item paths
+        // STEP 1: Extract all unique paths that need folders
         Set<String> folderPaths = new LinkedHashSet<>();
 
         for (Map<String, Object> item : items) {
             String path = (String) item.get("path");
             if (path != null && !path.isEmpty()) {
-                String[] parts = path.split("\\.");
-
-                // Add top-level folder
-                if (parts.length > 0) {
-                    folderPaths.add(parts[0]);
-                }
-
-                // Add nested folder paths incrementally
+                // Add all parent paths as folders
+                String[] segments = path.split("\\.");
                 StringBuilder currentPath = new StringBuilder();
-                for (String part : parts) {
-                    if (currentPath.length() > 0) {
+
+                for (int i = 0; i < segments.length; i++) {
+                    if (i > 0)
                         currentPath.append(".");
-                    }
-                    currentPath.append(part);
+                    currentPath.append(segments[i]);
                     folderPaths.add(currentPath.toString());
                 }
             }
         }
 
-        // STEP 2: Create folder nodes in order from root to leaves
-        List<String> sortedFolderPaths = new ArrayList<>(folderPaths);
-        sortedFolderPaths.sort(Comparator.comparingInt(p -> p.split("\\.").length));
+        // Sort paths by depth to process parent folders first
+        List<String> sortedPaths = new ArrayList<>(folderPaths);
+        sortedPaths.sort(Comparator.comparingInt(p -> p.split("\\.").length));
 
-        for (String folderPath : sortedFolderPaths) {
-            if (processedFolderPaths.contains(folderPath))
-                continue;
+        // STEP 2: Create folder nodes for each unique path
+        for (String folderPath : sortedPaths) {
+            if (processedFolderPaths.contains(folderPath)) {
+                continue; // Skip already processed paths
+            }
 
-            String[] parts = folderPath.split("\\.");
-            String folderName = parts[parts.length - 1];
-            String parentPath = parts.length > 1 ? folderPath.substring(0, folderPath.lastIndexOf(".")) : null;
-            Integer parentNodeId = parentPath != null ? pathToNodeId.get(parentPath) : null;
-
-            int level = parts.length - 1;
+            String[] segments = folderPath.split("\\.");
+            String folderName = segments[segments.length - 1];
 
             Map<String, Object> folderNode = new HashMap<>();
-            folderNode.put("NodeID", nodeId);
-            folderNode.put("HierarchyLevel", level);
-            folderNode.put("ParentNodeID", parentNodeId);
-            folderNode.put("DrillState", "expanded"); // Folders are expanded by default
+            // No ID for folders typically
             folderNode.put("path", folderPath);
             folderNode.put("label", folderName);
             folderNode.put("type", "folder");
             folderNode.put("isFolder", true);
 
-            flatNodes.add(folderNode);
-            pathToNodeId.put(folderPath, nodeId);
+            nodes.add(folderNode);
             processedFolderPaths.add(folderPath);
-            nodeId++;
         }
 
-        // STEP 3: Add leaf nodes representing the actual data items
+        // STEP 3: Add data items
         for (Map<String, Object> item : items) {
-            String path = (String) item.get("path");
-            String label = (String) item.get("label");
+            Map<String, Object> dataNode = new HashMap<>();
+            dataNode.put("ID", item.get("ID"));
+            dataNode.put("path", item.get("path"));
+            dataNode.put("label", item.get("label"));
+            dataNode.put("type", item.get("type"));
+            dataNode.put("value", item.get("value"));
+            dataNode.put("isFolder", false);
 
-            Integer parentNodeId = pathToNodeId.get(path);
-            if (parentNodeId == null) {
-                int lastDotIndex = path.lastIndexOf(".");
-                if (lastDotIndex > 0) {
-                    String parentPath = path.substring(0, lastDotIndex);
-                    parentNodeId = pathToNodeId.get(parentPath);
-                }
-                if (parentNodeId == null) {
-                    System.out.println("Warning: No parent found for path: " + path + ", item: " + label);
-                    continue;
-                }
-            }
-
-            int parentLevel = -1;
-            for (Map<String, Object> node : flatNodes) {
-                if (node.get("NodeID").equals(parentNodeId)) {
-                    parentLevel = (Integer) node.get("HierarchyLevel");
-                    break;
-                }
-            }
-            int level = parentLevel + 1;
-
-            Map<String, Object> itemNode = new HashMap<>();
-            itemNode.put("NodeID", nodeId);
-            itemNode.put("HierarchyLevel", level);
-            itemNode.put("ParentNodeID", parentNodeId);
-            itemNode.put("DrillState", "leaf");
-            itemNode.put("ID", item.get("ID"));
-            itemNode.put("path", path);
-            itemNode.put("label", label);
-            itemNode.put("type", item.get("type"));
-            itemNode.put("value", item.get("value"));
-            itemNode.put("isFolder", false);
-
-            flatNodes.add(itemNode);
-            nodeId++;
+            nodes.add(dataNode);
         }
-
-        // STEP 4: Adjust folder nodes' DrillState if they have no children
-        for (Map<String, Object> node : flatNodes) {
-            if ((Boolean) node.get("isFolder")) {
-                Integer currentNodeId = (Integer) node.get("NodeID");
-                boolean hasChildren = flatNodes.stream()
-                        .anyMatch(child -> currentNodeId.equals(child.get("ParentNodeID")));
-                if (!hasChildren) {
-                    node.put("DrillState", "leaf");
-                }
-            }
-        }
-
-        return flatNodes;
+        System.out.println(nodes);
+        return nodes;
     }
-
     // /**
     // * Returns the parent path of a given dot-separated path.
     // */
