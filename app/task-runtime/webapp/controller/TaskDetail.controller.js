@@ -1844,25 +1844,6 @@ sap.ui.define(
             items: [oBubble],
           });
           oMessageContainer.addStyleClass("chatBubbleContainer user");
-        } else {
-          // Assistant message without ID
-          var oBubble = new sap.m.VBox({
-            items: [
-              new sap.m.Text({
-                text: messageContent,
-              }),
-              new sap.m.Text({
-                text: sTimestamp,
-              }).addStyleClass("chatTimestamp"),
-            ],
-          });
-          oBubble.addStyleClass("chatBubble assistant");
-
-          oMessageContainer = new sap.m.VBox({
-            alignItems: "Start",
-            items: [oBubble],
-          });
-          oMessageContainer.addStyleClass("chatBubbleContainer assistant");
         }
 
         // Tambahkan ke chat box
