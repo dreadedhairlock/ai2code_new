@@ -87,6 +87,7 @@
   justify-content: flex-start;
 }
 
+/* Tambahan untuk layout spacing */
 .chatBubble {
   max-width: 80%;
   padding: 0.75rem 1rem;
@@ -96,10 +97,33 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Style untuk tombol adopt */
+.adoptButton {
+  margin-left: 12px; /* Jarak dari timestamp */
+}
+
+.adoptButton .sapMBtnInner {
+  border-radius: 4px !important;
+  background-color: #0854a0 !important; /* Warna biru seperti di referensi */
+  color: white !important;
+  border: none !important;
+}
+
+/* Style untuk timestamp */
+.chatTimestamp {
+  font-size: 0.7rem;
+  color: #666;
+  margin-top: 0; /* Tidak perlu margin atas lagi karena sudah ada HBox spacer */
+}
+
 .chatBubble.user {
   background-color: #007bff;
-  color: white;
+  color: #ffffff;
   border-bottom-right-radius: 4px;
+}
+
+.userText {
+  color: #ffffff !important;
 }
 
 .chatBubble.assistant {
@@ -241,9 +265,7 @@ css
 }
 
 .adoptButton:hover {
-  background-color: #fafafa;
   color: #0a6ed1;
-  border-color: #d0d0d0;
   opacity: 1 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }

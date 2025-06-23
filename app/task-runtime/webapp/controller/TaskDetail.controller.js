@@ -281,47 +281,106 @@ sap.ui.define(
       },
 
       /**
-       * Converts a flat array of nodes into a hierarchical structure
-       * suitable for display in a Tree control.
+       * Converts a flat array of nodes into a hierarchical tree structure.
+       * Uses path property as the key for determining parent-child relationships.
        *
-       * @param {Array} flatNodes - The flat list of nodes with parent references
-       * @returns {Array} Hierarchical array of root nodes with nested children
+       * @param {Array} flatNodes - Array of flat node objects containing path and isFolder properties
+       * @returns {Array} Hierarchical tree structure with items arrays representing child nodes
        */
       _convertFlatToHierarchical: function (flatNodes) {
+        // Handle empty input
         if (!flatNodes || flatNodes.length === 0) {
           return [];
         }
 
-        // Create a map for quick node lookups by NodeID
-        var nodesMap = {};
-        flatNodes.forEach(function (node) {
-          // Shallow copy to avoid mutating original data
-          var nodeCopy = Object.assign({}, node);
-          // Initialize an empty children array
-          nodeCopy.nodes = [];
-          // Store in map using NodeID as the key
-          nodesMap[node.NodeID] = nodeCopy;
-        });
+        // Maps and arrays for efficient lookups and storage
+        const nodesByPath = {}; // Stores folder nodes indexed by path for O(1) lookups
+        const rootNodes = []; // Stores the top-level nodes (nodes without parents)
 
-        // Build the hierarchical tree structure
-        var rootNodes = [];
-        flatNodes.forEach(function (node) {
-          var nodeWithChildren = nodesMap[node.NodeID];
+        // Step 1: Pre-process the input array to separate folders and data nodes
+        // This avoids multiple filter() iterations for better performance
+        const folderNodesMap = {}; // Map folders by path for faster access
+        const dataNodesArray = []; // Store data nodes separately
 
-          if (node.ParentNodeID === null) {
-            // Node has no parent; it's a root node
-            rootNodes.push(nodeWithChildren);
+        flatNodes.forEach((node) => {
+          if (node.isFolder) {
+            // Store folder nodes in a map with path as key
+            folderNodesMap[node.path] = node;
           } else {
-            // Node has a parent; append to parent's children array
-            var parent = nodesMap[node.ParentNodeID];
-            if (parent) {
-              parent.nodes.push(nodeWithChildren);
-            } else {
-              // Log warning if parent node is missing
-              console.warn("Parent not found for node:", node);
-            }
+            // Collect data nodes in a separate array
+            dataNodesArray.push(node);
           }
         });
+
+        // Step 2: Sort folder paths by depth (shallowest first)
+        // This ensures parent folders are processed before their children
+        const folderPaths = Object.keys(folderNodesMap);
+        folderPaths.sort((a, b) => {
+          // Count dots to determine path depth (faster than split for large strings)
+          return (a.match(/\./g) || []).length - (b.match(/\./g) || []).length;
+        });
+
+        // Step 3: Process folders and build the folder hierarchy
+        for (const path of folderPaths) {
+          const folder = folderNodesMap[path];
+          // Create a copy of the folder with an items array for children
+          const folderCopy = { ...folder, items: [] };
+          nodesByPath[path] = folderCopy;
+
+          // Check if this is a root folder (no dots in path)
+          if (path.indexOf(".") === -1) {
+            // faster than includes() for simple checks
+            rootNodes.push(folderCopy);
+            continue; // Skip to next iteration
+          }
+
+          // Find parent by removing the last path segment
+          const lastDotIndex = path.lastIndexOf(".");
+          const parentPath = path.substring(0, lastDotIndex);
+
+          // Add this folder to its parent's items array
+          const parentFolder = nodesByPath[parentPath];
+          if (parentFolder) {
+            parentFolder.items.push(folderCopy);
+          } else {
+            // If parent not found, add to root nodes as fallback
+            rootNodes.push(folderCopy);
+          }
+        }
+
+        // Step 4: Process data nodes and place them in appropriate folders
+        for (const dataNode of dataNodesArray) {
+          // Create a copy of data node with empty items array for consistency
+          const { items, ...dataCopy } = { ...dataNode, items: [] };
+
+          // Case 1: Check if there's a folder with the exact same path
+          // This handles cases where a data node shares the same path as a folder
+          const parentFolder = nodesByPath[dataNode.path];
+
+          if (parentFolder) {
+            // Add the data node to the folder with the same path
+            parentFolder.items.push(dataCopy);
+            continue;
+          }
+
+          // Case 2: Find parent folder by looking at the path's parent segment
+          if (dataNode.path.indexOf(".") !== -1) {
+            const lastDotIndex = dataNode.path.lastIndexOf(".");
+            const parentPath = dataNode.path.substring(0, lastDotIndex);
+            const parentFolder = nodesByPath[parentPath];
+
+            if (parentFolder) {
+              // Add to the parent folder
+              parentFolder.items.push(dataCopy);
+              continue;
+            }
+          }
+
+          // Case 3: If no parent folder found, add to root level
+          rootNodes.push(dataCopy);
+        }
+
+        // Return the hierarchical structure
         return rootNodes;
       },
 
@@ -389,6 +448,7 @@ sap.ui.define(
 
         // Store the selected node's attributes
         this._selectedNodePath = oNode.path;
+        console.log(this._selectedNodePath);
         this._selectedNodeIsFolder = oNode.isFolder;
         this._selectedNodeLabel = oNode.label;
 
@@ -1713,100 +1773,118 @@ sap.ui.define(
         var messageContent =
           typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
 
-        // Base HTML content
-        var sHtmlContent = "";
-
         // Generate unique ID for the button
-        var buttonId = "adoptBtn_" + sMessageId + "_" + new Date().getTime();
+        var buttonId = "adoptBtn_" + sMessageId;
+
+        var oMessageContainer;
 
         if (sType === "assistant" && sMessageId) {
-          // Untuk pesan assistant dengan ID, tambahkan tombol Adopt
-          sHtmlContent = `
-            <div class="chatBubbleContainer ${sType}">
-                <div class="chatBubble ${sType}">
-                    <div>${messageContent}</div>
-                    <div class="chatTimestamp">${sTimestamp}</div>
-                    <button id="${buttonId}" class="adoptButton" data-message-id="${sMessageId}">
-                        <span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopt
-                    </button>
-                </div>
-            </div>
-        `;
+          // Buat container untuk konten pesan
+          var oContentBox = new sap.m.VBox({
+            width: "100%",
+            items: [
+              new sap.m.Text({
+                text: messageContent,
+              }),
+              // Berikan margin-bottom cukup untuk memberikan ruang antara konten dan footer
+              new sap.m.HBox({
+                height: "12px", // Ruang kosong antara konten dan footer
+              }),
+            ],
+          });
+
+          // Buat container footer dengan timestamp dan button
+          var oFooterBox = new sap.m.HBox({
+            justifyContent: "SpaceBetween",
+            alignItems: "Center",
+            width: "100%",
+            items: [
+              new sap.m.Text({
+                text: sTimestamp,
+              }).addStyleClass("chatTimestamp"),
+              new sap.m.Button({
+                id: buttonId,
+                icon: "sap-icon://thumb-up",
+                text: "Adopt",
+                type: "Emphasized",
+                press: function (oEvent) {
+                  this._handleAdoptClick(oEvent, sMessageId);
+                }.bind(this),
+              }).addStyleClass("adoptButton"),
+            ],
+          });
+
+          // Gabungkan ke dalam bubble
+          var oBubble = new sap.m.VBox({
+            items: [oContentBox, oFooterBox],
+          });
+          oBubble.addStyleClass("chatBubble assistant");
+
+          oMessageContainer = new sap.m.VBox({
+            alignItems: "Start",
+            items: [oBubble],
+          });
+          oMessageContainer.addStyleClass("chatBubbleContainer assistant");
         } else if (sType === "user") {
-          // Untuk pesan user atau assistant tanpa ID
-          sHtmlContent = `
-            <div class="chatBubbleContainer ${sType}">
-                <div class="chatBubble ${sType}">
-                    <div>${messageContent}</div>
-                    <div class="chatTimestamp">${sTimestamp}</div>
-                </div>
-            </div>
-        `;
+          // Untuk pesan user
+          var oBubble = new sap.m.VBox({
+            items: [
+              new sap.m.Text({
+                text: messageContent,
+              }).addStyleClass("userText"),
+              new sap.m.Text({
+                text: sTimestamp,
+              }).addStyleClass("chatTimestamp"),
+            ],
+          });
+          oBubble.addStyleClass("chatBubble user");
+
+          oMessageContainer = new sap.m.VBox({
+            alignItems: "End",
+            items: [oBubble],
+          });
+          oMessageContainer.addStyleClass("chatBubbleContainer user");
         }
 
-        // Buat HTML control
-        var oHTML = new sap.ui.core.HTML({
-          content: sHtmlContent,
-          afterRendering: function (oEvent) {
-            if (sType === "assistant" && sMessageId) {
-              var adoptBtn = document.getElementById(buttonId);
-              if (adoptBtn) {
-                // Use simple once-attached click handler with debouncing
-                adoptBtn.addEventListener(
-                  "click",
-                  this._handleAdoptClick.bind(this),
-                  { once: false }
-                );
-              }
-            }
-          }.bind(this),
-        });
-
         // Tambahkan ke chat box
-        oChatBox.addItem(oHTML);
+        oChatBox.addItem(oMessageContainer);
       },
 
       // Centralized handler for adopt clicks with debounce mechanism
-      _handleAdoptClick: function (event) {
-        // Get message ID from data attribute
-        var messageId = event.currentTarget.getAttribute("data-message-id");
+      _handleAdoptClick: function (oEvent, messageId) {
+        var oButton = oEvent.getSource(); // UI5 Button
+
+        console.log(messageId);
+
         if (!messageId) return;
 
-        // Prevent bubbling
-        event.stopPropagation();
+        // Prevent multiple clicks using custom property
+        if (oButton._isProcessing) return;
+        oButton._isProcessing = true;
 
-        // Temporary disable button during operation to prevent multi-clicks
-        var button = event.currentTarget;
-        if (button._isProcessing) return; // Skip if already processing
-
-        button._isProcessing = true;
-        var originalText = button.innerHTML;
-        button.innerHTML =
-          '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopting...';
+        var originalText = oButton.getText();
+        oButton.setText("Adopting...");
+        oButton.setEnabled(false); // Disable the button during processing
 
         // Call adopt function
         this.onAdoptMessage(messageId)
           .then(function () {
-            // Show success indicator briefly
-            button.innerHTML =
-              '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Adopted!';
+            oButton.setText("Adopted!");
 
-            // Reset button after a short delay to show the success state
             setTimeout(function () {
-              button.innerHTML = originalText;
-              button._isProcessing = false;
+              oButton.setText(originalText);
+              oButton.setEnabled(true);
+              oButton._isProcessing = false;
             }, 1000);
           })
           .catch(function (error) {
-            // Show error state briefly
-            button.innerHTML =
-              '<span class="sapUiIcon sapUiIconMirrorInRTL" data-sap-ui-icon-content=""></span> Failed!';
+            oButton.setText("Failed!");
             console.error("Error adopting message:", error);
 
-            // Reset button after a short delay
             setTimeout(function () {
-              button.innerHTML = originalText;
-              button._isProcessing = false;
+              oButton.setText(originalText);
+              oButton.setEnabled(true);
+              oButton._isProcessing = false;
             }, 1000);
           });
       },
