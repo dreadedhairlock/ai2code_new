@@ -5,8 +5,8 @@ import com.sap.cap.ai2code.model.AIModel;
 import com.sap.cap.ai2code.model.AIModelResolver;
 import com.sap.cap.ai2code.model.Bot;
 import com.sap.cap.ai2code.model.ChatBot;
-import com.sap.cap.ai2code.service.BotService;
-import com.sap.cap.ai2code.service.PromptService;
+import com.sap.cap.ai2code.service.interfaces.BotService;
+import com.sap.cap.ai2code.service.interfaces.PromptService;
 
 import cds.gen.configservice.BotTypes;
 import cds.gen.mainservice.BotInstances;
@@ -163,25 +163,6 @@ public class BotServiceImpl implements BotService {
             // Log the CQN string to help debug the pattern
             throw new BusinessException("Could not extract bot instance ID from CQN: " + result);
         }
-    }
-
-    /**
-     * Retrieves message history for a bot instance, falling back to system
-     * prompts if no messages exist
-     */
-    private List<BotMessages> getMessageHistory(String botInstanceId, String botTypeId) {
-        // Get previous messages for this bot instance
-        List<BotMessages> messagesResult = genericCqnService.getBotMessagesByBotInstanceId(botInstanceId);
-
-        if (messagesResult.isEmpty()) {
-            return getSystemPrompt(botInstanceId, botTypeId);
-        } else {
-            return messagesResult;
-        }
-    }
-
-    private List<BotMessages> getSystemPrompt(String botInstanceId, String botTypeId) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     private Bot createBotInstance(BotInstances botInstance, BotTypes botType, AIModel aiModel) {

@@ -4,10 +4,10 @@ import org.springframework.stereotype.Service;
 import cds.gen.configservice.ModelConfigs;
 import com.sap.cap.ai2code.model.AIModel;
 import com.sap.cap.ai2code.model.SAPAICoreGemini20;
-import com.sap.cap.ai2code.service.AIService;
 import com.sap.cap.ai2code.service.impl.GenericCqnService;
 import com.sap.cap.ai2code.service.impl.SAPGeminiAIServiceImpl;
 // import com.sap.cap.ai2code.service.impl.DummyAIServiceImpl;
+import com.sap.cap.ai2code.service.interfaces.AIService;
 
 /**
  * AI Model Resolver - provides AI models and services based on configuration

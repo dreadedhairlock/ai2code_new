@@ -13,9 +13,10 @@ import cds.gen.mainservice.BotInstancesExecuteContext.ReturnType;
 import cds.gen.mainservice.BotMessages;
 import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cap.ai2code.model.AIModelResolver;
-import com.sap.cap.ai2code.service.AIService;
-import com.sap.cap.ai2code.service.PromptService;
 import com.sap.cap.ai2code.service.impl.GenericCqnService;
+import com.sap.cap.ai2code.service.interfaces.AIService;
+import com.sap.cap.ai2code.service.interfaces.PromptService;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

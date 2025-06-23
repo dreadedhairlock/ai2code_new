@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.service;
+package com.sap.cap.ai2code.service.interfaces;
 
 import java.util.List;
 

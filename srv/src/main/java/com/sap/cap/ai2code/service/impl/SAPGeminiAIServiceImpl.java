@@ -17,9 +17,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sap.cap.ai2code.model.AIModel;
-import com.sap.cap.ai2code.service.AIService;
-// import com.sap.cap.ai2code.service.execution.BotExecution;
-// import com.sap.cap.ai2code.service.processor.StreamingCompletedProcessor;
+import com.sap.cap.ai2code.service.interfaces.AIService;
 
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotMessages;
