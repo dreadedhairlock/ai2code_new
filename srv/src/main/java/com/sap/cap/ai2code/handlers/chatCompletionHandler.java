@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sap.cap.ai2code.service.BotService;
 import com.sap.cds.Result;
 import com.sap.cds.ql.Insert;
 import com.sap.cds.ql.Select;
@@ -41,6 +42,8 @@ public class chatCompletionHandler implements EventHandler {
     @Autowired
     private PersistenceService db;
 
+    private final BotService botService;
+
     private final String apiKey = "AIzaSyBnUu21XsdzPYDgBN0OzzoQmFNrK0QTYi0";
     private final String model = "gemini-2.0-flash";
 
@@ -50,52 +53,54 @@ public class chatCompletionHandler implements EventHandler {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @On(event = BotInstancesChatCompletionContext.CDS_NAME)
-    public void handleChatCompletion(BotInstancesChatCompletionContext context) {
-        String content = context.getContent();
-        String aiResponse;
-        String botTypeId;
-        String botInstanceId = null;
-        BotMessages aiResponseFinal = null;
-
-        //DEBUG
-        System.out.println("====================Handler Start!====================");
-
-        try {
-            // 1. Set BotInstance status to Running
-            Map<String, String> info = getBotInstanceAndSetRunning(context);
-            botTypeId = info.get("botTypeId");
-            botInstanceId = info.get("botInstanceId");
-
-            List<BotMessages> messageHistory = getMessageHistory(botInstanceId, botTypeId);
-            boolean isFirstConversation = messageHistory.isEmpty();
-
-            // 3. Build message context (history + user)
-            List<Map<String, String>> conversationContext = buildConversationContext(
-                    messageHistory, content, isFirstConversation);
-
-            // 4. Call AI API with proper context
-            aiResponse = callGeminiAPIWithContext(conversationContext);
-
-            // 5. Save messages to database
-            aiResponseFinal = saveMessages(botInstanceId, content, aiResponse);
-
-            // 6. Update status to Success
-            updateBotInstanceStatus(botInstanceId, "S");
-
-        } catch (Exception e) {
-            System.err.println("Error in chat completion: " + e.getMessage());
-            aiResponse = "Error: " + e.getMessage();
-
-            // Update status to Failed if we have botInstanceId
-            if (botInstanceId != null) {
-                updateBotInstanceStatus(botInstanceId, "F");
-            }
-        }
-
-        System.out.println("Gemini Response: " + aiResponse);
-        context.setResult(aiResponseFinal);
+    // Constructor
+    public chatCompletionHandler(BotService botService) {
+        this.botService = botService;
     }
+
+    @On(entity = BotInstances_.CDS_NAME, event = BotInstancesChatCompletionContext.CDS_NAME)
+    public void handleChatCompletion(BotInstancesChatCompletionContext context) {
+        System.out.println("====================Handler Start!====================");
+        context.setResult(botService.chat(context));
+    }
+    // @On(entity = BotInstances_.CDS_NAME, event = BotInstancesChatCompletionContext.CDS_NAME)
+    // public void handleChatCompletion(BotInstancesChatCompletionContext context) {
+    //     String content = context.getContent();
+    //     String aiResponse;
+    //     String botTypeId;
+    //     String botInstanceId = null;
+    //     BotMessages aiResponseFinal = null;
+    //     //DEBUG
+    //     System.out.println("====================Handler Start!====================");
+    //     try {
+    //         String aiResponseFinal2 = botService.chat(context);
+    //         // 1. Set BotInstance status to Running
+    //         Map<String, String> info = getBotInstanceAndSetRunning(context);
+    //         botTypeId = info.get("botTypeId");
+    //         botInstanceId = info.get("botInstanceId");
+    //         // 2. Get message history or system prompts (if history is empty) from related bot
+    //         List<BotMessages> messageHistory = getMessageHistory(botInstanceId, botTypeId);
+    //         boolean isFirstConversation = messageHistory.isEmpty();
+    //         // 3. Build message context (history + user)
+    //         List<Map<String, String>> conversationContext = buildConversationContext(
+    //                 messageHistory, content, isFirstConversation);
+    //         // 4. Call AI API with proper context
+    //         aiResponse = callGeminiAPIWithContext(conversationContext);
+    //         // 5. Save messages to database
+    //         aiResponseFinal = saveMessages(botInstanceId, content, aiResponse);
+    //         // 6. Update status to Success
+    //         updateBotInstanceStatus(botInstanceId, "S");
+    //     } catch (Exception e) {
+    //         System.err.println("Error in chat completion: " + e.getMessage());
+    //         aiResponse = "Error: " + e.getMessage();
+    //         // Update status to Failed if we have botInstanceId
+    //         if (botInstanceId != null) {
+    //             updateBotInstanceStatus(botInstanceId, "F");
+    //         }
+    //     }
+    //     System.out.println("Gemini Response: " + aiResponse);
+    //     context.setResult(aiResponseFinal);
+    // }
 
     /**
      * Sets the status of a bot instance to "Running" and returns the

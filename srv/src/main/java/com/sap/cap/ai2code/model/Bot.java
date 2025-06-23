@@ -1,27 +1,27 @@
-// package com.sap.cap.ai2code.model;
+package com.sap.cap.ai2code.model;
 
-// import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-// import cds.gen.mainservice.BotInstances;
-// import cds.gen.mainservice.BotInstancesExecuteContext;
+import cds.gen.mainservice.BotInstances;
+import cds.gen.mainservice.BotInstancesExecuteContext;
 
-// public interface Bot {
-      
-//     public BotInstancesExecuteContext.ReturnType execute();
+public interface Bot {
 
-//     public Boolean executeAsync();
+    public BotInstancesExecuteContext.ReturnType execute();
 
-//     public Boolean stop();
+    public Boolean executeAsync();
 
-//     public Boolean resume();
+    public Boolean stop();
 
-//     public Boolean cancel();
+    public Boolean resume();
 
-//     public SseEmitter chatInStreaming(String content);
+    public Boolean cancel();
 
-//     public String chat(String content);
+    public SseEmitter chatInStreaming(String content);
 
-//     public BotInstances getBotInstance();
+    public String chat(String content);
 
-//     public AIModel getAIModel();
-// }
+    public BotInstances getBotInstance();
+
+    // public AIModel getAIModel();
+}
