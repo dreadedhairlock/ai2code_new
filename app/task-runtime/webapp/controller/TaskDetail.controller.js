@@ -1660,6 +1660,8 @@ sap.ui.define(
         var that = this;
         var oInput = this.byId("chatInput");
         var sMessage = oInput.getValue().trim();
+        var sMessageDate = new Date().toISOString();
+        console.log(sMessageDate);
 
         if (!this._selectedBotInstanceId) {
           MessageToast.show("Select bot instance first!");
@@ -1669,21 +1671,10 @@ sap.ui.define(
 
         if (sMessage) {
           try {
-            // Tampilkan pesan pengguna
-            this.addChatMessage(sMessage, "user");
+            this.addChatMessage(sMessage, "user", null, sMessageDate);
 
-            // Tambahkan ke history lokal
-            // this.addToHistory("user", sMessage);
-
-            // Kosongkan input
             oInput.setValue("");
 
-            // Tandai sedang loading
-            // this.getView().getModel("ui").setProperty("/busy", true);
-            // ID Bot Instance (ganti dengan cara mendapatkan ID yang sesuai)
-            // Ganti dengan ID yang valid
-
-            // Panggil backend CAP Java
             const oModel = this.getOwnerComponent().getModel();
 
             const sPath =
@@ -1700,107 +1691,64 @@ sap.ui.define(
               .then((oResult) => {
                 that._reply = oBinding.getBoundContext().getProperty("message");
                 that._messageId = oBinding.getBoundContext().getProperty("ID");
-                that.addChatMessage(that._reply, "assistant", that._messageId);
+                that._messageRole = oBinding
+                  .getBoundContext()
+                  .getProperty("role");
+                that._messageCreationDate = oBinding
+                  .getBoundContext()
+                  .getProperty("createdAt");
+
+                console.log(that._messageRole);
+                that.addChatMessage(
+                  that._reply,
+                  that._messageRole,
+                  that._messageId,
+                  that._messageCreationDate
+                );
               })
               .catch((oError) => {
                 MessageToast.show("Error: " + oError.message);
               });
-
-            // const response = await fetch(
-            //   `/odata/v4/MainService/BotInstances(${botInstanceId})/MainService.chatCompletion`,
-            //   {
-            //     method: "POST",
-            //     headers: {
-            //       "Content-Type": "application/json",
-            //       // Tambahkan CSRF token jika diperlukan
-            //       // "X-CSRF-Token": csrfToken
-            //     },
-            //     body: JSON.stringify({
-            //       content: sMessage,
-            //     }),
-            //   }
-            // );
-
-            // const resData = await response.text();
-            // const reply = JSON.parse(resData).message;
-            // const debug = JSON.parse(resData);
-            // const messageId = JSON.parse(resData).ID;
-            // console.log(debug);
-            // console.log(messageId);
-            // console.log(reply);
-
-            // Matikan loading
-            // this.getView().getModel("ui").setProperty("/busy", false);
-
-            // if (!response.ok) {
-            //   throw new Error(`HTTP error ${response.status}`);
-            // }
-
-            // // Parse response
-            // const data = await response.json();
-            // const reply = data.value;
-
-            // // Parsing dan tampilkan response
-            // const parsedResponse = this.parseAIResponse(reply);
-            // this._onAdopt();
-
-            // Tambahkan ke history lokal
-            // this.addToHistory("ai", parsedResponse);
           } catch (error) {
-            // Matikan loading
-            // this.getView().getModel("ui").setProperty("/busy", false);
-
-            // this.addChatMessage(errorMessage, "ai");
             console.error("Error in chat completion:", error);
           }
         }
       },
 
-      // // Add these properties to your controller
-      // _chatHistory: [], // Array to store chat sessions
-      // _currentChatId: null, // Current active chat session ID
-      // _currentMessages: [], // Current chat messages
-
-      // // Modified addChatMessage function
-      addChatMessage: function (sMessage, sType, sMessageId) {
+      addChatMessage: function (sMessage, sType, sMessageId, sMessageTime) {
         var oChatBox = this.byId("chatMessagesBox");
-        var sTimestamp = new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
 
-        // Tentukan konten pesan
+        var timestamp = new Date().getTime();
+
         var messageContent =
           typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
 
         // Generate unique ID for the button
-        var buttonId = "adoptBtn_" + sMessageId;
+        var buttonId = "adoptBtn_" + sMessageId + timestamp;
 
         var oMessageContainer;
 
         if (sType === "assistant" && sMessageId) {
-          // Buat container untuk konten pesan
           var oContentBox = new sap.m.VBox({
             width: "100%",
             items: [
               new sap.m.Text({
                 text: messageContent,
               }),
-              // Berikan margin-bottom cukup untuk memberikan ruang antara konten dan footer
+
               new sap.m.HBox({
-                height: "12px", // Ruang kosong antara konten dan footer
+                height: "12px",
               }),
             ],
           });
 
-          // Buat container footer dengan timestamp dan button
           var oFooterBox = new sap.m.HBox({
             justifyContent: "SpaceBetween",
             alignItems: "Center",
             width: "100%",
             items: [
               new sap.m.Text({
-                text: sTimestamp,
+                text: sMessageTime,
               }).addStyleClass("chatTimestamp"),
               new sap.m.Button({
                 id: buttonId,
@@ -1814,7 +1762,6 @@ sap.ui.define(
             ],
           });
 
-          // Gabungkan ke dalam bubble
           var oBubble = new sap.m.VBox({
             items: [oContentBox, oFooterBox],
           });
@@ -1826,14 +1773,13 @@ sap.ui.define(
           });
           oMessageContainer.addStyleClass("chatBubbleContainer assistant");
         } else if (sType === "user") {
-          // Untuk pesan user
           var oBubble = new sap.m.VBox({
             items: [
               new sap.m.Text({
                 text: messageContent,
               }).addStyleClass("userText"),
               new sap.m.Text({
-                text: sTimestamp,
+                text: sMessageTime,
               }).addStyleClass("chatTimestamp"),
             ],
           });
@@ -1846,7 +1792,6 @@ sap.ui.define(
           oMessageContainer.addStyleClass("chatBubbleContainer user");
         }
 
-        // Tambahkan ke chat box
         oChatBox.addItem(oMessageContainer);
       },
 
@@ -1892,7 +1837,6 @@ sap.ui.define(
       onAdoptMessage: function (sMessageId) {
         // Return a promise that can be awaited by the caller
         return new Promise((resolve, reject) => {
-          // Dapatkan model OData V4
           var oModel = this.getOwnerComponent().getModel();
 
           // Binding context for action
@@ -1951,7 +1895,12 @@ sap.ui.define(
             aContexts.forEach(function (oContext) {
               // Get the message data for this context
               var oMessage = oContext.getObject();
-              that.addChatMessage(oMessage.message, oMessage.role, oMessage.ID);
+              that.addChatMessage(
+                oMessage.message,
+                oMessage.role,
+                oMessage.ID,
+                oMessage.createdAt
+              );
             });
           })
           .catch(function (oError) {
