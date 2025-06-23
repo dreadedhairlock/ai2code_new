@@ -65,17 +65,17 @@ public class BotServiceImpl implements BotService {
     @Override
     public BotMessages chat(BotInstancesChatCompletionContext context) {
         // Get BotInstance's ID
-        String botInstanceId = getBotInstanceIdFromUrl(context);
+        String botInstanceId = genericCqnService.extractBotInstanceIdFromContext(context);
         // Call and return the result of the second chat method
         return chat(botInstanceId, context.getContent());
     }
 
     @Override
     public BotMessages chat(String botInstanceId, String content) {
+        String response;
         // Get cached or create new Bot
         Bot bot = getCurrentBot(botInstanceId);
 
-        String response;
         try {
             if (bot instanceof ChatBot chatBot) {
                 response = chatBot.chat(content);
@@ -97,12 +97,6 @@ public class BotServiceImpl implements BotService {
             // updateBotInstanceStatus(bot, "F");
             throw new BusinessException("Chat failed for bot: " + botInstanceId, e);
         }
-
-        // //Get Bot Instance by ID
-        // BotInstances currentBotInstance = genericCqnService.getBotInstanceById(botInstanceId);
-        // //Get Message History
-        // List<BotMessages> messageHistory = getMessageHistory(botInstanceId, currentBotInstance.getTypeId());
-        // return "";
     }
 
     @Override
@@ -145,24 +139,6 @@ public class BotServiceImpl implements BotService {
     public void adopt(String botInstanceId, String messageId) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'adopt'");
-    }
-
-    /**
-     * Extracts the ID value from the CQN (Core Query Notation) string
-     * representation
-     */
-    private String getBotInstanceIdFromUrl(BotInstancesChatCompletionContext context) {
-        String result = context.getCqn().toString();
-        Pattern pattern = Pattern.compile("\"val\":\"([^\"]+)\"");
-        Matcher matcher = pattern.matcher(result);
-
-        if (matcher.find()) {
-            String botInstanceId = matcher.group(1);
-            return botInstanceId;
-        } else {
-            // Log the CQN string to help debug the pattern
-            throw new BusinessException("Could not extract bot instance ID from CQN: " + result);
-        }
     }
 
     private Bot createBotInstance(BotInstances botInstance, BotTypes botType, AIModel aiModel) {
