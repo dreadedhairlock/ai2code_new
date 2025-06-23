@@ -22,13 +22,17 @@ import com.sap.cap.ai2code.service.interfaces.AIService;
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotMessages;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 @Service
 public class SAPGeminiAIServiceImpl implements AIService {
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
-    private final String model = "gemini-2.0-flash"; // Default model
-    private final String apiKey = "AIzaSyBnUu21XsdzPYDgBN0OzzoQmFNrK0QTYi0"; // TODO: Get from configuration
+    private static final Dotenv dotenv = Dotenv.load();
+
+    private final String model = dotenv.get("GEMINI_MODEL");
+    private final String apiKey = dotenv.get("GEMINI_API_KEY");
 
     public SAPGeminiAIServiceImpl() {
         this.httpClient = HttpClient.newHttpClient();
