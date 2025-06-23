@@ -32,10 +32,6 @@ service MainService {
 
     action getContextNodesTree(taskId : UUID) returns {
         nodes : array of {
-            NodeID         : Integer;
-            HierarchyLevel : Integer;
-            ParentNodeID   : Integer;
-            DrillState     : String;
             ID             : UUID null; // Optional for folder
             path           : String;
             label          : String; // Show the label in the tree
