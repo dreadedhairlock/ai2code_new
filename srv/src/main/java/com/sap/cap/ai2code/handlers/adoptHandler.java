@@ -29,6 +29,8 @@ import cds.gen.mainservice.BotMessages_;
 import cds.gen.mainservice.ContextNodes;
 import cds.gen.mainservice.ContextNodes_;
 
+import com.sap.cap.ai2code.exception.BusinessException;
+
 @Component
 @ServiceName("MainService")
 public class adoptHandler implements EventHandler {
@@ -67,10 +69,7 @@ public class adoptHandler implements EventHandler {
                                     .byId(botInstanceId);
                             Result botInstanceResult = db.run(selectBotInstance);
 
-                            if (botInstanceResult.rowCount() == 0) {
-                                throw new IllegalArgumentException(
-                                        "BotInstance with ID " + botInstanceId + " not found.");
-                            }
+                            if (botInstanceResult.rowCount() == 0) throw BusinessException.botInstanceNotFound(botInstanceId);
 
                             // select single BotInstance
                             BotInstances botInstance = botInstanceResult.single(BotInstances.class);
@@ -85,9 +84,7 @@ public class adoptHandler implements EventHandler {
                                     
                             Result botTypeResult = db.run(selectBotType);
 
-                            if (botTypeResult.rowCount() == 0) {
-                                throw new IllegalArgumentException("BotType with ID " + botTypeId + " not found.");
-                            }
+                            if (botTypeResult.rowCount() == 0) throw BusinessException.botTypeNotFound(botTypeId);
 
                             BotTypes botType = botTypeResult.single(BotTypes.class);
 
@@ -155,8 +152,7 @@ public class adoptHandler implements EventHandler {
             System.out.println("Result Nodes: " + resultNodes);
 
         } catch (Exception e) {
-            System.err.println("Error in adopt handler: " + e.getMessage());
-            throw new RuntimeException("Failed to adopt bot messages: " + e.getMessage(), e);
+            throw BusinessException.failAdopt(e.getMessage(), e);
         }
     }
 
