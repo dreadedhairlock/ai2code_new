@@ -83,23 +83,25 @@ public class ChatBot implements Bot {
 
     @Override
     public String chat(String content) {
+
         List<PromptTexts> prompts = new ArrayList<>();
+
         try {
             // 1. Get the appropriate AI service based on the AI model type
             AIService aiService = aiModelResolver.resolveAIService(aiModel.getModelConfigs());
 
-            // 2. Check if this is the first chat call - if so, need to save prompt messages
-            boolean isFirstCall = genericCqnService.isFirstCall(botInstance.getId());
-            if (isFirstCall) {
-                // Get prompts for this bot type and instance
+            // 2. Get previous bot messages
+            List<BotMessages> historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());
+
+            // 3. Check if this is the first chat call - if so, need to save prompt messages
+            if (historyMessages.isEmpty()) {
                 prompts = promptService.getPrompts(botType.getId(), "", "");
                 if (prompts != null && !prompts.isEmpty()) {
                     savePromptMessages(prompts);
+                    historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());
+                    System.out.println("historyMessages: " + historyMessages);
                 }
             }
-
-            // 3. Retrieve chat history messages for this bot instance
-            List<BotMessages> historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());
 
             // 4. Make the actual AI service call with history, prompts, and current content
             String response = aiService.chatWithAI(historyMessages, prompts, content, aiModel);
