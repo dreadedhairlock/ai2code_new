@@ -8,11 +8,10 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cds.Result;
-import com.sap.cds.ql.Insert;
 import com.sap.cds.ql.Select;
 import com.sap.cds.ql.Update;
-import com.sap.cds.ql.cqn.CqnInsert;
 import com.sap.cds.ql.cqn.CqnSelect;
 import com.sap.cds.ql.cqn.CqnUpdate;
 import com.sap.cds.services.handler.EventHandler;
@@ -22,7 +21,6 @@ import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
 
-import cds.gen.ai.orchestration.config.PromptText;
 import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.BotTypes_;
 import cds.gen.configservice.PromptTexts;
@@ -30,8 +28,6 @@ import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstancesExecuteContext;
 import cds.gen.mainservice.BotInstancesExecuteContext.ReturnType;
 import cds.gen.mainservice.BotInstances_;
-import cds.gen.mainservice.ContextNodes;
-import cds.gen.mainservice.ContextNodes_;
 
 @Component
 @ServiceName("MainService")
@@ -91,7 +87,7 @@ public class executeHandler implements EventHandler {
                         // Set status to Failed
                         BotInstances botInstance = BotInstances.of(row);
                         updateBotInstanceStatus(botInstance.getId(), "F");
-                        throw new RuntimeException("Bot execution failed", e);
+                        throw BusinessException.failExecute(e.getMessage() , e);
                     }
                 });
             }
@@ -102,16 +98,14 @@ public class executeHandler implements EventHandler {
             
         } catch (Exception e) {
             System.err.println("Error in bot execution: " + e.getMessage());
-            throw new RuntimeException("Bot execution process failed", e);
+            throw BusinessException.failExecute(e.getMessage() , e);
         }
     }
 
    private BotTypes getBotType(String typeId) {
         CqnSelect select = Select.from(BotTypes_.CDS_NAME).byId(typeId);
         Result result = db.run(select);
-        if (result.rowCount() == 0) {
-            throw new IllegalArgumentException("Bot type with ID " + typeId + " not found.");
-        }
+        if (result.rowCount() == 0) throw BusinessException.botTypeNotFound(typeId);
         return result.single(BotTypes.class);
     }
 
@@ -126,9 +120,7 @@ public class executeHandler implements EventHandler {
             // Get implementation class
             String implementationClassFromBotType = botType.getImplementationClass();
 
-            if (implementationClassFromBotType == null || implementationClassFromBotType.isEmpty()) {
-                throw new IllegalArgumentException("Implementation class not specified for bot type");
-            }
+            if (implementationClassFromBotType == null || implementationClassFromBotType.isEmpty()) throw BusinessException.implementationClassMissing();
 
             // Get the implementationClass
             Class<?> implementationClass = Class.forName(implementationClassFromBotType);
@@ -145,7 +137,7 @@ public class executeHandler implements EventHandler {
                 }
             }
 
-            if(methodExists == false) throw new IllegalArgumentException("No method called execute found in the class");
+            if(methodExists == false) throw BusinessException.executeMethodNotFound();
             
             // Call the AI Function call and execute method
             Object implementationInstance = implementationClass.getDeclaredConstructor().newInstance();
@@ -162,7 +154,7 @@ public class executeHandler implements EventHandler {
             
         } catch (Exception e) {
             System.err.println("Error executing F type bot: " + e.getMessage());
-            throw new RuntimeException("Function call bot execution failed", e);
+            throw BusinessException.functionCallBotFailExecute(e.getMessage(),e);
         }
     }
 
@@ -173,9 +165,7 @@ public class executeHandler implements EventHandler {
             // Get implementation class
             String implementationClassFromBotType = botType.getImplementationClass();
 
-            if (implementationClassFromBotType == null || implementationClassFromBotType.isEmpty()) {
-                throw new IllegalArgumentException("Implementation class not specified for bot type");
-            }
+            if (implementationClassFromBotType == null || implementationClassFromBotType.isEmpty()) throw BusinessException.implementationClassMissing();
 
             // Get the implementationClass
             Class<?> implementationClass = Class.forName(implementationClassFromBotType);
@@ -192,7 +182,7 @@ public class executeHandler implements EventHandler {
                 }
             }
 
-            if(methodExists == false) throw new IllegalArgumentException("No method called execute found in the class");
+            if(methodExists == false) throw BusinessException.executeMethodNotFound();
             
             // Call the AI Function call and execute method
             Object implementationInstance = implementationClass.getDeclaredConstructor().newInstance();
@@ -210,7 +200,7 @@ public class executeHandler implements EventHandler {
             
         } catch (Exception e) {
             System.err.println("Error executing C type bot: " + e.getMessage());
-            throw new RuntimeException("Custom bot execution failed", e);
+            throw BusinessException.codeBotFailExecute(e.getMessage(), e);
         }
     }
 

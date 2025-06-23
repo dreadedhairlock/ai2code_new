@@ -24,6 +24,9 @@ public class createTaskWithBotsHandler implements EventHandler {
     @Before(event = CreateTaskWithBotsContext.CDS_NAME)
     public void beforeCreateTaskWithBots(CreateTaskWithBotsContext context) {
         // Basic validation - the actual validation is now handled in the service layer
+
+        // Because the parameter has already set to be mandatory, the create button cannot be pressed until that value is filled
+        // Hence, this throw exception error is unnecessary.
         if (context.getTypeId() == null || context.getTypeId().trim().isEmpty()) throw BusinessException.emptyTaskTypeID();
         if (context.getName() == null || context.getName().trim().isEmpty()) throw BusinessException.emptyTaskName();
         
