@@ -3,6 +3,7 @@ package com.sap.cap.ai2code.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cap.ai2code.model.Task;
 import com.sap.cap.ai2code.service.TaskService;
 import com.sap.cds.Result;
@@ -110,7 +111,7 @@ public class TaskServiceImpl implements TaskService {
         Result result = db.run(select);
 
         if (result.rowCount() == 0) {
-            throw new IllegalArgumentException("Task type with ID " + typeId + " not found.");
+            throw new BusinessException("Task type not found: " + typeId);
         }
     }
 

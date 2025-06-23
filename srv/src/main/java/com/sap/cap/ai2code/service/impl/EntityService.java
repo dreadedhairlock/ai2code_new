@@ -31,7 +31,7 @@ import com.sap.cds.services.draft.DraftService;
 // import cds.gen.CqnService.ReportFields_;
 // import cds.gen.CqnService.Reports;
 // import cds.gen.CqnService.Reports_;
-// import com.sap.cap.ai2code.exception.BusinessException; // Changed from AIServiceException
+import com.sap.cap.ai2code.exception.BusinessException; // Changed from AIServiceException
 
 // Rename from EntityServiceUtil.java
 @Service
@@ -50,7 +50,7 @@ public class EntityService {
             String errorMessage) {
         Result result = service.run(select);
         if (result.rowCount() == 0) {
-            // throw new BusinessException(errorMessage); // Changed exception type
+            throw new BusinessException(errorMessage); // Changed exception type
         }
         return result.single(type);
     }
@@ -271,7 +271,7 @@ public class EntityService {
                 entity.getClass().getMethod("setIsActiveEntity", Boolean.class)
                         .invoke(entity, isActiveEntity);
             } catch (Exception e) {
-                // throw new BusinessException("Failed_To_Set_Entity_Properties", e); // Changed exception type
+                throw new BusinessException("Failed_To_Set_Entity_Properties", e); // Changed exception type
             }
             insert(service, serviceDraft, entityClass, entity, isActiveEntity);
         });

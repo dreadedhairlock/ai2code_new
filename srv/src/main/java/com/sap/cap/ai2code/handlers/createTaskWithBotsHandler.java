@@ -3,6 +3,7 @@ package com.sap.cap.ai2code.handlers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cap.ai2code.model.Task;
 import com.sap.cap.ai2code.service.TaskService;
 import com.sap.cds.services.handler.EventHandler;
@@ -24,11 +25,11 @@ public class createTaskWithBotsHandler implements EventHandler {
     public void beforeCreateTaskWithBots(CreateTaskWithBotsContext context) {
         // Basic validation - the actual validation is now handled in the service layer
         if (context.getTypeId() == null || context.getTypeId().trim().isEmpty()) {
-            throw new IllegalArgumentException("Task type ID is required.");
+            throw new BusinessException("Task type ID is required.");
         }
         
         if (context.getName() == null || context.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Task name is required.");
+            throw new BusinessException("Task name is required.");
         }
         
         System.out.println("Before creating task with bots: " + context.getName());
