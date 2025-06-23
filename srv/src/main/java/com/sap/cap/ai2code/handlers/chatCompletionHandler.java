@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cds.Result;
 import com.sap.cds.ql.Insert;
 import com.sap.cds.ql.Select;
@@ -282,10 +283,9 @@ public class chatCompletionHandler implements EventHandler {
         HttpResponse<String> response = httpClient.send(request,
                 HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("API call failed: " + response.statusCode() + " - " + response.body());
-        }
-
+        if (response.statusCode() != 200) throw BusinessException.failAPICall(response.statusCode(),response.body());
+            //throw new RuntimeException("API call failed: " + response.statusCode() + " - " + response.body());
+        
         return parseGeminiResponse(response.body());
     }
 
