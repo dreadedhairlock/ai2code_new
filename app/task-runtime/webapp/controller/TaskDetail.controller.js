@@ -56,24 +56,27 @@ sap.ui.define(
           function (oEvent) {
             this._sTaskId = oEvent.getParameter("arguments").taskId;
 
+            this._loadTaskTree(this._sTaskId);
+
             // load context tree
-            this.loadContextNodesTree();
+            this._loadContextNodesTree();
             oModel.refresh();
           }.bind(this)
         );
 
-        // this._chatHistory = [];
-        // this._currentMessages = [];
-        // this._currentChatId = null;
-        // this._loadHistoryFromStorage();
-        // this.startNewChat();
-
-        // Initialize view model for tree data
+        // Initialize view model for contextNodes tree data
         var oViewModel = new JSONModel({
           rootNodes: [],
           selectedNode: null,
         });
         this.getView().setModel(oViewModel, "contextNodes");
+
+        // Initialize view model for task tree
+        this._oTaskModel = new JSONModel({
+          rootNodes: [],
+        });
+        this.getView().setModel(this._oTaskModel, "taskAndBotTree");
+
         // Create context menu programmatically if it doesn't exist
         if (!this._oContextMenu) {
           this._oContextMenu = new sap.m.Menu({
@@ -102,11 +105,105 @@ sap.ui.define(
         oTree.attachBrowserEvent("contextmenu", this._onContextMenu.bind(this));
       },
 
-      /**
-       * Store reference to the clicked item for later use in menu handlers
-       *
-       * @param {Event} oEvent - Browser event from right-click
-       */
+      _loadTaskTree: async function (sTaskId) {
+        console.log("Loading task tree for ID:", sTaskId);
+        const that = this;
+        const oModel = this.getOwnerComponent().getModel();
+        const oTaskModel = this.getOwnerComponent().getModel("taskAndBotTree");
+
+        if (!sTaskId) {
+          return;
+        }
+
+        const sPath = "/Tasks('" + sTaskId + "')";
+
+        // Create binding
+        const oContext = oModel.bindContext(sPath, null, {
+          $expand: "type,botInstances($expand=type,status,messages,tasks)",
+        });
+
+        const oTask = await oContext.requestObject();
+        if (oTask) {
+          console.log("ttt", oTask);
+          this._buildTaskAndBotStructure([{ getObject: () => oTask }]);
+        }
+      },
+
+      _buildTaskAndBotStructure: function (aTaskContexts) {
+        const nodes = [];
+        aTaskContexts.forEach((oContext) => {
+          const oTask = oContext.getObject();
+          const oTaskItem = this._buildTaskItemRecursively(oTask);
+          nodes.push(oTaskItem);
+        });
+        this._oTaskModel.setProperty("/rootNodes", nodes);
+
+        console.log(this._oTaskModel.getData());
+      },
+
+      _buildTaskItemRecursively: function (oTask) {
+        const oTaskItem = {
+          ID: oTask.ID,
+          name: oTask.name || "Unnamed Task",
+          type: "Task",
+          hasNodes: false,
+          data: oTask,
+          nodes: [],
+        };
+
+        const aBotInstances = oTask.botInstances;
+        if (aBotInstances && aBotInstances.length > 0) {
+          oTaskItem.hasNodes = true;
+          aBotInstances.forEach((oBotInstance) => {
+            const oBotItem = this._buildBotInstanceItem(oBotInstance);
+            oTaskItem.nodes.push(oBotItem);
+          });
+        }
+        return oTaskItem;
+      },
+
+      _buildBotInstanceItem: function (oBotInstance) {
+        const oBotItem = {
+          ID: oBotInstance.ID,
+          name:
+            oBotInstance.type?.name ||
+            `Bot Instance ${oBotInstance.sequence || ""}`,
+          hasNodes: false,
+          type: "BotInstance",
+          data: oBotInstance,
+          nodes: [],
+        };
+        const aSubTasks = oBotInstance.tasks;
+        if (aSubTasks && aSubTasks.length > 0) {
+          oBotItem.hasNodes = true;
+          aSubTasks.forEach((oSubTask) => {
+            const oSubTaskItem = this._buildTaskItemRecursively(oSubTask);
+            oSubTaskItem.name = `${oSubTask.name || "Unnamed SubTask"}`;
+            oBotItem.nodes.push(oSubTaskItem);
+          });
+        }
+
+        const aBotMessages = oBotInstance.messages;
+        if (aBotMessages && aBotMessages.length > 0) {
+          if (!oBotItem.hasNodes) {
+            oBotItem.hasNodes = true;
+          }
+          aBotMessages.forEach((oBotMessage, index) => {
+            const oBotMessageItem = {
+              ID: oBotMessage.ID,
+              name: `Message ${index + 1} (${oBotMessage.role || "unknown"})`,
+              hasNodes: false,
+              type: "BotMessage",
+              data: oBotMessage,
+              nodes: [],
+            };
+            oBotItem.nodes.push(oBotMessageItem);
+          });
+        }
+
+        return oBotItem;
+      },
+
       _storeClickedItem: function (oEvent) {
         // Get the DOM element that was right-clicked
         var oElement = oEvent.target;
@@ -127,12 +224,6 @@ sap.ui.define(
         this._clickedItem = null;
       },
 
-      /**
-       * Handle context menu event (right-click)
-       * Uses more basic positioning approach to avoid jQuery issues
-       *
-       * @param {Event} oEvent - Browser event from right-click
-       */
       _onContextMenu: function (oEvent) {
         // Prevent default browser context menu
         oEvent.preventDefault();
@@ -173,16 +264,10 @@ sap.ui.define(
         }
       },
 
-      /**
-       * Handler for Create File menu item press
-       */
       onCreateFile: function () {
         this.onCreateCNData();
       },
 
-      /**
-       * Handler for Create Folder menu item press
-       */
       onCreateFolder: function () {
         // Get the clicked item
         var oItem = this._clickedItem;
@@ -200,7 +285,7 @@ sap.ui.define(
         }
       },
 
-      loadContextNodesTree: function () {
+      _loadContextNodesTree: function () {
         // Retrieve the main OData model from the component
         const oModel = this.getOwnerComponent().getModel();
         // Access the view's JSON model for context nodes
@@ -280,13 +365,6 @@ sap.ui.define(
           });
       },
 
-      /**
-       * Converts a flat array of nodes into a hierarchical tree structure.
-       * Uses path property as the key for determining parent-child relationships.
-       *
-       * @param {Array} flatNodes - Array of flat node objects containing path and isFolder properties
-       * @returns {Array} Hierarchical tree structure with items arrays representing child nodes
-       */
       _convertFlatToHierarchical: function (flatNodes) {
         // Handle empty input
         if (!flatNodes || flatNodes.length === 0) {
@@ -595,8 +673,7 @@ sap.ui.define(
         await oBinding.create(oNew).created();
         MessageToast.show("Context Node created");
 
-        // await this.getOwnerComponent()._loadContextNodes(this._sTaskId);
-        this.loadContextNodesTree();
+        this._loadContextNodesTree();
         this.oCreateDialog.close();
       },
 
@@ -639,7 +716,7 @@ sap.ui.define(
                     await oBoundContext.delete();
                     MessageToast.show("Context node deleted successfully.");
 
-                    this.loadContextNodesTree();
+                    this._loadContextNodesTree();
                   } else {
                     MessageToast.show("Could not find context with ID: " + sID);
                   }
@@ -775,7 +852,7 @@ sap.ui.define(
 
           MessageToast.show("Context Node updated");
           this.oEditDialog.close();
-          this.loadContextNodesTree();
+          this._loadContextNodesTree();
           this._refreshCNContent();
         } catch (err) {
           console.error("Update error:", err);
@@ -905,6 +982,7 @@ sap.ui.define(
       onCreateSubTask: function () {
         var oTree = this.byId("taskAndBotTree");
         var oSelectedItem = oTree.getSelectedItem();
+        console.log(oSelectedItem);
 
         if (!oSelectedItem) {
           MessageToast.show("Select the bot instance first");
@@ -922,6 +1000,7 @@ sap.ui.define(
         }
 
         this._selectedBotInstanceId = oContext.getProperty("ID");
+        console.log(this._selectedBotInstanceId);
 
         this._openCreateTaskDialog();
       },
@@ -1266,27 +1345,31 @@ sap.ui.define(
         var sTaskId = oContext.getProperty("ID");
         var sTaskName = oContext.getProperty("name");
 
-        if (!this.oBotDialog) {
-          this.oBotDialog = new Dialog({
-            type: DialogType.Message,
-            title: "Create",
-            content: [this._createBotForm(sTaskName)],
-            beginButton: new Button({
-              type: ButtonType.Emphasized,
-              text: "Create",
-              press: function () {
-                this._createBot(sTaskId);
-                this.oBotDialog.close();
-              }.bind(this),
-            }),
-            endButton: new Button({
-              text: "Cancel",
-              press: function () {
-                this.oBotDialog.close();
-              }.bind(this),
-            }),
-          });
+        if (this.oBotDialog) {
+          this.oBotDialog.close();
+          this.oBotDialog.destroy();
+          this.oBotDialog = null;
         }
+
+        this.oBotDialog = new Dialog({
+          type: DialogType.Message,
+          title: "Create",
+          content: [this._createBotForm(sTaskName)],
+          beginButton: new Button({
+            type: ButtonType.Emphasized,
+            text: "Create",
+            press: function () {
+              this._createBot(sTaskId);
+              this.oBotDialog.close();
+            }.bind(this),
+          }),
+          endButton: new Button({
+            text: "Cancel",
+            press: function () {
+              this.oBotDialog.close();
+            }.bind(this),
+          }),
+        });
 
         this.oBotDialog.open();
       },
@@ -1320,7 +1403,7 @@ sap.ui.define(
         return new SimpleForm({
           content: [
             new Label({ text: "Task" }),
-            new Input({
+            new Input("botTaskName", {
               value: sTaskName,
               editable: false,
             }),
@@ -1851,7 +1934,7 @@ sap.ui.define(
             .then((oResult) => {
               MessageToast.show("Message adopted successfully");
               // Load context tree
-              this.loadContextNodesTree();
+              this._loadContextNodesTree();
               resolve(oResult);
             })
             .catch((oError) => {
@@ -1975,7 +2058,7 @@ sap.ui.define(
       //     .execute()
       //     .then(function (oResult) {
       //       MessageToast.show("Message adopted successfully");
-      //       that.loadContextNodesTree();
+      //       that._loadContextNodesTree();
       //     })
       //     .catch(function (oError) {
       //       MessageToast.show("Error: " + oError.message);
