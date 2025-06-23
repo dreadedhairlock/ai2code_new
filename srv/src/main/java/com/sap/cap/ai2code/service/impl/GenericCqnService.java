@@ -10,6 +10,7 @@ import cds.gen.configservice.ModelConfigs_;
 import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.BotTypes_;
 import cds.gen.mainservice.BotInstances;
+import cds.gen.mainservice.BotInstancesChatCompletionContext;
 import cds.gen.mainservice.BotInstances_;
 import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessages_;
@@ -24,6 +25,8 @@ import cds.gen.configservice.PromptTexts_;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Optional;
 
 import com.sap.cap.ai2code.exception.BusinessException;
@@ -158,6 +161,24 @@ public class GenericCqnService {
     }
 
     // ===== BOT INSTANCE OPERATIONS =====
+    /**
+     * Extracts the ID value from the CQN (Core Query Notation) string
+     * representation
+     */
+    public String extractBotInstanceIdFromContext(BotInstancesChatCompletionContext context) {
+        String result = context.getCqn().toString();
+        Pattern pattern = Pattern.compile("\"val\":\"([^\"]+)\"");
+        Matcher matcher = pattern.matcher(result);
+
+        if (matcher.find()) {
+            String botInstanceId = matcher.group(1);
+            return botInstanceId;
+        } else {
+            // Log the CQN string to help debug the pattern
+            throw new BusinessException("Could not extract bot instance ID from CQN: " + result);
+        }
+    }
+
     /**
      * Get bot instance by ID
      */
