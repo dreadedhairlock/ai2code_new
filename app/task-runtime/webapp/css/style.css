@@ -104,7 +104,7 @@
 
 .adoptButton .sapMBtnInner {
   border-radius: 4px !important;
-  background-color: #0854a0 !important; /* Warna biru seperti di referensi */
+  background-color: #007bff !important; /* Warna biru seperti di referensi */
   color: white !important;
   border: none !important;
 }

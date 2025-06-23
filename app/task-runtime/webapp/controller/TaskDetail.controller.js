@@ -1661,7 +1661,6 @@ sap.ui.define(
         var oInput = this.byId("chatInput");
         var sMessage = oInput.getValue().trim();
         var sMessageDate = new Date().toISOString();
-        console.log(sMessageDate);
 
         if (!this._selectedBotInstanceId) {
           MessageToast.show("Select bot instance first!");
@@ -1698,13 +1697,16 @@ sap.ui.define(
                   .getBoundContext()
                   .getProperty("createdAt");
 
-                console.log(that._messageRole);
                 that.addChatMessage(
                   that._reply,
                   that._messageRole,
                   that._messageId,
                   that._messageCreationDate
                 );
+
+                setTimeout(function () {
+                  that._scrollToBottom();
+                }, 100);
               })
               .catch((oError) => {
                 MessageToast.show("Error: " + oError.message);
@@ -1718,15 +1720,17 @@ sap.ui.define(
       addChatMessage: function (sMessage, sType, sMessageId, sMessageTime) {
         var oChatBox = this.byId("chatMessagesBox");
 
-        var timestamp = new Date().getTime();
+        var timestampForId = new Date().getTime();
 
         var messageContent =
           typeof sMessage === "string" ? sMessage : JSON.stringify(sMessage);
 
         // Generate unique ID for the button
-        var buttonId = "adoptBtn_" + sMessageId + timestamp;
+        var buttonId = "adoptBtn_" + sMessageId + timestampForId;
 
         var oMessageContainer;
+
+        var formattedTime = this._formatTimestamp(sMessageTime);
 
         if (sType === "assistant" && sMessageId) {
           var oContentBox = new sap.m.VBox({
@@ -1748,7 +1752,7 @@ sap.ui.define(
             width: "100%",
             items: [
               new sap.m.Text({
-                text: sMessageTime,
+                text: formattedTime,
               }).addStyleClass("chatTimestamp"),
               new sap.m.Button({
                 id: buttonId,
@@ -1779,7 +1783,7 @@ sap.ui.define(
                 text: messageContent,
               }).addStyleClass("userText"),
               new sap.m.Text({
-                text: sMessageTime,
+                text: formattedTime,
               }).addStyleClass("chatTimestamp"),
             ],
           });
@@ -1793,13 +1797,16 @@ sap.ui.define(
         }
 
         oChatBox.addItem(oMessageContainer);
+
+        var that = this;
+        setTimeout(function () {
+          that._scrollToBottom();
+        }, 100);
       },
 
       // Centralized handler for adopt clicks with debounce mechanism
       _handleAdoptClick: function (oEvent, messageId) {
         var oButton = oEvent.getSource(); // UI5 Button
-
-        console.log(messageId);
 
         if (!messageId) return;
 
@@ -1820,17 +1827,11 @@ sap.ui.define(
               oButton.setText(originalText);
               oButton.setEnabled(true);
               oButton._isProcessing = false;
-            }, 1000);
+            }, 100);
           })
           .catch(function (error) {
             oButton.setText("Failed!");
             console.error("Error adopting message:", error);
-
-            setTimeout(function () {
-              oButton.setText(originalText);
-              oButton.setEnabled(true);
-              oButton._isProcessing = false;
-            }, 1000);
           });
       },
 
@@ -1889,7 +1890,7 @@ sap.ui.define(
 
         // Request data from the server
         oListBinding
-          .requestContexts(0, 1000)
+          .requestContexts()
           .then(function (aContexts) {
             // Process the returned contexts
             aContexts.forEach(function (oContext) {
@@ -1902,7 +1903,11 @@ sap.ui.define(
                 oMessage.createdAt
               );
             });
+            setTimeout(function () {
+              that._scrollToBottom();
+            }, 100);
           })
+
           .catch(function (oError) {
             console.error("Error loading chat history:", oError);
             that.addChatMessage(
@@ -1910,6 +1915,49 @@ sap.ui.define(
               "error"
             );
           });
+      },
+
+      _formatTimestamp: function (sTimestamp) {
+        if (!sTimestamp) return "";
+
+        var date = new Date(sTimestamp);
+        var day = String(date.getDate()).padStart(2, "0");
+        var month = String(date.getMonth() + 1).padStart(2, "0");
+        var year = date.getFullYear();
+        var hours = String(date.getHours()).padStart(2, "0");
+        var minutes = String(date.getMinutes()).padStart(2, "0");
+        var seconds = String(date.getSeconds()).padStart(2, "0");
+
+        return (
+          day +
+          "-" +
+          month +
+          "-" +
+          year +
+          " " +
+          hours +
+          ":" +
+          minutes +
+          ":" +
+          seconds
+        );
+      },
+
+      _scrollToBottom: function () {
+        try {
+          var oChatBox = this.byId("chatMessagesBox");
+          if (oChatBox && oChatBox.getItems().length > 0) {
+            var oLastItem = oChatBox.getItems()[oChatBox.getItems().length - 1];
+            if (oLastItem) {
+              oLastItem.getDomRef()?.scrollIntoView({
+                behavior: "smooth",
+                block: "end",
+              });
+            }
+          }
+        } catch (error) {
+          console.warn("Scroll to bottom failed:", error);
+        }
       },
 
       // _onAdopt: function () {
