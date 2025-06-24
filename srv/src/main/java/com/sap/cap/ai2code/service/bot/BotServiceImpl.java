@@ -73,6 +73,8 @@ public class BotServiceImpl implements BotService {
         // Get cached or create new Bot
         Bot bot = getCurrentBot(botInstanceId);
 
+        updateBotInstanceStatus(bot, "R");
+
         try {
             if (bot instanceof ChatBot chatBot) {
                 response = chatBot.chat(content);
@@ -87,11 +89,13 @@ public class BotServiceImpl implements BotService {
 
             BotMessages botMessage = genericCqnService.createAndInsertBotMessage(botInstanceId, response, "assistant");
 
+            updateBotInstanceStatus(bot, "S");
+
             return botMessage;
 
         } catch (BusinessException | InterruptedException e) {
             // 更新状态为FAILED
-            // updateBotInstanceStatus(bot, "F");
+            updateBotInstanceStatus(bot, "F");
             throw new BusinessException("Chat failed for bot: " + botInstanceId, e);
         }
     }
@@ -153,5 +157,13 @@ public class BotServiceImpl implements BotService {
         //     return new FunctionCallingBot(botInstance, aiModel, botType, genericCqnService, promptService, aiModelResolver, botExecutionFactoryService);
         // case "C": // Coding Bot
         //     return new CodingBot(botInstance, aiModel, botType);
+    }
+
+    private void updateBotInstanceStatus(Bot bot, String status) {
+        String botInstanceId = bot.getBotInstance().getId();
+        // 使用缓存管理器更新状态
+        // cacheManager.updateBotStatus(botInstanceId, status);
+        // 同时更新数据库
+        genericCqnService.updateBotInstanceStatus(botInstanceId, status);
     }
 }
