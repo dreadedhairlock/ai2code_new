@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.service.impl;
+package com.sap.cap.ai2code.service.context;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import cds.gen.mainservice.ContextNodes;
 import cds.gen.mainservice.Tasks;
 import com.sap.cap.ai2code.exception.BusinessException;
-import com.sap.cap.ai2code.service.ContextService;
+import com.sap.cap.ai2code.service.common.GenericCqnService;
 
 @Service
 public class ContextServiceImpl implements ContextService {
@@ -90,9 +90,9 @@ public class ContextServiceImpl implements ContextService {
     @Override
     public ContextNodes upsertContext(String botInstanceId, String contextPath, String contextValue) {
         // try {
-            // 1. 通过botInstanceId获取mainTaskId
-            String mainTaskId = genericCqnService.getMainTaskId(botInstanceId);
-            return upsertContextWithMainTaskId(mainTaskId, contextPath, contextValue);
+        // 1. 通过botInstanceId获取mainTaskId
+        String mainTaskId = genericCqnService.getMainTaskId(botInstanceId);
+        return upsertContextWithMainTaskId(mainTaskId, contextPath, contextValue);
         //     // 2. 查询是否已存在相同mainTaskId和contextPath的记录
         //     ContextNodes existingNode = null;
         //     try {
@@ -112,7 +112,6 @@ public class ContextServiceImpl implements ContextService {
         //                 "text",
         //                 contextValue);
         //     }
-
         // } catch (Exception e) {
         //     throw new BusinessException("Failed to upsert context node for botInstanceId: " + botInstanceId +
         //             ", contextPath: " + contextPath, e);
@@ -148,8 +147,8 @@ public class ContextServiceImpl implements ContextService {
             }
 
         } catch (Exception e) {
-            throw new BusinessException("Failed to upsert context node for mainTaskId: " + mainTaskId +
-                    ", contextPath: " + contextPath, e);
+            throw new BusinessException("Failed to upsert context node for mainTaskId: " + mainTaskId
+                    + ", contextPath: " + contextPath, e);
         }
     }
 

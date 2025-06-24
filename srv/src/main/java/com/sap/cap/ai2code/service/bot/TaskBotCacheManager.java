@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.service.impl;
+package com.sap.cap.ai2code.service.bot;
 
 // import com.sap.cap.ai2code.model.tree.TaskBotNode;
 // import com.sap.cap.ai2code.model.bot.Bot;

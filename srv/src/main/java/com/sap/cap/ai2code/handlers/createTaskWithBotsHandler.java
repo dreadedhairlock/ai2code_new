@@ -21,7 +21,6 @@ public class createTaskWithBotsHandler implements EventHandler {
 
     @Autowired
     private TaskService taskService;
-    private TaskService taskService;
 
     @Before(event = CreateTaskWithBotsContext.CDS_NAME)
     public void beforeCreateTaskWithBots(CreateTaskWithBotsContext context) {
