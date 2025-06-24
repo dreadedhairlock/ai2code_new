@@ -11,6 +11,7 @@ import com.sap.cds.services.handler.annotations.Before;
 import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
 
+
 import cds.gen.mainservice.CreateTaskWithBotsContext;
 import cds.gen.mainservice.Tasks;
 
@@ -19,6 +20,7 @@ import cds.gen.mainservice.Tasks;
 public class createTaskWithBotsHandler implements EventHandler {
 
     @Autowired
+    private TaskService taskService;
     private TaskService taskService;
 
     @Before(event = CreateTaskWithBotsContext.CDS_NAME)
