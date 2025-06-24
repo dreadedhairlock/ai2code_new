@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.service.impl;
+package com.sap.cap.ai2code.service.common;
 
 import java.util.List;
 import java.util.Optional;
@@ -83,14 +83,14 @@ public class EntityService {
     /**
      * Insert multiple entities in batch
      */
-    public <T extends CdsData, E extends StructuredType<E>> void batchInsert(
-            CqnService service, DraftService draftService, Class<E> entityClass,
-            List<T> entities, boolean isActiveEntity) {
+    // public <T extends CdsData, E extends StructuredType<E>> void batchInsert(
+    //         CqnService service, DraftService draftService, Class<E> entityClass,
+    //         List<T> entities, boolean isActiveEntity) {
 
-        for (T entity : entities) {
-            insert(service, draftService, entityClass, entity, isActiveEntity);
-        }
-    }
+    //     for (T entity : entities) {
+    //         insert(service, draftService, entityClass, entity, isActiveEntity);
+    //     }
+    // }
 
     /**
      * Update a single entity (supports both active and draft)
@@ -154,4 +154,50 @@ public class EntityService {
     public Result executeDelete(CqnService service, CqnDelete delete) {
         return service.run(delete);
     }
+    public <T extends CdsData, E extends StructuredType<E>> void batchInsert(
+            CqnService service,
+            DraftService serviceDraft,
+            Class<E> entityClass,
+            List<T> entities,
+            String reportId,
+            Boolean isActiveEntity) {
+        entities.forEach(entity -> {
+            // Use reflection to set common properties
+            try {
+                entity.getClass().getMethod("setReportId", String.class)
+                        .invoke(entity, reportId);
+                entity.getClass().getMethod("setIsActiveEntity", Boolean.class)
+                        .invoke(entity, isActiveEntity);
+            } catch (Exception e) {
+                throw new BusinessException("Failed_To_Set_Entity_Properties", e); // Changed exception type
+            }
+            insert(service, serviceDraft, entityClass, entity, isActiveEntity);
+        });
+    }
+
+    // private <T extends CdsData> void insertEntity(
+    // CqnService service,
+    // DraftService serviceDraft,
+    // T entity,
+    // Boolean isActiveEntity) {
+    // if (entity instanceof Records) {
+    // insertRecord(service, serviceDraft, (Records) entity, isActiveEntity);
+    // } else if (entity instanceof Pcls) {
+    // insertPcl(service, serviceDraft, (Pcls) entity, isActiveEntity);
+    // } else if (entity instanceof ReportFields) {
+    // insertReportField(service, serviceDraft, (ReportFields) entity,
+    // isActiveEntity);
+    // }
+    // }
+
+    // public void updateReport(
+    // CqnService service,
+    // DraftService serviceDraft,
+    // Reports report) {
+    // if (report.getIsActiveEntity()) {
+    // service.run(Update.entity(Reports_.class).data(report));
+    // } else {
+    // serviceDraft.patchDraft(Update.entity(Reports_.class).data(report));
+    // }
+    // }
 }

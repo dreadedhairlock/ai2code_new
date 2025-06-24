@@ -1,35 +1,35 @@
-package com.sap.cap.ai2code.service.impl;
+package com.sap.cap.ai2code.service.common;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
+
+import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cds.ql.Select;
 import com.sap.cds.ql.cqn.CqnSelect;
 
+import cds.gen.configservice.BotTypes;
+import cds.gen.configservice.BotTypes_;
 import cds.gen.configservice.ConfigService;
 import cds.gen.configservice.ModelConfigs;
 import cds.gen.configservice.ModelConfigs_;
-import cds.gen.configservice.BotTypes;
-import cds.gen.configservice.BotTypes_;
+import cds.gen.configservice.PromptTexts;
+import cds.gen.configservice.PromptTexts_;
 import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstancesChatCompletionContext;
 import cds.gen.mainservice.BotInstances_;
 import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessages_;
-import cds.gen.mainservice.Tasks;
-import cds.gen.mainservice.Tasks_;
 import cds.gen.mainservice.ContextNodes;
 import cds.gen.mainservice.ContextNodes_;
 import cds.gen.mainservice.MainService;
-import cds.gen.configservice.PromptTexts;
-import cds.gen.configservice.PromptTexts_;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.Optional;
-
-import com.sap.cap.ai2code.exception.BusinessException;
+import cds.gen.mainservice.Tasks;
+import cds.gen.mainservice.Tasks_;
 
 /**
  * Generic CQN Service providing domain-specific data access operations for
@@ -150,7 +150,7 @@ public class GenericCqnService {
         newTask.setId(UUID.randomUUID().toString());
         newTask.setName(name);
         newTask.setDescription(description);
-        newTask.setIsMain(false);
+        newTask.setIsMain(false); // 子任务
         newTask.setContextPath(contextPath);
         newTask.setSequence(sequence);
         newTask.setBotInstanceId(botInstanceId);

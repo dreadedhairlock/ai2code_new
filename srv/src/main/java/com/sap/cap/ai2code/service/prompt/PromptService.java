@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.service.interfaces;
+package com.sap.cap.ai2code.service.prompt;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.model;
+package com.sap.cap.ai2code.model.bot;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 

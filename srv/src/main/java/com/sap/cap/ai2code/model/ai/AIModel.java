@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.model;
+package com.sap.cap.ai2code.model.ai;
 
 // import com.sap.cap.ai2code.model.config.AIServiceConfig;
 import cds.gen.configservice.ModelConfigs;

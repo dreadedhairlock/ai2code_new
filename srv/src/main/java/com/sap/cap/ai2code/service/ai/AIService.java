@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.service.interfaces;
+package com.sap.cap.ai2code.service.ai;
 
 import java.io.IOException;
 import java.util.List;
@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.sap.cap.ai2code.model.AIModel;
+import com.sap.cap.ai2code.model.ai.AIModel;
 
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotMessages;

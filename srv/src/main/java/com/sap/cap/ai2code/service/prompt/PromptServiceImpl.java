@@ -1,10 +1,11 @@
-package com.sap.cap.ai2code.service.impl;
+package com.sap.cap.ai2code.service.prompt;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.sap.cap.ai2code.service.interfaces.PromptService;
+import com.sap.cap.ai2code.service.common.GenericCqnService;
+import com.sap.cap.ai2code.service.prompt.PromptService;
 
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotInstances;
