@@ -9,15 +9,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 import java.time.Duration;
-import java.util.concurrent.ExecutorService;
+// import java.util.concurrent.ExecutorService;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+// import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sap.cap.ai2code.model.ai.AIModel;
-import com.sap.cap.ai2code.service.ai.AIService;
+// import com.sap.cap.ai2code.service.ai.AIService;
 
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotMessages;

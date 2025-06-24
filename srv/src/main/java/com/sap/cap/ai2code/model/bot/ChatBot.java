@@ -8,7 +8,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotInstances;
-import cds.gen.mainservice.BotInstancesExecuteContext;
 import cds.gen.mainservice.BotInstancesExecuteContext.ReturnType;
 import cds.gen.mainservice.BotMessages;
 import com.sap.cap.ai2code.exception.BusinessException;

@@ -199,7 +199,7 @@ public class TaskServiceImpl implements TaskService {
         return task.getTypeId();
     }
 
-    private int getNextSequenceForBotInstance(String botInstanceId) {
+    private int getNextSequenceForBotInstance(@SuppressWarnings("unused") String botInstanceId) {
         return (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
     }
 

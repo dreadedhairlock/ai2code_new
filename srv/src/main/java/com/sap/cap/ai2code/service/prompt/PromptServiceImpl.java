@@ -5,10 +5,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.sap.cap.ai2code.service.common.GenericCqnService;
-import com.sap.cap.ai2code.service.prompt.PromptService;
 
 import cds.gen.configservice.PromptTexts;
-import cds.gen.mainservice.BotInstances;
 
 @Service
 public class PromptServiceImpl implements PromptService {

@@ -5,7 +5,6 @@ import com.sap.cap.ai2code.model.ai.AIModel;
 import com.sap.cap.ai2code.model.ai.AIModelResolver;
 import com.sap.cap.ai2code.model.bot.Bot;
 import com.sap.cap.ai2code.model.bot.ChatBot;
-import com.sap.cap.ai2code.service.bot.BotService;
 import com.sap.cap.ai2code.service.common.GenericCqnService;
 import com.sap.cap.ai2code.service.prompt.PromptService;
 
@@ -16,12 +15,9 @@ import cds.gen.mainservice.BotInstancesExecuteContext;
 import cds.gen.mainservice.BotInstancesExecuteContext.ReturnType;
 import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessagesAdoptContext;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import org.apache.tomcat.util.descriptor.web.ContextService;
-import org.springframework.beans.factory.annotation.Autowired;
+// import org.apache.tomcat.util.descriptor.web.ContextService;
+// import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -84,7 +80,7 @@ public class BotServiceImpl implements BotService {
                 throw new BusinessException("Bot is not a ChatBot: " + botInstanceId);
             }
 
-            BotMessages userMessage = genericCqnService.createAndInsertBotMessage(botInstanceId, content, "user");
+            genericCqnService.createAndInsertBotMessage(botInstanceId, content, "user");
 
             // 500ms delay to ensure user message got inserted to DB first
             Thread.sleep(500);
@@ -93,7 +89,7 @@ public class BotServiceImpl implements BotService {
 
             return botMessage;
 
-        } catch (Exception e) {
+        } catch (BusinessException | InterruptedException e) {
             // 更新状态为FAILED
             // updateBotInstanceStatus(bot, "F");
             throw new BusinessException("Chat failed for bot: " + botInstanceId, e);
@@ -146,14 +142,16 @@ public class BotServiceImpl implements BotService {
         String functionTypeCode = botType.getFunctionTypeCode();
 
         switch (functionTypeCode) {
-            case "A": // AI Chat Bot
+            case "A" -> {
+                // AI Chat Bot
                 return new ChatBot(botInstance, aiModel, botType, genericCqnService, promptService, aiModelResolver);
-            // case "F": // Function Calling Bot
-            //     return new FunctionCallingBot(botInstance, aiModel, botType, genericCqnService, promptService, aiModelResolver, botExecutionFactoryService);
-            // case "C": // Coding Bot
-            //     return new CodingBot(botInstance, aiModel, botType);
-            default:
+            }
+            default ->
                 throw new BusinessException("Unsupported bot function type: " + functionTypeCode);
         }
+        // case "F": // Function Calling Bot
+        //     return new FunctionCallingBot(botInstance, aiModel, botType, genericCqnService, promptService, aiModelResolver, botExecutionFactoryService);
+        // case "C": // Coding Bot
+        //     return new CodingBot(botInstance, aiModel, botType);
     }
 }
