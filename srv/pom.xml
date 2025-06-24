@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <artifactId>ai2code-parent</artifactId>
         <groupId>com.sap.cap</groupId>
         <version>${revision}</version>
     </parent>
+
     <artifactId>ai2code</artifactId>
     <packaging>jar</packaging>
+
     <name>ai2code</name>
+
     <!-- ACTUAL DEPENDENCIES -->
     <dependencies>
         <!-- CDS SPRING BOOT STARTER -->
@@ -15,39 +19,44 @@
             <groupId>com.sap.cds</groupId>
             <artifactId>cds-starter-spring-boot</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.sap.cds</groupId>
             <artifactId>cds-adapter-odata-v4</artifactId>
-            <scope>task-runtime</scope>
+            <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <scope>task-runtime</scope>
+            <scope>runtime</scope>
         </dependency>
-        <!-- GEMINI AI -->
+
         <dependency>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>google-cloud-aiplatform</artifactId>
-            <version>3.50.0</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
-        <!-- Jackson untuk JSON handling -->
+
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.15.2</version>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>3.0.0</version>
         </dependency>
     </dependencies>
+
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
@@ -71,6 +80,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <!-- STEPS TO BUILD CDS MODEL AND GENERATE POJOs -->
             <plugin>
                 <groupId>com.sap.cds</groupId>
@@ -82,12 +92,14 @@
                             <goal>clean</goal>
                         </goals>
                     </execution>
+
                     <execution>
                         <id>cds.install-node</id>
                         <goals>
                             <goal>install-node</goal>
                         </goals>
                     </execution>
+
                     <execution>
                         <id>cds.npm-ci</id>
                         <goals>
@@ -97,12 +109,14 @@
                             <arguments>ci</arguments>
                         </configuration>
                     </execution>
+
                     <execution>
                         <id>cds.resolve</id>
                         <goals>
                             <goal>resolve</goal>
                         </goals>
                     </execution>
+
                     <execution>
                         <id>cds.build</id>
                         <goals>
@@ -115,6 +129,7 @@
                             </commands>
                         </configuration>
                     </execution>
+
                     <execution>
                         <id>cds.generate</id>
                         <goals>
@@ -126,6 +141,8 @@
                     </execution>
                 </executions>
             </plugin>
+			
+            <!-- BUILD HELPER PLUGIN -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>

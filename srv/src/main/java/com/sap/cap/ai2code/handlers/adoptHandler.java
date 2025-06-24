@@ -43,8 +43,9 @@ public class adoptHandler implements EventHandler {
     }
 
     @On(event = BotMessagesAdoptContext.CDS_NAME, entity = BotMessages_.CDS_NAME)
+    @SuppressWarnings("UseSpecificCatch")
     public void onAdopt(BotMessagesAdoptContext context) {
-        List<ContextNodes> resultNodes = new ArrayList<>(); // set array
+        List<ContextNodes> resultNodes = new ArrayList<>(); //set array
 
         try {
             // Get BotMessage information
@@ -69,22 +70,24 @@ public class adoptHandler implements EventHandler {
                                     .byId(botInstanceId);
                             Result botInstanceResult = db.run(selectBotInstance);
 
-                            if (botInstanceResult.rowCount() == 0) throw BusinessException.botInstanceNotFound(botInstanceId);
+                            if (botInstanceResult.rowCount() == 0) {
+                                throw new IllegalArgumentException("BotInstance with ID " + botInstanceId + " not found.");
+                            }
 
-                            // select single BotInstance
+                            //select single BotInstance
                             BotInstances botInstance = botInstanceResult.single(BotInstances.class);
                             String botTypeId = botInstance.getTypeId();
                             System.out.println("BotType with ID: " + botTypeId);
 
                             // 3. Get BotTypes entries based on BotInstances.type
                             CqnSelect selectBotType = Select.from(BotTypes_.CDS_NAME)
-                                    .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE, BotTypes.OUTPUT_CONTEXT_PATH,
-                                            BotTypes_.TASK_TYPE_ID)
+                                    .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE, BotTypes.OUTPUT_CONTEXT_PATH, BotTypes_.TASK_TYPE_ID)
                                     .where(b -> b.get("ID").eq(botTypeId));
-                                    
                             Result botTypeResult = db.run(selectBotType);
 
-                            if (botTypeResult.rowCount() == 0) throw BusinessException.botTypeNotFound(botTypeId);
+                            if (botTypeResult.rowCount() == 0) {
+                                throw new IllegalArgumentException("BotType with ID " + botTypeId + " not found.");
+                            }
 
                             BotTypes botType = botTypeResult.single(BotTypes.class);
 
@@ -92,24 +95,15 @@ public class adoptHandler implements EventHandler {
                             ContextNodes contextNode = ContextNodes.create();
 
                             // Path: outputContextPath set according to BotTypes
-                            String path = botType.getOutputContextPath();
-                            System.out.println("path: " + path);
-                            String cleanedPath = path.contains("SubContext:") ? path.replaceFirst("SubContext:", "")
-                                    : path;
-                            System.out.println("path: " + cleanedPath);
-                            contextNode.setPath(cleanedPath);
+                            contextNode.setPath(botType.getOutputContextPath());
 
                             // Label: using bot message content as label
-                            String labelValue = botMessage != null && botMessage.length() > 200
-                                    ? botMessage.substring(0, 200)
-                                    : botMessage;
-                            contextNode.setLabel(labelValue);
+                            contextNode.setLabel(botMessage);
 
                             // Type: contextType set according to BotTypes
                             contextNode.setType(botType.getContextTypeCode());
 
-                            // Value: BotMessages.message/Convert to the corresponding format according to
-                            // the AI function call
+                            // Value: BotMessages.message/Convert to the corresponding format according to the AI function call
                             String messageValue = processMessageValue(botMessage, botType.getContextType());
                             contextNode.setValue(messageValue);
 
@@ -138,15 +132,15 @@ public class adoptHandler implements EventHandler {
                                         .data(BotInstances.STATUS_CODE, "F");
                                 db.run(updateBotInstanceFailed);
 
-                                System.err.println("Failed to process BotMessage for BotInstance ID: " + botInstanceId +
-                                        ". Error: " + e.getMessage());
+                                System.err.println("Failed to process BotMessage for BotInstance ID: " + botInstanceId
+                                        + ". Error: " + e.getMessage());
                             } catch (Exception updateException) {
-                                System.err.println("Failed to update BotInstance status to Failed: "
-                                        + updateException.getMessage());
+                                System.err.println("Failed to update BotInstance status to Failed: " + updateException.getMessage());
                             }
 
                         }
-                    });
+                    }
+            );
             // 6. Returns the ContextNodes entries
             context.setResult(resultNodes);
             System.out.println("Result Nodes: " + resultNodes);
@@ -157,10 +151,10 @@ public class adoptHandler implements EventHandler {
     }
 
     /**
-     * Processes the message value according to the context type.
-     * This is a placeholder implementation; adjust logic as needed.
+     * Processes the message value according to the context type. This is a
+     * placeholder implementation; adjust logic as needed.
      */
-    private String processMessageValue(String message, Object contextType) {
+    private String processMessageValue(String message, @SuppressWarnings("unused") Object contextType) {
         // Example: just return the message as-is, or add logic based on contextType
         return message;
     }
