@@ -139,6 +139,8 @@ public class GenericCqnService {
 
         entityService.insert(mainService, null, Tasks_.class, newTask, true);
         return newTask;
+        entityService.insert(mainService, null, Tasks_.class, newTask, true);
+        return newTask;
     }
 
     /**
@@ -150,7 +152,7 @@ public class GenericCqnService {
         newTask.setId(UUID.randomUUID().toString());
         newTask.setName(name);
         newTask.setDescription(description);
-        newTask.setIsMain(false);
+        newTask.setIsMain(false); // 子任务
         newTask.setContextPath(contextPath);
         newTask.setSequence(sequence);
         newTask.setBotInstanceId(botInstanceId);
