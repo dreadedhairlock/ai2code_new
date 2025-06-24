@@ -5,24 +5,24 @@ import java.util.List;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.sap.cap.ai2code.exception.BusinessException;
-import com.sap.cap.ai2code.model.ai.AIModel;
-import com.sap.cap.ai2code.model.ai.AIModelResolver;
-import com.sap.cap.ai2code.service.ai.AIService;
-import com.sap.cap.ai2code.service.common.GenericCqnService;
-import com.sap.cap.ai2code.service.prompt.PromptService;
-
 import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstancesExecuteContext.ReturnType;
 import cds.gen.mainservice.BotMessages;
+import com.sap.cap.ai2code.exception.BusinessException;
+import com.sap.cap.ai2code.model.ai.AIModel;
+import com.sap.cap.ai2code.model.ai.AIModelResolver;
+import com.sap.cap.ai2code.service.common.GenericCqnService;
+import com.sap.cap.ai2code.service.ai.AIService;
+import com.sap.cap.ai2code.service.prompt.PromptService;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class ChatBot implements Bot {
+public class FunctionCallingBot implements Bot {
 
     private BotInstances botInstance;
     private AIModel aiModel;
@@ -34,22 +34,17 @@ public class ChatBot implements Bot {
     private AIModelResolver aiModelResolver;
 
     // Constructor that matches what BotServiceImpl is calling
-    public ChatBot(BotInstances botInstance, AIModel aiModel, BotTypes botType,
-            GenericCqnService genericCqnService, PromptService promptService,
-            AIModelResolver aiModelResolver) {
+    public FunctionCallingBot(BotInstances botInstance, AIModel aiModel, BotTypes botType) {
         this.botInstance = botInstance;
         this.aiModel = aiModel;
         this.botType = botType;
-        this.genericCqnService = genericCqnService;
-        this.promptService = promptService;
-        this.aiModelResolver = aiModelResolver;
+
     }
 
     @Override
     public ReturnType execute() {
         // TODO Auto-generated method stub
-
-        // Implementasi yang sebenarnya
+        
         return null;
     }
 
@@ -135,6 +130,6 @@ public class ChatBot implements Bot {
 
     // @Override
     // public AIModel getAiModel() {
-    // return this.aiModel;
+    //     return this.aiModel;
     // }
 }

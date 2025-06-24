@@ -23,5 +23,6 @@ public interface Bot {
 
     public BotInstances getBotInstance();
 
+
     // public AIModel getAIModel();
 }
