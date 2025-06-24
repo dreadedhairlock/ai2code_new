@@ -1,33 +1,17 @@
 package com.sap.cap.ai2code.handlers;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
-import com.sap.cds.services.handler.annotations.ServiceName;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.sap.cds.services.handler.EventHandler;
-import com.sap.cds.services.persistence.PersistenceService;
-import com.sap.cds.services.handler.annotations.On;
 
 import com.sap.cap.ai2code.service.BotService;
+import com.sap.cds.services.handler.EventHandler;
+import com.sap.cds.services.handler.annotations.On;
+import com.sap.cds.services.handler.annotations.ServiceName;
 
-import com.sap.cds.Result;
-import com.sap.cds.ql.Insert;
-import com.sap.cds.ql.Select;
-import com.sap.cds.ql.Update;
-import com.sap.cds.ql.cqn.CqnInsert;
-import com.sap.cds.ql.cqn.CqnSelect;
-import com.sap.cds.ql.cqn.CqnUpdate;
-
-import cds.gen.configservice.BotTypes;
-import cds.gen.configservice.BotTypes_;
-import cds.gen.mainservice.BotInstances;
-import cds.gen.mainservice.BotInstances_;
 import cds.gen.mainservice.BotMessagesAdoptContext;
 import cds.gen.mainservice.BotMessages_;
 import cds.gen.mainservice.ContextNodes;
-import cds.gen.mainservice.ContextNodes_;
 
 @Component
 @ServiceName("MainService")
@@ -48,9 +32,9 @@ public class adoptHandler implements EventHandler {
             // ContextNodes resultNode = botService.adopt(context);
 
             // // Return type should be List<ContextNodes> not single ContextNodes
-            // List<ContextNodes> resultNodes = List.of(resultNode);
-
-            ContextNodes resultNodes = botService.adopt(context);
+            
+            ContextNodes resultNode = botService.adopt(context);
+            List<ContextNodes> resultNodes = List.of(resultNode);
             context.setResult(resultNodes);
             System.out.println("Result Nodes: " + resultNodes);
             

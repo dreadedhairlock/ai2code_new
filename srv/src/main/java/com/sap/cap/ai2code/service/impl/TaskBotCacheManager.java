@@ -4,16 +4,13 @@ package com.sap.cap.ai2code.service.impl;
 // import com.sap.cap.ai2code.model.bot.Bot;
 // import com.sap.cap.ai2code.model.task.Task;
 
-// import org.springframework.stereotype.Service;
-
-// import java.util.Map;
-// import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Service;
 
 // /**
 //  * 任务-Bot统一缓存管理器
 //  * 使用树形结构管理Task和BotInstance的层级关系
 //  */
-// @Service
+@Service
 public class TaskBotCacheManager {
     
 //     // 全局节点缓存：nodeId -> TaskBotNode

@@ -1,11 +1,12 @@
 package com.sap.cap.ai2code.service.impl;
 
-import org.apache.tomcat.util.descriptor.web.ContextService;
 import org.springframework.stereotype.Service;
 
+import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cap.ai2code.model.Bot;
 import com.sap.cap.ai2code.model.bot.CodingBot;
 import com.sap.cap.ai2code.service.BotService;
+import com.sap.cap.ai2code.service.ContextService;
 import com.sap.cds.ql.cqn.AnalysisResult;
 import com.sap.cds.ql.cqn.CqnAnalyzer;
 
@@ -14,11 +15,9 @@ import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessagesAdoptContext;
 import cds.gen.mainservice.ContextNodes;
-import com.sap.cap.ai2code.service.impl.GenericCqnService;
-import com.sap.cap.ai2code.exception.BusinessException;
 
 @Service
-public class BotServiceImpl implements BotService{
+public class BotServiceImpl implements BotService {
     private final GenericCqnService genericCqnService;
     private final ContextService contextService;
 
@@ -57,6 +56,7 @@ public class BotServiceImpl implements BotService{
     @Override
     public Bot getCurrentBot(String botInstanceId) {
         // 从数据库查询BotInstance
+        System.out.println("Bot Instance ID: " + botInstanceId);
         BotInstances botInstance = genericCqnService.getBotInstanceById(botInstanceId);
 
         // 查询关联的BotType
@@ -84,9 +84,7 @@ public class BotServiceImpl implements BotService{
 
         // adopt 1. Get the current BotMessages entries
         BotMessages botMessage = genericCqnService.getMessageById(botInstanceId, messageId);
-        if (botMessage == null) {
-            throw new BusinessException("Message not found: " + messageId);
-        }
+        if (botMessage == null) throw new BusinessException("Message not found: " + messageId);
 
         String messageText = botMessage.getMessage();
 
@@ -101,7 +99,6 @@ public class BotServiceImpl implements BotService{
         if (outputContextPath == null || outputContextPath.isBlank()) {
             updateBotInstanceStatus(bot, "FAILED");
             throw new BusinessException("No outputContextPath configured for botInstance: " + botInstanceId);
-
         }
 
         // 4. Retrieve the absolute outputContextPath

@@ -1,30 +1,30 @@
 package com.sap.cap.ai2code.service.impl;
 
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
+
+import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cds.ql.Select;
 import com.sap.cds.ql.cqn.CqnSelect;
 
+import cds.gen.configservice.BotTypes;
+import cds.gen.configservice.BotTypes_;
 import cds.gen.configservice.ConfigService;
 import cds.gen.configservice.ModelConfigs;
 import cds.gen.configservice.ModelConfigs_;
-import cds.gen.configservice.BotTypes;
-import cds.gen.configservice.BotTypes_;
+import cds.gen.configservice.PromptTexts;
+import cds.gen.configservice.PromptTexts_;
 import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstances_;
 import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessages_;
-import cds.gen.mainservice.Tasks;
-import cds.gen.mainservice.Tasks_;
 import cds.gen.mainservice.ContextNodes;
 import cds.gen.mainservice.ContextNodes_;
 import cds.gen.mainservice.MainService;
-import cds.gen.configservice.PromptTexts;
-import cds.gen.configservice.PromptTexts_;
-
-import java.util.List;
-import java.util.UUID;
-
-import com.sap.cap.ai2code.exception.BusinessException;
+import cds.gen.mainservice.Tasks;
+import cds.gen.mainservice.Tasks_;
 
 @Service
 public class GenericCqnService {
@@ -360,7 +360,7 @@ public class GenericCqnService {
      */
     public String getBotInstanceIdByMessageId(String messageId) {
         CqnSelect selectBotInstance = Select.from(BotMessages_.class)
-                .columns(BotInstances_.ID, BotInstances_.TYPE_ID, BotInstances_.TASK_ID)
+                .columns(BotMessages_.ID, BotMessages_.BOT_INSTANCE_ID)
                 .where(m -> m.ID().eq(messageId));
 
         BotMessages message = entityService.selectSingle(
