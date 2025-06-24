@@ -1,5 +1,6 @@
 package com.sap.cap.ai2code.service.common;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 
@@ -86,12 +87,10 @@ public class EntityService {
     // public <T extends CdsData, E extends StructuredType<E>> void batchInsert(
     //         CqnService service, DraftService draftService, Class<E> entityClass,
     //         List<T> entities, boolean isActiveEntity) {
-
     //     for (T entity : entities) {
     //         insert(service, draftService, entityClass, entity, isActiveEntity);
     //     }
     // }
-
     /**
      * Update a single entity (supports both active and draft)
      */
@@ -154,6 +153,7 @@ public class EntityService {
     public Result executeDelete(CqnService service, CqnDelete delete) {
         return service.run(delete);
     }
+
     public <T extends CdsData, E extends StructuredType<E>> void batchInsert(
             CqnService service,
             DraftService serviceDraft,
@@ -168,7 +168,7 @@ public class EntityService {
                         .invoke(entity, reportId);
                 entity.getClass().getMethod("setIsActiveEntity", Boolean.class)
                         .invoke(entity, isActiveEntity);
-            } catch (Exception e) {
+            } catch (IllegalAccessException | NoSuchMethodException | SecurityException | InvocationTargetException e) {
                 throw new BusinessException("Failed_To_Set_Entity_Properties", e); // Changed exception type
             }
             insert(service, serviceDraft, entityClass, entity, isActiveEntity);
@@ -189,7 +189,6 @@ public class EntityService {
     // isActiveEntity);
     // }
     // }
-
     // public void updateReport(
     // CqnService service,
     // DraftService serviceDraft,
