@@ -43,21 +43,34 @@ sap.ui.define(
         }
       },
 
-      _loadMainTasks: function () {
-        return this.getModel()
-          .bindList("/Tasks", null, null, [
-            new Filter("isMain", FilterOperator.EQ, true),
-          ])
-          .requestContexts()
-          .then((aCtx) => {
-            const aData = aCtx.map((c) => {
-              const o = c.getObject();
-              o.type = "task"; // Set type sebagai task
-              o.nodes = []; // Initialize nodes untuk children
-              return o;
-            });
-            // Set sebagai root data untuk tree
-            this.getModel("taskTree").setData(aData);
+      _loadMainTasks: function (sTaskId) {
+        const oModel = this.getModel();
+
+        // Get data from OData V4
+        return oModel
+          .bindContext(`/Tasks('${sTaskId}')`)
+          .requestObject()
+          .then((oData) => {
+            if (oData) {
+              // Populate data for tree
+              const aData = [
+                {
+                  ...oData,
+                  type: "task",
+                  nodes: [],
+                },
+              ];
+              // Set data to tree model
+              this.getModel("taskTree").setData(aData);
+              console.log(aData)
+              return aData;
+            } else {
+              throw new Error(`Task with ID ${sTaskId} not found`);
+            }
+          })
+          .catch((oError) => {
+            console.error("Error loading task:", oError);
+            throw oError;
           });
       },
     });

@@ -124,7 +124,7 @@ sap.ui.define(
 
         const oTask = await oContext.requestObject();
         if (oTask) {
-          console.log("ttt", oTask);
+          console.log("oTask loaded: ", oTask);
           this._buildTaskAndBotStructure([{ getObject: () => oTask }]);
         }
       },
@@ -143,7 +143,7 @@ sap.ui.define(
 
       _buildTaskItemRecursively: function (oTask) {
         const oTaskItem = {
-          ID: oTask.ID,
+          ID: `task_${oTask.ID}`,
           name: oTask.name || "Unnamed Task",
           type: "Task",
           hasNodes: false,
@@ -164,7 +164,7 @@ sap.ui.define(
 
       _buildBotInstanceItem: function (oBotInstance) {
         const oBotItem = {
-          ID: oBotInstance.ID,
+          ID: `bot_${oBotInstance.ID}`,
           name:
             oBotInstance.type?.name ||
             `Bot Instance ${oBotInstance.sequence || ""}`,
@@ -190,7 +190,7 @@ sap.ui.define(
           }
           aBotMessages.forEach((oBotMessage, index) => {
             const oBotMessageItem = {
-              ID: oBotMessage.ID,
+              ID: `botmessage_${oBotMessage.ID}`,
               name: `Message ${index + 1} (${oBotMessage.role || "unknown"})`,
               hasNodes: false,
               type: "BotMessage",
@@ -742,14 +742,14 @@ sap.ui.define(
           return;
         }
 
-        const data = {
+        const oData = {
           path: oCtx.getProperty("path"),
           label: oCtx.getProperty("label"),
           type: oCtx.getProperty("type"),
           value: oCtx.getProperty("value"),
         };
 
-        const oForm = this._createCNFormForEdit(data);
+        const oForm = this._createCNFormForEdit(oData);
         this.oEditDialog = new Dialog({
           title: "Edit Context Node",
           content: [oForm],
