@@ -32,7 +32,14 @@
                         path: '/Tasks',
                         sorter: {
                             path: 'name'
-                        }
+                        },
+                        filters: [
+                            {
+                                path: 'isMain',
+                                operator: 'EQ',
+                                value1: true
+                            }
+                        ]
                     }"
                 >
                     <headerToolbar>
@@ -78,7 +85,7 @@
                                     wrapping="false"
                                 />
                                 <Text text="{sequence}" />
-                                <CheckBox selected="{isMain}" />
+                                <Text text="{isMain}" />
                             </cells>
                         </ColumnListItem>
                     </items>
