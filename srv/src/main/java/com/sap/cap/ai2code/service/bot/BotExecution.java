@@ -1,3 +1,4 @@
+package com.sap.cap.ai2code.service.bot;
 // package com.sap.cap.ai2code.service;
 
 // public interface BotExecution {
