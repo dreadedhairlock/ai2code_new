@@ -15,6 +15,8 @@ public class CodingBot implements Bot {
     private BotTypes botType;
     public CodingBot(BotInstances botInstance, BotTypes botType) {
         //TODO Auto-generated constructor stub
+        this.botInstance = botInstance;
+        this.botType = botType;
     }
 
     // @Override
@@ -62,7 +64,7 @@ public class CodingBot implements Bot {
     @Override
     public BotInstances getBotInstance() {
         // 返回当前Bot实例信息
-        return null; // 需要实现具体的返回逻辑
+        return botInstance; // 需要实现具体的返回逻辑
     }
 
     // @Override
