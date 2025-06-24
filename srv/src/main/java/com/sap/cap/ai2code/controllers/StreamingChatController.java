@@ -1,13 +1,25 @@
 // File Location: srv/src/main/java/customer/ai2code/controllers/StreamingChatController.java
 package com.sap.cap.ai2code.controllers;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.sap.cap.ai2code.service.bot.BotService;
-import com.sap.cap.ai2code.exception.BusinessException;
 
 /**
  * REST Controller for streaming chat endpoints Handles /api/chat/Streaming
@@ -15,7 +27,7 @@ import com.sap.cap.ai2code.exception.BusinessException;
  */
 @RestController
 @RequestMapping("/api/chat")
-@CrossOrigin(origins = "*") // Configure CORS as needed
+@CrossOrigin(origins = "*")
 public class StreamingChatController {
 
     @Autowired
@@ -23,36 +35,60 @@ public class StreamingChatController {
 
     /**
      * Streaming chat endpoint using Server-Sent Events (SSE)
-     *
-     * @param request The streaming request payload
-     * @return SseEmitter for real-time streaming
      */
     @PostMapping(value = "/Streaming", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamChat(@RequestBody StreamRequestVO request) {
+    public SseEmitter streamChat(@RequestBody StreamRequestVO chatRequest) {
+        SseEmitter emitter = new SseEmitter();
 
-        try {
-            // Extract parameters from request
-            String botInstanceId = request.getId();
-            String content = request.getContent();
+        new Thread(() -> {
+            try {
+                HttpClient httpClient = HttpClient.newHttpClient();
+                String apiKey = "AIzaSyASQmgwGONMTa9kdAkGCoY-blWiE0a5A7U"; // Ganti dengan API key milikmu
+                String endpoint = String.format(
+                        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?key=%s",
+                        apiKey);
 
-            // Validate input
-            if (botInstanceId == null || botInstanceId.isEmpty()) {
-                throw new BusinessException("Bot instance ID is required");
+                String requestBody = """
+                        {
+                          "contents": [
+                            {
+                              "parts": [
+                                { "text": "%s" }
+                              ]
+                            }
+                          ]
+                        }
+                        """.formatted(chatRequest.getContent().replace("\"", "\\\""));
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(endpoint))
+                        .header("Content-Type", "application/json")
+                        .header("Accept", "text/event-stream")
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                        .build();
+
+                HttpResponse<InputStream> response = httpClient.send(request,
+                        HttpResponse.BodyHandlers.ofInputStream());
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(response.body()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (!line.isEmpty()) {
+                        emitter.send(SseEmitter.event()
+                                .name("chunk")
+                                .data(line));
+                    }
+                }
+
+                emitter.complete();
+            } catch (Exception e) {
+                e.printStackTrace();
+                emitter.completeWithError(e);
             }
+        }).start();
 
-            if (content == null || content.trim().isEmpty()) {
-                throw new BusinessException("Content is required");
-            }
-
-            // Delegate to bot service for streaming
-            return botService.chatInStreaming(botInstanceId, content);
-
-        } catch (Exception e) {
-            // Return error via SSE
-            SseEmitter errorEmitter = new SseEmitter();
-            errorEmitter.completeWithError(e);
-            return errorEmitter;
-        }
+        return emitter;
     }
 
     /**
@@ -81,10 +117,10 @@ public class StreamingChatController {
  */
 class StreamRequestVO {
 
-    private String id;              // botInstanceId
+    private String id; // botInstanceId
     private Boolean isActiveEntity; // Entity status
-    private String content;         // User message
-    private String locale;          // Language locale
+    private String content; // User message
+    private String locale; // Language locale
 
     // Constructors
     public StreamRequestVO() {
