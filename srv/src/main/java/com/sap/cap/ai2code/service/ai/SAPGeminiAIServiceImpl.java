@@ -3,6 +3,7 @@ package com.sap.cap.ai2code.service.ai;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,6 +14,7 @@ import java.time.Duration;
 
 import org.springframework.stereotype.Service;
 // import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,6 +54,13 @@ public class SAPGeminiAIServiceImpl implements AIService {
             System.err.println("Gemini API call failed: " + e.getMessage());
             throw new RuntimeException("Failed to call Gemini API", e);
         }
+    }
+
+    @Override
+    public SseEmitter chatWithAIStreaming(List<BotMessages> messages, List<PromptTexts> prompts, String content,
+            AIModel model, ExecutorService executor, StreamingCompletedProcessor streamingCompletionProcessor) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'chatWithAIStreaming'");
     }
 
     /**
@@ -173,4 +182,5 @@ public class SAPGeminiAIServiceImpl implements AIService {
 
         return "No response from AI";
     }
+
 }

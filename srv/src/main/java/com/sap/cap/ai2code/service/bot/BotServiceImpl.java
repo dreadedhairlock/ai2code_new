@@ -105,8 +105,17 @@ public class BotServiceImpl implements BotService {
 
     @Override
     public SseEmitter chatInStreaming(String botInstanceId, String content) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'chatInStreaming'");
+        // Get the bot instance
+        Bot bot = getCurrentBot(botInstanceId);
+
+        if (bot instanceof ChatBot chatBot) {
+            //Update Bot status
+            updateBotInstanceStatus(bot, "R");
+
+            return chatBot.chatInStreaming(content);
+        } else {
+            throw new BusinessException("Bot is not a ChatBot: " + botInstanceId);
+        }
     }
 
     @Override
