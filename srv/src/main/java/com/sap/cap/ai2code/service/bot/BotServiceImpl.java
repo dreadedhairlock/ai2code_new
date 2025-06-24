@@ -1,12 +1,13 @@
-package com.sap.cap.ai2code.service.impl;
+package com.sap.cap.ai2code.service.bot;
 
 import com.sap.cap.ai2code.exception.BusinessException;
-import com.sap.cap.ai2code.model.AIModel;
-import com.sap.cap.ai2code.model.AIModelResolver;
-import com.sap.cap.ai2code.model.Bot;
-import com.sap.cap.ai2code.model.ChatBot;
-import com.sap.cap.ai2code.service.interfaces.BotService;
-import com.sap.cap.ai2code.service.interfaces.PromptService;
+import com.sap.cap.ai2code.model.ai.AIModel;
+import com.sap.cap.ai2code.model.ai.AIModelResolver;
+import com.sap.cap.ai2code.model.bot.Bot;
+import com.sap.cap.ai2code.model.bot.ChatBot;
+import com.sap.cap.ai2code.service.bot.BotService;
+import com.sap.cap.ai2code.service.common.GenericCqnService;
+import com.sap.cap.ai2code.service.prompt.PromptService;
 
 import cds.gen.configservice.BotTypes;
 import cds.gen.mainservice.BotInstances;

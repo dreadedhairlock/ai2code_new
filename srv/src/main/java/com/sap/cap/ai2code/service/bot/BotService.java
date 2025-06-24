@@ -1,8 +1,9 @@
-package com.sap.cap.ai2code.service.interfaces;
+package com.sap.cap.ai2code.service.bot;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.sap.cap.ai2code.model.Bot;
+import com.sap.cap.ai2code.model.bot.Bot;
+
 import cds.gen.mainservice.BotInstancesChatCompletionContext;
 import cds.gen.mainservice.BotInstancesExecuteContext;
 import cds.gen.mainservice.BotMessages;

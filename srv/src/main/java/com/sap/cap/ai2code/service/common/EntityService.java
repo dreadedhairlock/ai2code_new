@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.service.impl;
+package com.sap.cap.ai2code.service.common;
 
 import java.util.List;
 import java.util.Optional;

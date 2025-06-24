@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sap.cap.ai2code.service.interfaces.BotService;
+import com.sap.cap.ai2code.service.bot.BotService;
 import com.sap.cds.Result;
 import com.sap.cds.ql.Insert;
 import com.sap.cds.ql.Select;

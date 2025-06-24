@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.model;
+package com.sap.cap.ai2code.model.bot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,10 +12,11 @@ import cds.gen.mainservice.BotInstancesExecuteContext;
 import cds.gen.mainservice.BotInstancesExecuteContext.ReturnType;
 import cds.gen.mainservice.BotMessages;
 import com.sap.cap.ai2code.exception.BusinessException;
-import com.sap.cap.ai2code.model.AIModelResolver;
-import com.sap.cap.ai2code.service.impl.GenericCqnService;
-import com.sap.cap.ai2code.service.interfaces.AIService;
-import com.sap.cap.ai2code.service.interfaces.PromptService;
+import com.sap.cap.ai2code.model.ai.AIModel;
+import com.sap.cap.ai2code.model.ai.AIModelResolver;
+import com.sap.cap.ai2code.service.common.GenericCqnService;
+import com.sap.cap.ai2code.service.ai.AIService;
+import com.sap.cap.ai2code.service.prompt.PromptService;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

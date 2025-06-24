@@ -1,4 +1,4 @@
-package com.sap.cap.ai2code.service.impl;
+package com.sap.cap.ai2code.service.ai;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -16,8 +16,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sap.cap.ai2code.model.AIModel;
-import com.sap.cap.ai2code.service.interfaces.AIService;
+import com.sap.cap.ai2code.model.ai.AIModel;
+import com.sap.cap.ai2code.service.ai.AIService;
 
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotMessages;
