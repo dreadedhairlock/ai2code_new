@@ -21,29 +21,49 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.sap.cap.ai2code.service.bot.BotService;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * REST Controller for streaming chat endpoints Handles /api/chat/Streaming
  * endpoint for real-time chat streaming
  */
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping("${cds.odata-v4.endpoint.path:/api}/chat")
 @CrossOrigin(origins = "*")
+@Slf4j  // Lombok annotation for logging
 public class StreamingChatController {
 
     @Autowired
     private BotService botService;
 
+    // Use configuration instead of hardcoded API key
+    private String apiKey = "AIzaSyASQmgwGONMTa9kdAkGCoY-blWiE0a5A7U";
+
     /**
      * Streaming chat endpoint using Server-Sent Events (SSE)
      */
     @PostMapping(value = "/Streaming", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamChat(@RequestBody StreamRequestVO chatRequest) {
-        SseEmitter emitter = new SseEmitter();
+    public SseEmitter streamChat(@RequestBody ChatRequest chatRequest) {
+
+        SseEmitter emitter = new SseEmitter(30000L);
+
+        // Validate request using Lombok-generated methods
+        try {
+            chatRequest.validate();
+            log.info("Starting streaming chat for bot: {}", chatRequest.getId());
+        } catch (IllegalArgumentException e) {
+            log.error("Validation failed: {}", e.getMessage());
+            emitter.completeWithError(e);
+            return emitter;
+        }
 
         new Thread(() -> {
             try {
                 HttpClient httpClient = HttpClient.newHttpClient();
-                String apiKey = "AIzaSyASQmgwGONMTa9kdAkGCoY-blWiE0a5A7U"; // Ganti dengan API key milikmu
                 String endpoint = String.format(
                         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?key=%s",
                         apiKey);
@@ -74,16 +94,18 @@ public class StreamingChatController {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();
-                    if (!line.isEmpty()) {
+                    if (!line.isEmpty() && line.contains("\"text\":")) {
                         emitter.send(SseEmitter.event()
                                 .name("chunk")
                                 .data(line));
                     }
                 }
 
+                log.info("Streaming completed successfully for bot: {}", chatRequest.getId());
                 emitter.complete();
+
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Streaming failed for bot: {} - Error: {}", chatRequest.getId(), e.getMessage());
                 emitter.completeWithError(e);
             }
         }).start();
@@ -91,157 +113,26 @@ public class StreamingChatController {
         return emitter;
     }
 
-    /**
-     * Health check endpoint for streaming service
-     */
-    @GetMapping("/streaming/health")
-    public String healthCheck() {
-        return "Streaming service is running";
-    }
-
-    /**
-     * Get streaming configuration
-     */
-    @GetMapping("/streaming/config")
-    public StreamingConfigResponse getStreamingConfig() {
-        return StreamingConfigResponse.builder()
-                .streamingEnabled(true)
-                .timeout(30000L)
-                .maxConnections(100)
-                .build();
-    }
 }
 
-/**
- * Request payload for streaming chat
- */
-class StreamRequestVO {
+@Data                    // Generates getters, setters, toString, equals, hashCode
+@NoArgsConstructor       // Generates default constructor
+@AllArgsConstructor      // Generates constructor with all parameters
+class ChatRequest {
 
-    private String id; // botInstanceId
-    private Boolean isActiveEntity; // Entity status
-    private String content; // User message
-    private String locale; // Language locale
+    @NonNull
+    private String id;       // botInstanceId
 
-    // Constructors
-    public StreamRequestVO() {
-    }
+    @NonNull
+    private String content;  // User message
 
-    public StreamRequestVO(String id, Boolean isActiveEntity, String content, String locale) {
-        this.id = id;
-        this.isActiveEntity = isActiveEntity;
-        this.content = content;
-        this.locale = locale;
-    }
-
-    // Getters and Setters
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Boolean getIsActiveEntity() {
-        return isActiveEntity;
-    }
-
-    public void setIsActiveEntity(Boolean isActiveEntity) {
-        this.isActiveEntity = isActiveEntity;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getLocale() {
-        return locale;
-    }
-
-    public void setLocale(String locale) {
-        this.locale = locale;
-    }
-
-    @Override
-    public String toString() {
-        return "StreamRequestVO{"
-                + "id='" + id + '\''
-                + ", isActiveEntity=" + isActiveEntity
-                + ", content='" + content + '\''
-                + ", locale='" + locale + '\''
-                + '}';
-    }
-}
-
-/**
- * Response for streaming configuration
- */
-class StreamingConfigResponse {
-
-    private boolean streamingEnabled;
-    private long timeout;
-    private int maxConnections;
-
-    public static StreamingConfigResponseBuilder builder() {
-        return new StreamingConfigResponseBuilder();
-    }
-
-    // Getters and Setters
-    public boolean isStreamingEnabled() {
-        return streamingEnabled;
-    }
-
-    public void setStreamingEnabled(boolean streamingEnabled) {
-        this.streamingEnabled = streamingEnabled;
-    }
-
-    public long getTimeout() {
-        return timeout;
-    }
-
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
-    }
-
-    public int getMaxConnections() {
-        return maxConnections;
-    }
-
-    public void setMaxConnections(int maxConnections) {
-        this.maxConnections = maxConnections;
-    }
-
-    public static class StreamingConfigResponseBuilder {
-
-        private boolean streamingEnabled;
-        private long timeout;
-        private int maxConnections;
-
-        public StreamingConfigResponseBuilder streamingEnabled(boolean streamingEnabled) {
-            this.streamingEnabled = streamingEnabled;
-            return this;
+    // Custom validation method
+    public void validate() {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Bot instance ID is required");
         }
-
-        public StreamingConfigResponseBuilder timeout(long timeout) {
-            this.timeout = timeout;
-            return this;
-        }
-
-        public StreamingConfigResponseBuilder maxConnections(int maxConnections) {
-            this.maxConnections = maxConnections;
-            return this;
-        }
-
-        public StreamingConfigResponse build() {
-            StreamingConfigResponse response = new StreamingConfigResponse();
-            response.setStreamingEnabled(this.streamingEnabled);
-            response.setTimeout(this.timeout);
-            response.setMaxConnections(this.maxConnections);
-            return response;
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("Content is required");
         }
     }
 }
