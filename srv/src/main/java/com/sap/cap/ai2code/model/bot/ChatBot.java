@@ -49,7 +49,6 @@ public class ChatBot implements Bot {
     public ReturnType execute() {
         // TODO Auto-generated method stub
 
-        // Implementasi yang sebenarnya
         return null;
     }
 
@@ -97,7 +96,7 @@ public class ChatBot implements Bot {
 
             // 3. Check if this is the first chat call - if so, need to save prompt messages
             if (historyMessages.isEmpty()) {
-                prompts = promptService.getPrompts(botType.getId(), "", "");
+                prompts = promptService.getPrompts(botType.getId(), "");
                 if (prompts != null && !prompts.isEmpty()) {
                     savePromptMessages(prompts);
                     historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());

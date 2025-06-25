@@ -1,9 +1,5 @@
 package com.sap.cap.ai2code.service.bot;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.List;
-
 // import org.apache.tomcat.util.descriptor.web.ContextService;
 // import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,9 +14,10 @@ import com.sap.cap.ai2code.model.bot.CodingBot;
 import com.sap.cap.ai2code.model.bot.FunctionCallingBot;
 import com.sap.cap.ai2code.service.common.GenericCqnService;
 import com.sap.cap.ai2code.service.prompt.PromptService;
+import com.sap.cds.ql.cqn.AnalysisResult;
+import com.sap.cds.ql.cqn.CqnAnalyzer;
 
 import cds.gen.configservice.BotTypes;
-import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstancesChatCompletionContext;
 import cds.gen.mainservice.BotInstancesExecuteContext;
@@ -33,12 +30,14 @@ public class BotServiceImpl implements BotService {
     private final AIModelResolver aiModelResolver;
     private final GenericCqnService genericCqnService;
     private final PromptService promptService;
+    private final BotExecutionFactoryService botExecutionFactoryService;
 
     public BotServiceImpl(AIModelResolver aiModelResolver, GenericCqnService genericCqnService,
-            PromptService promptService) {
+            PromptService promptService, BotExecutionFactoryService botExecutionFactoryService) {
         this.aiModelResolver = aiModelResolver;
         this.genericCqnService = genericCqnService;
         this.promptService = promptService;
+        this.botExecutionFactoryService = botExecutionFactoryService;
     }
 
     @Override
@@ -128,105 +127,33 @@ public class BotServiceImpl implements BotService {
 
     @Override
     public BotInstancesExecuteContext.ReturnType execute(BotInstancesExecuteContext context) {
-        String botInstanceId = genericCqnService.extractBotInstanceIdFromContext(context);
+        String botInstanceId = extractIdFromContext(context);
         return execute(botInstanceId);
     }
 
     @Override
     public BotInstancesExecuteContext.ReturnType execute(String botInstanceId) {
         Bot bot = getCurrentBot(botInstanceId);
-        BotTypes botType;
-        String functionTypeCode;
-        try {
-            Field botTypeField = bot.getClass().getDeclaredField("botType");
-            botTypeField.setAccessible(true);
-            Object botTypeObj = botTypeField.get(bot);
-
-            if (botTypeObj instanceof BotTypes) {
-                botType = (BotTypes) botTypeObj;
-                functionTypeCode = botType.getFunctionTypeCode();
-            } else {
-                throw new BusinessException("Invalid Bot Type");
-            }
-        } catch (Exception e) {
-            throw new BusinessException("Execution failed for bot: " + botInstanceId, e);
-        }
-
-        // 创建返回对象
-        BotInstancesExecuteContext.ReturnType returnValue = BotInstancesExecuteContext.ReturnType.create();
 
         // 更新状态为RUNNING
-        updateBotInstanceStatus(bot, "R");
-
+        updateBotInstanceStatus(bot, "RUNNING");
         try {
-            switch (functionTypeCode) {
-                case "F": {
-                    List<PromptTexts> prompts = botType.getPrompts();
-                    System.out.println("prompt: " + prompts);
-                    String implementationClassFromBotType = botType.getImplementationClass();
+            BotInstancesExecuteContext.ReturnType result = bot.execute();
 
-                    if (implementationClassFromBotType == null ||
-                            implementationClassFromBotType.isEmpty())
-                        throw BusinessException.implementationClassMissing();
+            // 更新状态为SUCCESS
+            updateBotInstanceStatus(bot, "SUCCESS");
 
-                    // Get the implementationClass
-                    Class<?> implementationClass = Class.forName(implementationClassFromBotType);
-                    System.out.println("Class Name: " + implementationClass.getName());
+            // 更新result字段
+            updateBotInstanceResult(bot, result.getResult());
 
-                    // Get all methods
-                    Method[] methods = implementationClass.getDeclaredMethods();
-
-                    // Check if there exists a method called execute in the class
-                    Boolean methodExists = false;
-                    for (Method method : methods) {
-                        if ("execute".equals(method.getName())) {
-                            methodExists = true;
-                            break;
-                        }
-                    }
-
-                    if (methodExists == false)
-                        throw BusinessException.executeMethodNotFound();
-
-                    // Call the AI Function call and execute method
-                    Object implementationInstance = implementationClass.getDeclaredConstructor().newInstance();
-                    Method executeMethod = implementationClass.getMethod("execute",
-                            Object.class);
-                    String executionResult = executeMethod.invoke(implementationInstance).toString();
-
-                    System.out.println("result: " + executionResult);
-                    updateBotInstanceResult(bot, executionResult);
-                    updateBotInstanceStatus(bot, "S");
-
-                    // 设置返回值
-                    returnValue.setResult(executionResult);
-                    System.out.println("test" + returnValue);
-                    return returnValue;
-                }
-                case "C": {
-                    List<PromptTexts> prompts = botType.getPrompts();
-                    System.out.println("prompt: " + prompts);
-
-                    // 如果有返回值，设置
-                    returnValue.setResult("Custom bot result"); // 根据实际情况修改
-
-                    return returnValue;
-                }
-                default: {
-                    // 默认情况下的返回值
-                    returnValue.setResult("Unsupported bot type: " + functionTypeCode);
-                    return returnValue;
-                }
-            }
-
-            // 如果switch没有返回，则返回一个空对象
-            // return returnValue;
-
+            return result;
         } catch (Exception e) {
+            // TODO: handle exception
             // 更新状态为FAILED
-            updateBotInstanceStatus(bot, "F");
+            updateBotInstanceStatus(bot, "FAILED");
             throw new BusinessException("Execution failed for bot: " + botInstanceId, e);
         }
+
     }
 
     @Override
@@ -248,7 +175,8 @@ public class BotServiceImpl implements BotService {
             case "A": // AI Chat Bot
                 return new ChatBot(botInstance, aiModel, botType, genericCqnService, promptService, aiModelResolver);
             case "F": // Function Calling Bot
-                return new FunctionCallingBot(botInstance, aiModel, botType);
+                return new FunctionCallingBot(botInstance, aiModel, botType, genericCqnService, promptService,
+                        aiModelResolver, botExecutionFactoryService);
             case "C": // Coding Bot
                 return new CodingBot(botInstance, aiModel, botType);
             default:
@@ -268,5 +196,14 @@ public class BotServiceImpl implements BotService {
         String botInstanceId = bot.getBotInstance().getId();
         System.out.println("Bot update:" + botInstanceId);
         genericCqnService.updateBotInstanceResult(botInstanceId, result);
+    }
+
+    private String extractIdFromContext(BotInstancesExecuteContext context) {
+        // 从CQN查询中提取ID，需要解析CqnSelect
+        // return context.getCqn().ref().segments().get(0).id();
+        CqnAnalyzer cqnAnalyzer = CqnAnalyzer.create(context.getModel());
+        AnalysisResult result = cqnAnalyzer.analyze(context.getCqn().ref());
+        // return result.rootKeys().get("ID").toString();
+        return result.targetKeys().get("ID").toString();
     }
 }

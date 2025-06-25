@@ -3,4 +3,4 @@ ff5c1b57-1646-4580-b58d-db3fd36fcb24,17f0ad88-ae6b-4114-bc4b-e8e15ae0cceb,1,Chat
 ac32a636-065a-4bba-9932-7c4aaa769076,17f0ad88-ae6b-4114-bc4b-e8e15ae0cceb,2,ChatGetTable&Fields,Get CDS View & Fields,A,,,5e256932-15b9-4145-ba49-966216ea9cf6,SubContext:report.tableFields,JSON,,,,,,,,,
 380546ee-cd3b-4ec5-806a-3af899dbbfc3,17f0ad88-ae6b-4114-bc4b-e8e15ae0cceb,3,GenerateCDS_I,Create Interface View,A,,,5e256932-15b9-4145-ba49-966216ea9cf6,SubContext:report.iView,JSON,,,,,,,,,
 13650c32-a4e9-40c5-a38e-e30279d65bac,17f0ad88-ae6b-4114-bc4b-e8e15ae0cceb,4,GenerateCDS_C,Create Projection View,A,,,5e256932-15b9-4145-ba49-966216ea9cf6,SubContext:report.cView,JSON,,,,,,,,,
-d3023609-97f5-4830-9ecf-bb1d0f120a69,17f0ad88-ae6b-4114-bc4b-e8e15ae0cceb,5,CreateS4Project,Create S/4 HANA RAP Report,C,,,5e256932-15b9-4145-ba49-966216ea9cf6,SubContext:report.oData,JSON,,,,,,,,,
+d3023609-97f5-4830-9ecf-bb1d0f120a69,17f0ad88-ae6b-4114-bc4b-e8e15ae0cceb,5,CreateS4Project,Create S/4 HANA RAP Report,F,,,5e256932-15b9-4145-ba49-966216ea9cf6,SubContext:report.oData,JSON,,,,,CreateTasksBotExecution,,,,
