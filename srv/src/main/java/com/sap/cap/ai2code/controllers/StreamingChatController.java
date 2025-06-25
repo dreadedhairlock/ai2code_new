@@ -19,7 +19,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.sap.cap.ai2code.exception.BusinessException;
+import com.sap.cap.ai2code.model.ai.AIModelResolver;
 import com.sap.cap.ai2code.service.bot.BotService;
+import com.sap.cap.ai2code.service.common.GenericCqnService;
+import com.sap.cap.ai2code.service.context.ContextService;
+import com.sap.cap.ai2code.service.prompt.PromptService;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,8 +42,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j  // Lombok annotation for logging
 public class StreamingChatController {
 
-    @Autowired
-    private BotService botService;
+    private final BotService botService;
+
+    public StreamingChatController(BotService botService) {
+        this.botService = botService;
+    }
 
     // Use configuration instead of hardcoded API key
     private String apiKey = "AIzaSyASQmgwGONMTa9kdAkGCoY-blWiE0a5A7U";
@@ -113,6 +121,23 @@ public class StreamingChatController {
         return emitter;
     }
 
+    /**
+     * Streaming chat endpoint using Server-Sent Events (SSE)
+     */
+    @PostMapping(value = "/StreamingSAP", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamChatSAP(@RequestBody ChatRequest chatRequest) {
+
+        // Validate request using Lombok-generated methods
+        try {
+            chatRequest.validate();
+            log.info("Starting streaming chat for bot: {}", chatRequest.getId());
+        } catch (IllegalArgumentException e) {
+            log.error("Validation failed: {}", e.getMessage());
+            throw new BusinessException("Validation failed:" + e.getMessage());
+        }
+
+        return botService.chatInStreaming(chatRequest.getId(), chatRequest.getContent());
+    }
 }
 
 @Data                    // Generates getters, setters, toString, equals, hashCode
