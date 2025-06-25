@@ -13,6 +13,7 @@ import com.sap.cap.ai2code.model.bot.ChatBot;
 import com.sap.cap.ai2code.model.bot.CodingBot;
 import com.sap.cap.ai2code.model.bot.FunctionCallingBot;
 import com.sap.cap.ai2code.service.common.GenericCqnService;
+import com.sap.cap.ai2code.service.context.ContextService;
 import com.sap.cap.ai2code.service.prompt.PromptService;
 import com.sap.cds.ql.cqn.AnalysisResult;
 import com.sap.cds.ql.cqn.CqnAnalyzer;
@@ -23,6 +24,12 @@ import cds.gen.mainservice.BotInstancesChatCompletionContext;
 import cds.gen.mainservice.BotInstancesExecuteContext;
 import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessagesAdoptContext;
+import cds.gen.mainservice.ContextNodes;
+
+// import org.apache.tomcat.util.descriptor.web.ContextService;
+// import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Service
 public class BotServiceImpl implements BotService {
@@ -30,14 +37,16 @@ public class BotServiceImpl implements BotService {
     private final AIModelResolver aiModelResolver;
     private final GenericCqnService genericCqnService;
     private final PromptService promptService;
+    private final ContextService contextService;
     private final BotExecutionFactoryService botExecutionFactoryService;
 
     public BotServiceImpl(AIModelResolver aiModelResolver, GenericCqnService genericCqnService,
-            PromptService promptService, BotExecutionFactoryService botExecutionFactoryService) {
+            PromptService promptService, BotExecutionFactoryService botExecutionFactoryService, ContextService contextService) {
         this.aiModelResolver = aiModelResolver;
         this.genericCqnService = genericCqnService;
         this.promptService = promptService;
         this.botExecutionFactoryService = botExecutionFactoryService;
+        this.contextService = contextService;
     }
 
     @Override
@@ -48,10 +57,6 @@ public class BotServiceImpl implements BotService {
         BotTypes botType = genericCqnService.getBotTypeById(botInstance.getTypeId());
 
         AIModel aiModel = aiModelResolver.resolveAIModel(botType.getModelId());
-
-        System.out.println("botInstance: " + botInstance);
-        System.out.println("botType: " + botType);
-        System.out.println("aiModel: " + aiModel);
 
         Bot bot = createBotInstance(botInstance, botType, aiModel);
 
@@ -103,14 +108,25 @@ public class BotServiceImpl implements BotService {
         } catch (BusinessException | InterruptedException e) {
             // 更新状态为FAILED
             updateBotInstanceStatus(bot, "F");
-            throw new BusinessException("Chat failed for bot: " + botInstanceId, e);
+            throw new BusinessException("Chat Failed for bot: " + botInstanceId, e);
         }
     }
 
     @Override
     public SseEmitter chatInStreaming(String botInstanceId, String content) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'chatInStreaming'");
+        // Get the bot instance
+        Bot bot = getCurrentBot(botInstanceId);
+
+        if (bot instanceof ChatBot chatBot) {
+
+            //Update Bot status to running
+            updateBotInstanceStatus(bot, "R");
+
+            return chatBot.chatInStreaming(content);
+        } else {
+            updateBotInstanceStatus(bot, "F");
+            throw new BusinessException("Bot is not a ChatBot: " + botInstanceId);
+        }
     }
 
     @Override
@@ -156,15 +172,54 @@ public class BotServiceImpl implements BotService {
     }
 
     @Override
-    public void adopt(BotMessagesAdoptContext context) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'adopt'");
+    public ContextNodes adopt(BotMessagesAdoptContext context) {
+
+        // Get MessageID from context
+        String messageId = extractMessageIdFromContext(context);
+
+        // Get the associated BotInstanceID from MessageID
+        String botInstanceId = genericCqnService.getBotInstanceIdByMessageId(messageId);
+        if (botInstanceId == null) {
+            throw new BusinessException("No bot instance associated with message: " + messageId);
+        }
+
+        return adopt(botInstanceId, messageId);
+
     }
 
     @Override
-    public void adopt(String botInstanceId, String messageId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'adopt'");
+    public ContextNodes adopt(String botInstanceId, String messageId) {
+
+        // adopt 1. Get the current BotMessages entries
+        BotMessages botMessage = genericCqnService.getMessageById(botInstanceId, messageId);
+        if (botMessage == null) {
+            throw new BusinessException("Message not found: " + messageId);
+        }
+
+        String messageText = botMessage.getMessage();
+
+        // adopt 2. Get BotInstances entry according to BotMessages.botInstance
+        // adopt 3. Get BotTypes entries based on BotInstances.type
+        Bot bot = getCurrentBot(botInstanceId);
+
+        updateBotInstanceStatus(bot, "R");
+
+        // 3. Retrieve outputContextPath
+        String outputContextPath = genericCqnService.getOutputContextPathByBotInstanceId(botInstanceId);
+        if (outputContextPath == null || outputContextPath.isBlank()) {
+            updateBotInstanceStatus(bot, "F");
+            throw new BusinessException("No outputContextPath configured for botInstance: " + botInstanceId);
+        }
+
+        // 4. Retrieve the absolute outputContextPath
+        String absoluteOutputContextPath = contextService.getContextFullPath(botInstanceId, outputContextPath);
+        // 5. Call the upsertContext method of ContextService to store and return ContextNodes
+        ContextNodes node = contextService.upsertContext(botInstanceId, absoluteOutputContextPath, messageText);
+
+        updateBotInstanceStatus(bot, "S");
+
+        return node;
+
     }
 
     private Bot createBotInstance(BotInstances botInstance, BotTypes botType, AIModel aiModel) {
@@ -173,10 +228,12 @@ public class BotServiceImpl implements BotService {
         switch (functionTypeCode) {
             case "A": // AI Chat Bot
                 return new ChatBot(botInstance, aiModel, botType, genericCqnService, promptService, aiModelResolver);
-            case "F": // Function Calling Bot
+            case "F":
+                // Function Calling Bot
                 return new FunctionCallingBot(botInstance, aiModel, botType, genericCqnService, promptService,
                         aiModelResolver, botExecutionFactoryService);
-            case "C": // Coding Bot
+            case "C":
+                // Coding Bot
                 return new CodingBot(botInstance, aiModel, botType);
             default:
                 throw new BusinessException("Unsupported bot function type: " + functionTypeCode);
@@ -203,6 +260,14 @@ public class BotServiceImpl implements BotService {
         CqnAnalyzer cqnAnalyzer = CqnAnalyzer.create(context.getModel());
         AnalysisResult result = cqnAnalyzer.analyze(context.getCqn().ref());
         // return result.rootKeys().get("ID").toString();
+        return result.targetKeys().get("ID").toString();
+    }
+
+    private String extractMessageIdFromContext(BotMessagesAdoptContext context) {
+        // Extract the message ID from the CQN query
+        // Use the CqnAnalyzer class to extract the ID from the CQN query
+        CqnAnalyzer cqnAnalyzer = CqnAnalyzer.create(context.getModel());
+        AnalysisResult result = cqnAnalyzer.analyze(context.getCqn().ref());
         return result.targetKeys().get("ID").toString();
     }
 }
