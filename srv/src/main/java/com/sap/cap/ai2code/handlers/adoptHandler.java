@@ -36,9 +36,9 @@ public class adoptHandler implements EventHandler {
             List<ContextNodes> resultNodes = List.of(resultNode);
             context.setResult(resultNodes);
             System.out.println("Result Nodes: " + resultNodes);
-
         } catch (Exception e) {
-            throw BusinessException.failAdopt(e.getMessage(), e);
+            System.err.println("Error in adopt handler: " + e.getMessage());
+            throw new RuntimeException("Failed to adopt bot messages: " + e.getMessage(), e);
         }
 
         /**

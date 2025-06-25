@@ -1,5 +1,4 @@
 ID;sequence;result;type_ID;status_code;task_ID;createdAt;createdBy;modifiedAt;modifiedBy
 bi1;1;Success;g6h90i78-6789-0123-f456-789012345f01;C;task1;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
 bi2;2;Failure;d3e67f45-3456-7890-c123-456789012cde;R;task3;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous
-bi3;3;Success;324830c3-e8a1-4f96-922d-35d5b54990ec;C;task3;2026-06-02T06:51:15.469Z;anonymous;2026-06-02T06:51:15.469Z;anonymous
 ef941e16-5a0d-4856-a8da-ff3585356447;2;Success;d3e67f45-3456-7890-c123-456789012cdf;R;task3;2025-06-02T06:51:15.469Z;anonymous;2025-06-02T06:51:15.469Z;anonymous

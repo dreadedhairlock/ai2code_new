@@ -7,10 +7,11 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import cds.gen.mainservice.ContextNodes;
-import cds.gen.mainservice.Tasks;
 import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cap.ai2code.service.common.GenericCqnService;
+
+import cds.gen.mainservice.ContextNodes;
+import cds.gen.mainservice.Tasks;
 
 @Service
 public class ContextServiceImpl implements ContextService {
@@ -141,7 +142,7 @@ public class ContextServiceImpl implements ContextService {
                 // 4. 如果不存在，创建新记录
                 return genericCqnService.createAndInsertContextNode(mainTaskId,
                         contextPath,
-                        generateLabelFromPath(contextPath),
+                        generateLabelFromBotMessage(contextValueInString),
                         "text",
                         contextValueInString);
             }
@@ -223,23 +224,25 @@ public class ContextServiceImpl implements ContextService {
     /**
      * 从路径生成标签
      */
-    private String generateLabelFromPath(String path) {
-        if (path == null || path.isEmpty()) {
-            return "Root";
+private String generateLabelFromBotMessage(String botMessage) {
+        if (botMessage == null || botMessage.isEmpty()) {
+            return "Empty Message";
         }
-
-        // 提取路径的最后一部分作为标签
-        String[] parts = path.split("\\.");
-        String lastPart = parts[parts.length - 1];
-
-        // 移除数组索引
-        lastPart = lastPart.replaceAll("\\[\\d+\\]", "");
-
-        // 首字母大写
-        if (!lastPart.isEmpty()) {
-            return lastPart.substring(0, 1).toUpperCase() + lastPart.substring(1);
-        }
-
-        return "Node";
+        return botMessage.length() > 25 
+                ? botMessage.substring(0, 25) + "..."
+                : botMessage;
+        // if (path == null || path.isEmpty()) {
+        //     return "Root";
+        // }
+        // // 提取路径的最后一部分作为标签
+        // String[] parts = path.split("\\.");
+        // String lastPart = parts[parts.length - 1];
+        // // 移除数组索引
+        // lastPart = lastPart.replaceAll("\\[\\d+\\]", "");
+        // // 首字母大写
+        // if (!lastPart.isEmpty()) {
+        //     return lastPart.substring(0, 1).toUpperCase() + lastPart.substring(1);
+        // }
+        // return "Node";
     }
 }
