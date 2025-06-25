@@ -109,11 +109,13 @@ public class BotServiceImpl implements BotService {
         Bot bot = getCurrentBot(botInstanceId);
 
         if (bot instanceof ChatBot chatBot) {
-            //Update Bot status
+
+            //Update Bot status to running
             updateBotInstanceStatus(bot, "R");
 
             return chatBot.chatInStreaming(content);
         } else {
+            updateBotInstanceStatus(bot, "F");
             throw new BusinessException("Bot is not a ChatBot: " + botInstanceId);
         }
     }

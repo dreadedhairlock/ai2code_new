@@ -107,7 +107,30 @@ public class ChatBot implements Bot {
                     content,
                     aiModel,
                     null,
-                    null
+                    (completeResponse) -> {
+                        try {
+                            // Save messages when streaming completes
+                            // Save user message
+                            genericCqnService.createAndInsertBotMessage(
+                                    botInstance.getId(),
+                                    content,
+                                    "user"
+                            );
+                            // Small delay to ensure user message is saved first
+                            Thread.sleep(500);
+                            // Save assistant message
+                            genericCqnService.createAndInsertBotMessage(
+                                    botInstance.getId(),
+                                    completeResponse,
+                                    "assistant"
+                            );
+
+                        } catch (Exception e) {
+                            System.err.println("Failed to save conversation: " + e.getMessage());
+                            e.printStackTrace();
+                            // updateBotInstanceStatus("F"); // Uncomment if you have this method
+                        }
+                    }
             );
 
         } catch (Exception e) {
