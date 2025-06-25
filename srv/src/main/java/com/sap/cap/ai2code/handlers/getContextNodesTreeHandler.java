@@ -75,9 +75,10 @@ public class getContextNodesTreeHandler implements EventHandler {
     }
 
     /**
-     * Creates a flat list of nodes (both folders and data items) using path as
-     * the key. The output conforms to the revised action schema without
-     * unnecessary attributes.
+     * Creates a flat list of nodes (both folders and data items) using path as the
+     * key.
+     * The output conforms to the revised action schema without unnecessary
+     * attributes.
      */
     private List<Map<String, Object>> createFlatNodesUsingPath(List<Map<String, Object>> items) {
         List<Map<String, Object>> nodes = new ArrayList<>();
@@ -94,9 +95,8 @@ public class getContextNodesTreeHandler implements EventHandler {
                 StringBuilder currentPath = new StringBuilder();
 
                 for (int i = 0; i < segments.length; i++) {
-                    if (i > 0) {
+                    if (i > 0)
                         currentPath.append(".");
-                    }
                     currentPath.append(segments[i]);
                     folderPaths.add(currentPath.toString());
                 }
@@ -156,32 +156,41 @@ public class getContextNodesTreeHandler implements EventHandler {
     // class Pair<K, V> {
     // private K key;
     // private V value;
+
     // public Pair(K key, V value) {
     // this.key = key;
     // this.value = value;
     // }
+
     // public K getKey() {
     // return key;
     // }
+
     // public V getValue() {
     // return value;
     // }
     // }
+
     // // Ganti seluruh logika tree building Anda dengan ini:
+
     // // Map untuk menyimpan semua nodes (folder + data)
     // Map<String, Map<String, Object>> allNodes = new HashMap<>();
     // Map<String, Set<String>> parentChildren = new HashMap<>();
+
     // // Proses setiap item dari database
     // items.forEach(item -> {
     // String fullPath = (String) item.get("path");
     // List<String> pathParts = Arrays.asList(fullPath.split("\\."))
     // .stream().filter(part -> !part.isEmpty()).collect(Collectors.toList());
+
     // String currentPath = "";
+
     // // Buat semua folder nodes di path
     // for (int i = 0; i < pathParts.size(); i++) {
     // String part = pathParts.get(i);
     // String previousPath = currentPath;
     // currentPath = currentPath.isEmpty() ? part : currentPath + "." + part;
+
     // // Buat folder node jika belum ada
     // if (!allNodes.containsKey(currentPath)) {
     // Map<String, Object> folderNode = new HashMap<>();
@@ -194,12 +203,14 @@ public class getContextNodesTreeHandler implements EventHandler {
     // folderNode.put("isFolder", true);
     // allNodes.put(currentPath, folderNode);
     // }
+
     // // Track parent-child relationship
     // if (!previousPath.isEmpty()) {
     // parentChildren.computeIfAbsent(previousPath, k -> new
     // HashSet<>()).add(currentPath);
     // }
     // }
+
     // // Buat data node (leaf node) untuk item ini
     // Map<String, Object> dataNode = new HashMap<>();
     // dataNode.put("ID", item.get("ID"));
@@ -209,6 +220,7 @@ public class getContextNodesTreeHandler implements EventHandler {
     // dataNode.put("value", item.get("value"));
     // dataNode.put("children", new ArrayList<Map<String, Object>>());
     // dataNode.put("isFolder", false);
+
     // // Tambahkan data node ke parent folder
     // if (allNodes.containsKey(fullPath)) {
     // List<Map<String, Object>> children = (List<Map<String, Object>>)
@@ -216,6 +228,7 @@ public class getContextNodesTreeHandler implements EventHandler {
     // children.add(dataNode);
     // }
     // });
+
     // // Build hierarchy - populate children untuk setiap node
     // parentChildren.forEach((parentPath, childrenPaths) -> {
     // if (allNodes.containsKey(parentPath)) {
@@ -234,6 +247,7 @@ public class getContextNodesTreeHandler implements EventHandler {
     // });
     // }
     // });
+
     // // Dapatkan root nodes (nodes yang tidak punya parent)
     // List<Map<String, Object>> rootNodes = allNodes.values().stream()
     // .filter(node -> {
@@ -241,15 +255,19 @@ public class getContextNodesTreeHandler implements EventHandler {
     // return !nodePath.contains("."); // Root level nodes
     // })
     // .collect(Collectors.toList());
+
     // // Response
     // Map<String, Object> response = new HashMap<>();
     // response.put("nodes", rootNodes);
+
     // GetContextNodesTreeContext.ReturnType result =
     // GetContextNodesTreeContext.ReturnType.of(response);
     // context.setResult(result);
     // System.out.println(rootNodes);
+
     // // Struktur untuk menyimpan tree yang sudah diproses
     // Map<String, Map<String, Object>> treeMap = new HashMap<>();
+
     // // Proses item menjadi struktur tree
     // items.forEach(item -> {
     // // Split path menggunakan dot notation
@@ -257,12 +275,15 @@ public class getContextNodesTreeHandler implements EventHandler {
     // List<String> pathParts = Arrays.asList(path.split("\\."));
     // pathParts = pathParts.stream().filter(part ->
     // !part.isEmpty()).collect(Collectors.toList());
+
     // String currentPath = "";
+
     // // Buat hierarchy untuk setiap level
     // for (int i = 0; i < pathParts.size(); i++) {
     // String part = pathParts.get(i);
     // String previousPath = currentPath;
     // currentPath = currentPath.isEmpty() ? part : currentPath + "." + part;
+
     // // Buat node jika belum ada
     // if (!treeMap.containsKey(currentPath)) {
     // Map<String, Object> node = new HashMap<>();
@@ -272,20 +293,25 @@ public class getContextNodesTreeHandler implements EventHandler {
     // node.put("isFolder", true);
     // treeMap.put(currentPath, node);
     // }
+
     // // Link dengan parent
     // if (!previousPath.isEmpty() && treeMap.containsKey(previousPath)) {
     // Map<String, Object> parent = treeMap.get(previousPath);
     // Map<String, Object> current = treeMap.get(currentPath);
+
     // List<Map<String, Object>> children = (List<Map<String, Object>>)
     // parent.get("children");
+
     // // Periksa apakah child sudah ada dalam list
     // boolean childExists = children.stream()
     // .anyMatch(child -> current.get("path").equals(child.get("path")));
+
     // if (!childExists) {
     // children.add(current);
     // }
     // }
     // }
+
     // // Tambahkan item data ke node terakhir
     // String finalPath = (String) item.get("path");
     // if (treeMap.containsKey(finalPath)) {
@@ -297,11 +323,13 @@ public class getContextNodesTreeHandler implements EventHandler {
     // leafNode.put("value", item.get("value"));
     // leafNode.put("children", new ArrayList<>());
     // leafNode.put("isFolder", false);
+
     // List<Map<String, Object>> children = (List<Map<String, Object>>)
     // treeMap.get(finalPath).get("children");
     // children.add(leafNode);
     // }
     // });
+
     // // Dapatkan root nodes
     // List<Map<String, Object>> rootNodes = treeMap.values().stream()
     // .filter(node -> {
@@ -312,25 +340,31 @@ public class getContextNodesTreeHandler implements EventHandler {
     // return parentPath.isEmpty() || !treeMap.containsKey(parentPath);
     // })
     // .collect(Collectors.toList());
+
     // // Buat result object
     // GetContextNodesTreeContext.ReturnType response =
     // GetContextNodesTreeContext.ReturnType.create();
+
     // // Convert rootNodes langsung menggunakan reflection/mapping CAP
     // List<GetContextNodesTreeContext.ReturnType.Nodes> convertedNodes =
     // rootNodes.stream()
     // .map(nodeMap -> GetContextNodesTreeContext.ReturnType.Nodes.of(nodeMap))
     // .collect(Collectors.toList());
+
     // response.setNodes(convertedNodes);
     // context.setResult(response);
     // System.out.println("test:" + response);
     // System.out.println("root:" + rootNodes);
+
     // GetContextNodesTreeContext.ReturnType response =
     // GetContextNodesTreeContext.ReturnType.create();
     // response.setNodes(rootNodes);
     // context.setResult(response);
+
     // // Siapkan respons
     // Map<String, Object> response = new HashMap<>();
     // response.put("nodes", rootNodes);
+
     // Set hasil ke context
     // context.setResult(response);
 }

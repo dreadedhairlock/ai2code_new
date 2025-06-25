@@ -19,10 +19,10 @@ service MainService {
             action chatCompletion(content : LargeString) returns BotMessages;
         }
 
-    entity BotMessages  as projection on db.BotMessage
-        actions {
-            action adopt() returns array of ContextNodes;
-        }
+        entity BotMessages  as projection on db.BotMessage
+            actions {
+                action adopt() returns array of ContextNodes;
+            }
 
     // Unbound actions
     action createTaskWithBots(name : String @mandatory,
@@ -32,12 +32,12 @@ service MainService {
 
     action getContextNodesTree(taskId : UUID) returns {
         nodes : array of {
-            ID       : UUID null; // Optional for folder
-            path     : String;
-            label    : String; // Show the label in the tree
-            type     : String;
-            value    : String null; // Optional for folder
-            isFolder : Boolean;
+            ID             : UUID null; // Optional for folder
+            path           : String;
+            label          : String; // Show the label in the tree
+            type           : String;
+            value          : String null; // Optional for folder
+            isFolder       : Boolean;
         }
     }
 

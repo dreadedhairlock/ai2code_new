@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cap.ai2code.service.bot.BotService;
 import com.sap.cds.services.handler.EventHandler;
 import com.sap.cds.services.handler.annotations.On;
@@ -37,8 +38,7 @@ public class adoptHandler implements EventHandler {
             System.out.println("Result Nodes: " + resultNodes);
 
         } catch (Exception e) {
-            System.err.println("Error in adopt handler: " + e.getMessage());
-            throw new RuntimeException("Failed to adopt bot messages: " + e.getMessage(), e);
+            throw BusinessException.failAdopt(e.getMessage(), e);
         }
 
         /**
