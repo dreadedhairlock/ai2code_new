@@ -81,7 +81,6 @@ public class ChatBot implements Bot {
     public SseEmitter chatInStreaming(String content) {
 
         List<PromptTexts> prompts = new ArrayList<>();
-        SseEmitter emitter = new SseEmitter(30000L);
 
         try {
             // 1. Get the appropriate AI service based on the AI model type
@@ -108,17 +107,7 @@ public class ChatBot implements Bot {
                     content,
                     aiModel,
                     null,
-                    (completeReply) -> {
-                        try {
-                            // Save messages when streaming completes
-                            genericCqnService.createAndInsertBotMessage(botInstance.getId(), content, "user");
-                            genericCqnService.createAndInsertBotMessage(botInstance.getId(), completeReply, "assistant");
-                            //updateBotInstanceStatus("S");
-                        } catch (Exception e) {
-                            //updateBotInstanceStatus("F");
-                            System.err.println("Failed to save conversation: " + e.getMessage());
-                        }
-                    }
+                    null
             );
 
         } catch (Exception e) {

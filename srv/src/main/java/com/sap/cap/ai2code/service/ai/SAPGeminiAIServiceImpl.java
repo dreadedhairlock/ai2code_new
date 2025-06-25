@@ -61,29 +61,147 @@ public class SAPGeminiAIServiceImpl implements AIService {
     }
 
     @Override
-    public SseEmitter chatWithAIStreaming(List<BotMessages> messages, List<PromptTexts> prompts, String content,
-            AIModel model, ExecutorService executor, StreamingCompletedProcessor streamingCompletionProcessor) {
+    public SseEmitter chatWithAIStreaming(List<BotMessages> messages, List<PromptTexts> prompts, String content, AIModel model, ExecutorService executor, StreamingCompletedProcessor streamingCompletionProcessor) {
 
-        SseEmitter emitter = new SseEmitter(30000L); // 30 second timeout
+        SseEmitter emitter = new SseEmitter(30000L);
 
-        // Use provided executor or default one
-        ExecutorService actualExecutor = executor != null ? executor : this.executorService;
+        new Thread(() -> {
+            StringBuilder completeResponse = new StringBuilder();
 
-        actualExecutor.execute(() -> {
             try {
-                // Build conversation context
-                List<Map<String, String>> conversationContext = buildConversationContext(messages, prompts, content);
+                String endpoint = String.format(
+                        "https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent?key=%s",
+                        this.model, apiKey);
 
-                // Call Gemini streaming API
-                callGeminiStreamingAPI(conversationContext, emitter, streamingCompletionProcessor);
+                // Build conversation context and create proper request body
+                List<Map<String, String>> conversationContext = buildConversationContext(messages, prompts, content);
+                String requestBody = buildRequestBody(conversationContext, true);
+
+                System.out.println("Streaming endpoint: " + endpoint);
+                System.out.println("Request body: " + requestBody);
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(endpoint))
+                        .header("Content-Type", "application/json")
+                        .header("Accept", "text/event-stream")
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                        .build();
+
+                HttpResponse<InputStream> response = httpClient.send(request,
+                        HttpResponse.BodyHandlers.ofInputStream());
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(response.body()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (!line.isEmpty() && line.contains("\"text\":")) {
+
+                        // Extract just the text content for cleaner streaming
+                        String textContent = extractTextFromLine(line);
+                        if (textContent != null && !textContent.isEmpty()) {
+                            completeResponse.append(textContent);
+
+                            emitter.send(SseEmitter.event()
+                                    .name("chunk")
+                                    .data(textContent));
+
+                            System.out.println("Sent chunk: " + textContent);
+                        } else {
+                            // Fallback: send the raw line if text extraction fails
+                            emitter.send(SseEmitter.event()
+                                    .name("chunk")
+                                    .data(line));
+                        }
+                    }
+                }
+
+                // Process complete response if processor provided
+                if (streamingCompletionProcessor != null && completeResponse.length() > 0) {
+                    streamingCompletionProcessor.process(completeResponse.toString());
+                }
+
+                System.out.println("Streaming completed successfully. Total response: " + completeResponse.toString());
+                emitter.complete();
 
             } catch (Exception e) {
-                System.err.println("Streaming failed: " + e.getMessage());
+                System.err.println("Streaming failed - Error: " + e.getMessage());
+                e.printStackTrace();
                 emitter.completeWithError(e);
             }
-        });
+        }).start();
 
         return emitter;
+    }
+
+    /**
+     * Extract text content from a line containing "text": This is a simple
+     * extraction method similar to your working controller
+     */
+    private String extractTextFromLine(String line) {
+        try {
+            // Try to parse as JSON and extract text
+            JsonNode jsonNode = objectMapper.readTree(line);
+            JsonNode candidates = jsonNode.get("candidates");
+
+            if (candidates != null && candidates.size() > 0) {
+                JsonNode content = candidates.get(0).get("content");
+                if (content != null) {
+                    JsonNode parts = content.get("parts");
+                    if (parts != null && parts.size() > 0) {
+                        JsonNode text = parts.get(0).get("text");
+                        if (text != null) {
+                            return text.asText();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // If JSON parsing fails, return null to use fallback
+            System.err.println("Text extraction failed, using fallback: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Enhanced streaming chunk parser with better error handling
+     */
+    private String parseStreamingChunk(JsonNode jsonNode) {
+        try {
+            // Check if this is an error response first
+            if (jsonNode.has("error")) {
+                JsonNode error = jsonNode.get("error");
+                String errorMessage = error.has("message") ? error.get("message").asText() : "Unknown error";
+                System.err.println("API Error: " + errorMessage);
+                return null;
+            }
+
+            // Parse normal response
+            JsonNode candidates = jsonNode.get("candidates");
+            if (candidates != null && candidates.size() > 0) {
+                JsonNode candidate = candidates.get(0);
+
+                // Check for finish reason
+                if (candidate.has("finishReason")) {
+                    String finishReason = candidate.get("finishReason").asText();
+                    System.out.println("Stream finished with reason: " + finishReason);
+                    return null; // Don't send finish reason as content
+                }
+
+                JsonNode content = candidate.get("content");
+                if (content != null) {
+                    JsonNode parts = content.get("parts");
+                    if (parts != null && parts.size() > 0) {
+                        JsonNode text = parts.get(0).get("text");
+                        if (text != null) {
+                            return text.asText();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to parse streaming chunk: " + e.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -205,73 +323,6 @@ public class SAPGeminiAIServiceImpl implements AIService {
         return "No response from AI";
     }
 
-    private void callGeminiStreamingAPI(List<Map<String, String>> conversationContext,
-            SseEmitter emitter, StreamingCompletedProcessor processor) throws Exception {
-
-        String url = String.format(
-                "https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent?key=%s",
-                model, apiKey);
-
-        String requestBody = buildRequestBody(conversationContext, true);
-        System.out.println("Streaming URL: " + url);
-        System.out.println("Request Body: " + requestBody);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .header("Accept", "text/event-stream")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .timeout(Duration.ofSeconds(60))
-                .build();
-
-        StringBuilder completeResponse = new StringBuilder();
-
-        try {
-            // Gunakan InputStream untuk membaca response streaming
-            HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
-
-            if (response.statusCode() != 200) {
-                throw new RuntimeException("Streaming API call failed: " + response.statusCode());
-            }
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(response.body()));
-            String line;
-
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("data: ")) {
-                    String jsonData = line.substring(6).trim();
-
-                    if (jsonData.equals("[DONE]") || jsonData.isEmpty()) {
-                        break;
-                    }
-
-                    try {
-                        JsonNode jsonNode = objectMapper.readTree(jsonData);
-                        String chunk = parseStreamingChunk(jsonNode);
-
-                        if (chunk != null && !chunk.isEmpty()) {
-                            completeResponse.append(chunk);
-                            emitter.send(SseEmitter.event().data(chunk));
-                        }
-
-                    } catch (Exception e) {
-                        System.err.println("Failed to parse streaming chunk: " + e.getMessage());
-                    }
-                }
-            }
-
-            if (processor != null) {
-                processor.process(completeResponse.toString());
-            }
-
-            emitter.complete();
-
-        } catch (Exception e) {
-            System.err.println("Streaming error: " + e.getMessage());
-            emitter.completeWithError(e);
-        }
-    }
-
     /**
      * Build request body for Gemini API
      */
@@ -311,62 +362,4 @@ public class SAPGeminiAIServiceImpl implements AIService {
         System.out.println("AI Request Body: " + requestBody.toString());
         return requestBody.toString();
     }
-
-    /**
-     * Process streaming response from Gemini API
-     */
-    private void processStreamingResponse(String responseBody, SseEmitter emitter, StringBuilder completeResponse)
-            throws IOException {
-
-        BufferedReader reader = new BufferedReader(new StringReader(responseBody));
-        String line;
-
-        while ((line = reader.readLine()) != null) {
-            if (line.startsWith("data: ")) {
-                String jsonData = line.substring(6).trim();
-
-                if (jsonData.equals("[DONE]")) {
-                    break;
-                }
-
-                try {
-                    JsonNode jsonNode = objectMapper.readTree(jsonData);
-                    String chunk = parseStreamingChunk(jsonNode);
-
-                    if (chunk != null && !chunk.isEmpty()) {
-                        completeResponse.append(chunk);
-                        emitter.send(chunk);
-                    }
-
-                } catch (Exception e) {
-                    System.err.println("Failed to parse streaming chunk: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    /**
-     * Parse individual streaming chunk from Gemini response
-     */
-    private String parseStreamingChunk(JsonNode jsonNode) {
-        try {
-            JsonNode candidates = jsonNode.get("candidates");
-            if (candidates != null && candidates.size() > 0) {
-                JsonNode content = candidates.get(0).get("content");
-                if (content != null) {
-                    JsonNode parts = content.get("parts");
-                    if (parts != null && parts.size() > 0) {
-                        JsonNode text = parts.get(0).get("text");
-                        if (text != null) {
-                            return text.asText();
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to parse streaming chunk: " + e.getMessage());
-        }
-        return "";
-    }
-
 }
