@@ -7,11 +7,10 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import com.sap.cap.ai2code.exception.BusinessException;
-import com.sap.cap.ai2code.service.common.GenericCqnService;
-
 import cds.gen.mainservice.ContextNodes;
 import cds.gen.mainservice.Tasks;
+import com.sap.cap.ai2code.exception.BusinessException;
+import com.sap.cap.ai2code.service.common.GenericCqnService;
 
 @Service
 public class ContextServiceImpl implements ContextService {
@@ -94,30 +93,28 @@ public class ContextServiceImpl implements ContextService {
         // 1. 通过botInstanceId获取mainTaskId
         String mainTaskId = genericCqnService.getMainTaskId(botInstanceId);
         return upsertContextWithMainTaskId(mainTaskId, contextPath, contextValue);
-        // // 2. 查询是否已存在相同mainTaskId和contextPath的记录
-        // ContextNodes existingNode = null;
-        // try {
-        // existingNode = genericCqnService.getContextNodeByTaskAndPath(mainTaskId,
-        // contextPath);
-        // } catch (Exception e) {
-        // // 如果没找到，existingNode保持为null
-        // }
+        //     // 2. 查询是否已存在相同mainTaskId和contextPath的记录
+        //     ContextNodes existingNode = null;
+        //     try {
+        //         existingNode = genericCqnService.getContextNodeByTaskAndPath(mainTaskId, contextPath);
+        //     } catch (Exception e) {
+        //         // 如果没找到，existingNode保持为null
+        //     }
 
-        // if (existingNode != null) {
-        // // 3. 如果存在，更新现有记录
-        // return genericCqnService.updateContextNodeValue(existingNode, contextValue);
-        // } else {
-        // // 4. 如果不存在，创建新记录
-        // return genericCqnService.createAndInsertContextNode(mainTaskId,
-        // contextPath,
-        // generateLabelFromPath(contextPath),
-        // "text",
-        // contextValue);
-        // }
+        //     if (existingNode != null) {
+        //         // 3. 如果存在，更新现有记录
+        //         return genericCqnService.updateContextNodeValue(existingNode, contextValue);
+        //     } else {
+        //         // 4. 如果不存在，创建新记录
+        //         return genericCqnService.createAndInsertContextNode(mainTaskId,
+        //                 contextPath,
+        //                 generateLabelFromPath(contextPath),
+        //                 "text",
+        //                 contextValue);
+        //     }
         // } catch (Exception e) {
-        // throw new BusinessException("Failed to upsert context node for botInstanceId:
-        // " + botInstanceId +
-        // ", contextPath: " + contextPath, e);
+        //     throw new BusinessException("Failed to upsert context node for botInstanceId: " + botInstanceId +
+        //             ", contextPath: " + contextPath, e);
         // }
     }
 
@@ -144,7 +141,7 @@ public class ContextServiceImpl implements ContextService {
                 // 4. 如果不存在，创建新记录
                 return genericCqnService.createAndInsertContextNode(mainTaskId,
                         contextPath,
-                        generateLabelFromBotMessage(contextValueInString),
+                        generateLabelFromPath(contextPath),
                         "text",
                         contextValueInString);
             }
@@ -226,31 +223,23 @@ public class ContextServiceImpl implements ContextService {
     /**
      * 从路径生成标签
      */
-    private String generateLabelFromBotMessage(String botMessage) {
-        if (botMessage == null || botMessage.isEmpty()) {
-            return "Empty Message";
+    private String generateLabelFromPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return "Root";
         }
-        String debug = botMessage.length() > 25
-                ? botMessage.substring(0, 25) + "..."
-                : botMessage;
-        System.out.println("message: " + debug);
-        return debug;
-        // if (path == null || path.isEmpty()) {
-        // return "Root";
-        // }
 
-        // // 提取路径的最后一部分作为标签
-        // String[] parts = path.split("\\.");
-        // String lastPart = parts[parts.length - 1];
+        // 提取路径的最后一部分作为标签
+        String[] parts = path.split("\\.");
+        String lastPart = parts[parts.length - 1];
 
-        // // 移除数组索引
-        // lastPart = lastPart.replaceAll("\\[\\d+\\]", "");
+        // 移除数组索引
+        lastPart = lastPart.replaceAll("\\[\\d+\\]", "");
 
-        // // 首字母大写
-        // if (!lastPart.isEmpty()) {
-        // return lastPart.substring(0, 1).toUpperCase() + lastPart.substring(1);
-        // }
+        // 首字母大写
+        if (!lastPart.isEmpty()) {
+            return lastPart.substring(0, 1).toUpperCase() + lastPart.substring(1);
+        }
 
-        // return "Node";
+        return "Node";
     }
 }
