@@ -161,6 +161,9 @@ public class SAPGeminiAIServiceImpl implements AIService {
             line = line.trim();
 
             if (!line.isEmpty() && line.contains("\"text\":")) {
+                // trim the first 10 and last character
+                line = line.substring(10);
+                line = line.substring(0, line.length() - 1);
 
                 // Extract text content for cleaner streaming
                 String textContent = extractTextFromLine(line);
