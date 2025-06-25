@@ -257,39 +257,49 @@ public class SAPGeminiAIServiceImpl implements AIService {
      * streaming)
      */
     private String buildRequestBody(List<Map<String, String>> conversationContext, boolean isStreaming) {
-        StringBuilder contentsBuilder = new StringBuilder();
-        contentsBuilder.append("\"contents\": [");
+        try {
+            // Create the main request object
+            Map<String, Object> requestMap = new HashMap<>();
 
-        for (int i = 0; i < conversationContext.size(); i++) {
-            Map<String, String> message = conversationContext.get(i);
-            String role = message.get("role");
-            String content = message.get("content").replace("\"", "\\\"").replace("\n", "\\n");
+            // Build contents array
+            List<Map<String, Object>> contents = new ArrayList<>();
 
-            // Gemini uses "user" and "model" roles, map "assistant" and "system" to "model"
-            String geminiRole = "user".equals(role) ? "user" : "model";
+            for (Map<String, String> message : conversationContext) {
+                String role = message.get("role");
+                String content = message.get("content");
 
-            contentsBuilder.append("{")
-                    .append("\"role\": \"").append(geminiRole).append("\",")
-                    .append("\"parts\": [{\"text\": \"").append(content).append("\"}]")
-                    .append("}");
+                // Gemini uses "user" and "model" roles, map "assistant" and "system" to "model"
+                String geminiRole = "user".equals(role) ? "user" : "model";
 
-            if (i < conversationContext.size() - 1) {
-                contentsBuilder.append(",");
+                // Create parts array
+                List<Map<String, String>> parts = new ArrayList<>();
+                Map<String, String> textPart = new HashMap<>();
+                textPart.put("text", content); // No manual escaping needed!
+                parts.add(textPart);
+
+                // Create content object
+                Map<String, Object> contentObj = new HashMap<>();
+                contentObj.put("role", geminiRole);
+                contentObj.put("parts", parts);
+
+                contents.add(contentObj);
             }
+
+            requestMap.put("contents", contents);
+
+            // Add streaming configuration if needed
+            if (isStreaming) {
+                Map<String, Object> generationConfig = new HashMap<>();
+                generationConfig.put("temperature", 0.7);
+                requestMap.put("generationConfig", generationConfig);
+            }
+
+            // Convert to JSON using ObjectMapper (handles all escaping automatically)
+            return objectMapper.writeValueAsString(requestMap);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to build request body", e);
         }
-        contentsBuilder.append("]");
-
-        StringBuilder requestBody = new StringBuilder();
-        requestBody.append("{").append(contentsBuilder.toString());
-
-        // Add streaming configuration if needed
-        if (isStreaming) {
-            requestBody.append(",\"generationConfig\": {\"temperature\": 0.7}");
-        }
-
-        requestBody.append("}");
-
-        return requestBody.toString();
     }
 
     /**
