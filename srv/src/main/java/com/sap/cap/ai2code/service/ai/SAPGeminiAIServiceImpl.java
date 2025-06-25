@@ -75,14 +75,8 @@ public class SAPGeminiAIServiceImpl implements AIService {
             StringBuilder completeResponse = new StringBuilder();
 
             try {
-                // Call unified streaming method
-                callGeminiStreamingAPI(conversationContext, emitter, completeResponse);
-
-                // Process complete response if processor provided
-                if (streamingCompletionProcessor != null && completeResponse.length() > 0) {
-                    streamingCompletionProcessor.process(completeResponse.toString());
-                }
-                emitter.complete();
+                // Call streaming method
+                callGeminiStreamingAPI(conversationContext, emitter, completeResponse, streamingCompletionProcessor);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -125,17 +119,14 @@ public class SAPGeminiAIServiceImpl implements AIService {
     }
 
     /**
-     * Call streaming Gemini API request
+     * Call streaming Gemini API request with callback support
      */
-    private void callGeminiStreamingAPI(List<Map<String, String>> conversationContext, SseEmitter emitter, StringBuilder completeResponse) throws Exception {
+    private void callGeminiStreamingAPI(List<Map<String, String>> conversationContext, SseEmitter emitter, StringBuilder completeResponse, StreamingCompletedProcessor streamingCompletionProcessor) throws Exception {
         String requestBody = buildRequestBody(conversationContext, true);
 
         String endpoint = String.format(
                 "https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent?key=%s",
                 this.model, apiKey);
-
-        System.out.println("Streaming endpoint: " + endpoint);
-        System.out.println("Request body: " + requestBody);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
@@ -155,28 +146,41 @@ public class SAPGeminiAIServiceImpl implements AIService {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(response.body()));
         String line;
+        int lineCount = 0;
+        int chunkCount = 0;
+
         while ((line = reader.readLine()) != null) {
+            lineCount++;
             line = line.trim();
+
             if (!line.isEmpty() && line.contains("\"text\":")) {
 
                 // Extract text content for cleaner streaming
                 String textContent = extractTextFromLine(line);
                 if (textContent != null && !textContent.isEmpty()) {
+                    chunkCount++;
                     completeResponse.append(textContent);
 
                     emitter.send(SseEmitter.event()
                             .name("chunk")
                             .data(textContent));
 
-                    System.out.println("Sent chunk: " + textContent);
                 } else {
-                    // Fallback: send the raw line if text extraction fails
                     emitter.send(SseEmitter.event()
                             .name("chunk")
                             .data(line));
+                    completeResponse.append(line);
                 }
             }
         }
+
+        // Process complete response AFTER streaming finishes
+        if (streamingCompletionProcessor != null && completeResponse.length() > 0) {
+            streamingCompletionProcessor.process(completeResponse.toString());
+        }
+
+        emitter.complete();
+
     }
 
     /**
