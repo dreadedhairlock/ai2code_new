@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class ChatBot implements Bot {
+public class CodingBot implements Bot {
 
     private BotInstances botInstance;
     private AIModel aiModel;
@@ -34,15 +34,11 @@ public class ChatBot implements Bot {
     private AIModelResolver aiModelResolver;
 
     // Constructor that matches what BotServiceImpl is calling
-    public ChatBot(BotInstances botInstance, AIModel aiModel, BotTypes botType,
-            GenericCqnService genericCqnService, PromptService promptService,
-            AIModelResolver aiModelResolver) {
+    public CodingBot(BotInstances botInstance, AIModel aiModel, BotTypes botType) {
         this.botInstance = botInstance;
         this.aiModel = aiModel;
         this.botType = botType;
-        this.genericCqnService = genericCqnService;
-        this.promptService = promptService;
-        this.aiModelResolver = aiModelResolver;
+
     }
 
     @Override
