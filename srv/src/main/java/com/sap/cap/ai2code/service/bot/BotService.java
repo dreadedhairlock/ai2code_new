@@ -8,6 +8,7 @@ import cds.gen.mainservice.BotInstancesChatCompletionContext;
 import cds.gen.mainservice.BotInstancesExecuteContext;
 import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessagesAdoptContext;
+import cds.gen.mainservice.ContextNodes;
 
 public interface BotService {
 
@@ -29,7 +30,7 @@ public interface BotService {
 
     public BotInstancesExecuteContext.ReturnType execute(String botInstanceId);
 
-    public void adopt(BotMessagesAdoptContext context);
+    public ContextNodes adopt(BotMessagesAdoptContext context);
 
-    public void adopt(String botInstanceId, String messageId);
+    public ContextNodes adopt(String botInstanceId, String messageId);
 }

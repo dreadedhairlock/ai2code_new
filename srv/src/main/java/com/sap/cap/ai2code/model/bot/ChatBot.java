@@ -2,6 +2,7 @@ package com.sap.cap.ai2code.model.bot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -15,6 +16,7 @@ import com.sap.cap.ai2code.model.ai.AIModel;
 import com.sap.cap.ai2code.model.ai.AIModelResolver;
 import com.sap.cap.ai2code.service.common.GenericCqnService;
 import com.sap.cap.ai2code.service.ai.AIService;
+import com.sap.cap.ai2code.service.ai.StreamingCompletedProcessor;
 import com.sap.cap.ai2code.service.prompt.PromptService;
 
 import lombok.Data;
@@ -77,8 +79,52 @@ public class ChatBot implements Bot {
 
     @Override
     public SseEmitter chatInStreaming(String content) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'chatInStreaming'");
+
+        List<PromptTexts> prompts = new ArrayList<>();
+        SseEmitter emitter = new SseEmitter(30000L);
+
+        try {
+            // 1. Get the appropriate AI service based on the AI model type
+            AIService aiService = aiModelResolver.resolveAIService(aiModel.getModelConfigs());
+
+            // 2. Get previous bot messages
+            List<BotMessages> historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());
+
+            // 3. Check if this is the first chat call - if so, need to save prompt messages
+            boolean isFirstCall = historyMessages.isEmpty();
+            if (isFirstCall) {
+                prompts = promptService.getPrompts(botType.getId(), "", "");
+                if (prompts != null && !prompts.isEmpty()) {
+                    savePromptMessages(prompts);
+                    historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());
+                    System.out.println("historyMessages: " + historyMessages);
+                }
+            }
+
+            // 4. Make the streaming AI service call with streaming processor
+            return aiService.chatWithAIStreaming(
+                    historyMessages,
+                    prompts,
+                    content,
+                    aiModel,
+                    null,
+                    (completeReply) -> {
+                        try {
+                            // Save messages when streaming completes
+                            genericCqnService.createAndInsertBotMessage(botInstance.getId(), content, "user");
+                            genericCqnService.createAndInsertBotMessage(botInstance.getId(), completeReply, "assistant");
+                            //updateBotInstanceStatus("S");
+                        } catch (Exception e) {
+                            //updateBotInstanceStatus("F");
+                            System.err.println("Failed to save conversation: " + e.getMessage());
+                        }
+                    }
+            );
+
+        } catch (Exception e) {
+            throw new BusinessException("Chat failed", e);
+        }
+
     }
 
     @Override
@@ -109,7 +155,6 @@ public class ChatBot implements Bot {
             return response;
 
         } catch (Exception e) {
-            System.err.println("Chat failed for bot: " + botInstance.getId() + ", error: " + e.getMessage());
             throw new BusinessException("Chat failed", e);
         }
     }
