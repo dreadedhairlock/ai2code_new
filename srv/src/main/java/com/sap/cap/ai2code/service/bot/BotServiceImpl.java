@@ -148,7 +148,6 @@ public class BotServiceImpl implements BotService {
 
             return result;
         } catch (Exception e) {
-            // TODO: handle exception
             // 更新状态为FAILED
             updateBotInstanceStatus(bot, "FAILED");
             throw new BusinessException("Execution failed for bot: " + botInstanceId, e);
