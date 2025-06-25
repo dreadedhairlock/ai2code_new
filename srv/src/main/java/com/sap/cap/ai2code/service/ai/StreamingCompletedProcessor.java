@@ -1,3 +1,4 @@
+package com.sap.cap.ai2code.service.ai;
 // package com.sap.cap.ai2code.service;
 
 // @FunctionalInterface

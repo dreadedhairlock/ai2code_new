@@ -24,7 +24,6 @@ import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.BotTypes_;
 import cds.gen.mainservice.BotInstances;
 import cds.gen.mainservice.BotInstances_;
-import cds.gen.mainservice.BotMessages;
 import cds.gen.mainservice.BotMessagesAdoptContext;
 import cds.gen.mainservice.BotMessages_;
 import cds.gen.mainservice.ContextNodes;
@@ -42,8 +41,9 @@ public class adoptHandler implements EventHandler {
     }
 
     @On(event = BotMessagesAdoptContext.CDS_NAME, entity = BotMessages_.CDS_NAME)
-        public void onAdopt(BotMessagesAdoptContext context) {
-            List<ContextNodes> resultNodes = new ArrayList<>(); //set array
+    @SuppressWarnings("UseSpecificCatch")
+    public void onAdopt(BotMessagesAdoptContext context) {
+        List<ContextNodes> resultNodes = new ArrayList<>(); //set array
 
         try {
             // Get BotMessage information
@@ -53,91 +53,91 @@ public class adoptHandler implements EventHandler {
             Result botMessagesResult = db.run(selectQuery);
 
             botMessagesResult.stream().forEach(
-                row -> {
-                    System.out.println("Row: " + row);
-                    String botInstanceId = row.getPath("botInstance_ID");
-                    String botMessageId  = row.getPath("ID");
-                    String botMessage    = row.getPath("message");
-                    System.out.println("BotInstance with ID: " + botInstanceId);
-                    System.out.println("BotMessage with ID: " + botMessageId);
+                    row -> {
+                        System.out.println("Row: " + row);
+                        String botInstanceId = row.getPath("botInstance_ID");
+                        String botMessageId = row.getPath("ID");
+                        String botMessage = row.getPath("message");
+                        System.out.println("BotInstance with ID: " + botInstanceId);
+                        System.out.println("BotMessage with ID: " + botMessageId);
 
-                    try {
-                    // 2. Get BotInstances entry according to BotMessages.botInstance
-                    CqnSelect selectBotInstance = Select.from(BotInstances_.CDS_NAME)
-                              .columns(BotInstances_.ID, BotInstances_.TYPE_ID, BotInstances_.TASK_ID)
-                              .byId(botInstanceId);
-                    Result botInstanceResult = db.run(selectBotInstance);
+                        try {
+                            // 2. Get BotInstances entry according to BotMessages.botInstance
+                            CqnSelect selectBotInstance = Select.from(BotInstances_.CDS_NAME)
+                                    .columns(BotInstances_.ID, BotInstances_.TYPE_ID, BotInstances_.TASK_ID)
+                                    .byId(botInstanceId);
+                            Result botInstanceResult = db.run(selectBotInstance);
 
-                    if (botInstanceResult.rowCount() == 0) {
-                        throw new IllegalArgumentException("BotInstance with ID " + botInstanceId + " not found.");
+                            if (botInstanceResult.rowCount() == 0) {
+                                throw new IllegalArgumentException("BotInstance with ID " + botInstanceId + " not found.");
+                            }
+
+                            //select single BotInstance
+                            BotInstances botInstance = botInstanceResult.single(BotInstances.class);
+                            String botTypeId = botInstance.getTypeId();
+                            System.out.println("BotType with ID: " + botTypeId);
+
+                            // 3. Get BotTypes entries based on BotInstances.type
+                            CqnSelect selectBotType = Select.from(BotTypes_.CDS_NAME)
+                                    .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE, BotTypes.OUTPUT_CONTEXT_PATH, BotTypes_.TASK_TYPE_ID)
+                                    .where(b -> b.get("ID").eq(botTypeId));
+                            Result botTypeResult = db.run(selectBotType);
+
+                            if (botTypeResult.rowCount() == 0) {
+                                throw new IllegalArgumentException("BotType with ID " + botTypeId + " not found.");
+                            }
+
+                            BotTypes botType = botTypeResult.single(BotTypes.class);
+
+                            // 4. Store the content of this message in the ContextNodes entry
+                            ContextNodes contextNode = ContextNodes.create();
+
+                            // Path: outputContextPath set according to BotTypes
+                            contextNode.setPath(botType.getOutputContextPath());
+
+                            // Label: using bot message content as label
+                            contextNode.setLabel(botMessage);
+
+                            // Type: contextType set according to BotTypes
+                            contextNode.setType(botType.getContextTypeCode());
+
+                            // Value: BotMessages.message/Convert to the corresponding format according to the AI function call
+                            String messageValue = processMessageValue(botMessage, botType.getContextType());
+                            contextNode.setValue(messageValue);
+
+                            // Set task ID from bot instance
+                            contextNode.setTaskId(botInstance.getTaskId());
+
+                            // Insert the context node
+                            CqnInsert insertContextNode = Insert.into(ContextNodes_.CDS_NAME).entry(contextNode);
+                            Result insertResult = db.run(insertContextNode);
+
+                            ContextNodes createdNode = insertResult.single(ContextNodes.class);
+                            resultNodes.add(createdNode);
+
+                            // 5. Set the status field of BotInstances to S (Success)
+                            CqnUpdate updateBotInstance = Update.entity(BotInstances_.CDS_NAME)
+                                    .byId(botInstanceId)
+                                    .data(BotInstances.STATUS_CODE, "S");
+                            db.run(updateBotInstance);
+                            System.out.println("Successfully processed BotInstance ID: " + botInstanceId);
+
+                        } catch (Exception e) {
+                            // Error handling: Set the status field of BotInstances to F (Failed)
+                            try {
+                                CqnUpdate updateBotInstanceFailed = Update.entity(BotInstances_.CDS_NAME)
+                                        .byId(botInstanceId)
+                                        .data(BotInstances.STATUS_CODE, "F");
+                                db.run(updateBotInstanceFailed);
+
+                                System.err.println("Failed to process BotMessage for BotInstance ID: " + botInstanceId
+                                        + ". Error: " + e.getMessage());
+                            } catch (Exception updateException) {
+                                System.err.println("Failed to update BotInstance status to Failed: " + updateException.getMessage());
+                            }
+
+                        }
                     }
-
-                    //select single BotInstance
-                    BotInstances botInstance = botInstanceResult.single(BotInstances.class);
-                    String botTypeId = botInstance.getTypeId();
-                    System.out.println("BotType with ID: " + botTypeId);
-
-                    // 3. Get BotTypes entries based on BotInstances.type
-                    CqnSelect selectBotType = Select.from(BotTypes_.CDS_NAME)
-                    .columns(BotTypes_.ID, BotTypes_.CONTEXT_TYPE_CODE, BotTypes.OUTPUT_CONTEXT_PATH, BotTypes_.TASK_TYPE_ID)
-                              .where(b -> b.get("ID").eq(botTypeId));
-                    Result botTypeResult = db.run(selectBotType);
-
-                    if (botTypeResult.rowCount() == 0) {
-                        throw new IllegalArgumentException("BotType with ID " + botTypeId + " not found.");
-                    }
-
-                    BotTypes botType = botTypeResult.single(BotTypes.class);
-
-                    // 4. Store the content of this message in the ContextNodes entry
-                    ContextNodes contextNode = ContextNodes.create();
-
-                        // Path: outputContextPath set according to BotTypes
-                        contextNode.setPath(botType.getOutputContextPath());
-
-                        // Label: using bot message content as label
-                        contextNode.setLabel(botMessage);
-
-                        // Type: contextType set according to BotTypes
-                        contextNode.setType(botType.getContextTypeCode());
-
-                        // Value: BotMessages.message/Convert to the corresponding format according to the AI function call
-                        String messageValue = processMessageValue(botMessage, botType.getContextType());
-                        contextNode.setValue(messageValue);
-
-                    // Set task ID from bot instance
-                    contextNode.setTaskId(botInstance.getTaskId());
-
-                    // Insert the context node
-                    CqnInsert insertContextNode = Insert.into(ContextNodes_.CDS_NAME).entry(contextNode);
-                    Result insertResult = db.run(insertContextNode);
-
-                    ContextNodes createdNode = insertResult.single(ContextNodes.class);
-                    resultNodes.add(createdNode);
-
-                    // 5. Set the status field of BotInstances to S (Success)
-                    CqnUpdate updateBotInstance = Update.entity(BotInstances_.CDS_NAME)
-                            .byId(botInstanceId)
-                            .data(BotInstances.STATUS_CODE, "S");
-                    db.run(updateBotInstance);
-                    System.out.println("Successfully processed BotInstance ID: " + botInstanceId);
-
-                } catch (Exception e) {
-                    // Error handling: Set the status field of BotInstances to F (Failed)
-                    try {
-                        CqnUpdate updateBotInstanceFailed = Update.entity(BotInstances_.CDS_NAME)
-                                .byId(botInstanceId)
-                                .data(BotInstances.STATUS_CODE, "F");
-                        db.run(updateBotInstanceFailed);
-
-                        System.err.println("Failed to process BotMessage for BotInstance ID: " + botInstanceId + 
-                                         ". Error: " + e.getMessage());
-                    } catch (Exception updateException) {
-                        System.err.println("Failed to update BotInstance status to Failed: " + updateException.getMessage());
-                    }
-
-                }
-                }
             );
             // 6. Returns the ContextNodes entries
             context.setResult(resultNodes);
@@ -148,11 +148,12 @@ public class adoptHandler implements EventHandler {
             throw new RuntimeException("Failed to adopt bot messages: " + e.getMessage(), e);
         }
     }
+
     /**
-     * Processes the message value according to the context type.
-     * This is a placeholder implementation; adjust logic as needed.
+     * Processes the message value according to the context type. This is a
+     * placeholder implementation; adjust logic as needed.
      */
-    private String processMessageValue(String message, Object contextType) {
+    private String processMessageValue(String message, @SuppressWarnings("unused") Object contextType) {
         // Example: just return the message as-is, or add logic based on contextType
         return message;
     }
