@@ -1,2 +1,4 @@
 code,name,descr
-CODE,C,C
+A,AI Chat,Standard AI chat interaction
+F,Function Call,Structured function invocation
+C,Code,Execute code block

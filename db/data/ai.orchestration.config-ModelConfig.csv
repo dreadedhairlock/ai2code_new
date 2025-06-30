@@ -1,2 +1,89 @@
 ID,name,provider,modelName,parameters,createdAt,createdBy,modifiedAt,modifiedBy
-22920428-b71a-4f80-807b-d199119ab228,gemini,SAPAICore-Gemini,gemini-2.0,parameters-22920428,2018-04-07T17:00:00.000Z,createdBy.dn9ik@example.net,2005-02-22T17:00:00.000Z,modifiedBy.dn9ik@example.org
+5e256932-15b9-4145-ba49-966216ea9cf6,chatGPT4o,SAPAICore-OpenAI,gpt-4o,"{
+  ""serviceurls"": {
+    ""AI_API_URL"": ""https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com""
+  },
+  ""appname"": ""4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientid"": ""sb-4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientsecret"": ""30c733f4-1d27-4891-9633-c3125e0296a6$59d5zVVBHoXVGk_T-A5CAhelitpx5XkOYImEmubfp0w="",
+  ""identityzone"": ""genai-europe-aws-16rxv3mh"",
+  ""identityzoneid"": ""9963ad8b-ff66-4a99-9e1f-413a1b34420e"",
+  ""url"": ""https://genai-europe-aws-16rxv3mh.authentication.eu10.hana.ondemand.com"",
+  ""credential-type"": ""binding-secret""
+}",,,,
+63536bff-7cb8-46af-83c6-9129eba85937,chatGPT4.1,SAPAICore-OpenAI,gpt-4.1,"{
+  ""serviceurls"": {
+    ""AI_API_URL"": ""https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com""
+  },
+  ""appname"": ""4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientid"": ""sb-4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientsecret"": ""30c733f4-1d27-4891-9633-c3125e0296a6$59d5zVVBHoXVGk_T-A5CAhelitpx5XkOYImEmubfp0w="",
+  ""identityzone"": ""genai-europe-aws-16rxv3mh"",
+  ""identityzoneid"": ""9963ad8b-ff66-4a99-9e1f-413a1b34420e"",
+  ""url"": ""https://genai-europe-aws-16rxv3mh.authentication.eu10.hana.ondemand.com"",
+  ""credential-type"": ""binding-secret""
+}",,,,
+9789e6f9-c9b9-4c08-bba6-1e28af4af69d,claude-3.7-sonnet,SAPAICore-Claude,claude-3.7-sonnet,"{
+  ""serviceurls"": {
+    ""AI_API_URL"": ""https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com""
+  },
+  ""appname"": ""4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientid"": ""sb-4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientsecret"": ""30c733f4-1d27-4891-9633-c3125e0296a6$59d5zVVBHoXVGk_T-A5CAhelitpx5XkOYImEmubfp0w="",
+  ""identityzone"": ""genai-europe-aws-16rxv3mh"",
+  ""identityzoneid"": ""9963ad8b-ff66-4a99-9e1f-413a1b34420e"",
+  ""url"": ""https://genai-europe-aws-16rxv3mh.authentication.eu10.hana.ondemand.com"",
+  ""credential-type"": ""binding-secret""
+}",,,,
+2e421e12-b543-4cb4-866d-9dece4c570f2,claude-4-sonnet,SAPAICore-Claude,claude-4-sonnet,"{
+  ""serviceurls"": {
+    ""AI_API_URL"": ""https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com""
+  },
+  ""appname"": ""4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientid"": ""sb-4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientsecret"": ""30c733f4-1d27-4891-9633-c3125e0296a6$59d5zVVBHoXVGk_T-A5CAhelitpx5XkOYImEmubfp0w="",
+  ""identityzone"": ""genai-europe-aws-16rxv3mh"",
+  ""identityzoneid"": ""9963ad8b-ff66-4a99-9e1f-413a1b34420e"",
+  ""url"": ""https://genai-europe-aws-16rxv3mh.authentication.eu10.hana.ondemand.com"",
+  ""credential-type"": ""binding-secret""
+}",,,,
+9cbce215-3fb1-41e7-b331-06c515835bf2,gemini-2.5-pro,SAPAICore-Google,gemini-2.5-pro,"{
+  ""serviceurls"": {
+    ""AI_API_URL"": ""https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com""
+  },
+  ""appname"": ""4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientid"": ""sb-4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientsecret"": ""30c733f4-1d27-4891-9633-c3125e0296a6$59d5zVVBHoXVGk_T-A5CAhelitpx5XkOYImEmubfp0w="",
+  ""identityzone"": ""genai-europe-aws-16rxv3mh"",
+  ""identityzoneid"": ""9963ad8b-ff66-4a99-9e1f-413a1b34420e"",
+  ""url"": ""https://genai-europe-aws-16rxv3mh.authentication.eu10.hana.ondemand.com"",
+  ""credential-type"": ""binding-secret""
+}",,,,
+ed5eebb8-4d34-49ac-9810-563f6ee9790e,text-embedding-3-large,SAPAICore-OpenAI,text-embedding-3-large,"{
+  ""serviceurls"": {
+    ""AI_API_URL"": ""https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com""
+  },
+  ""appname"": ""4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientid"": ""sb-4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientsecret"": ""30c733f4-1d27-4891-9633-c3125e0296a6$59d5zVVBHoXVGk_T-A5CAhelitpx5XkOYImEmubfp0w="",
+  ""identityzone"": ""genai-europe-aws-16rxv3mh"",
+  ""identityzoneid"": ""9963ad8b-ff66-4a99-9e1f-413a1b34420e"",
+  ""url"": ""https://genai-europe-aws-16rxv3mh.authentication.eu10.hana.ondemand.com"",
+  ""credential-type"": ""binding-secret""
+}",,,,
+cca919bf-3afa-481d-beb2-d546fd2dc748,text-embedding-3-small,SAPAICore-OpenAI,text-embedding-3-small,"{
+  ""serviceurls"": {
+    ""AI_API_URL"": ""https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com""
+  },
+  ""appname"": ""4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientid"": ""sb-4ba914fb-04d8-406b-ac7c-42a33bcc8f89!b549118|aicore!b540"",
+  ""clientsecret"": ""30c733f4-1d27-4891-9633-c3125e0296a6$59d5zVVBHoXVGk_T-A5CAhelitpx5XkOYImEmubfp0w="",
+  ""identityzone"": ""genai-europe-aws-16rxv3mh"",
+  ""identityzoneid"": ""9963ad8b-ff66-4a99-9e1f-413a1b34420e"",
+  ""url"": ""https://genai-europe-aws-16rxv3mh.authentication.eu10.hana.ondemand.com"",
+  ""credential-type"": ""binding-secret""
+}",,,,
+e5d6866c-4611-4413-9fc5-47179f688952,OpenRouter-GPT-4O,OpenRouter,GPT-4O,"{
+  ""apiUrl"":"""",
+  ""apiKey"":""""
+}",,,,
