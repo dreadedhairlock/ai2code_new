@@ -33,9 +33,8 @@ public class adoptHandler implements EventHandler {
             // // Return type should be List<ContextNodes> not single ContextNodes
             ContextNodes resultNode = botService.adopt(context);
             List<ContextNodes> resultNodes = List.of(resultNode);
-            context.setResult(resultNodes);
+            context.setResult((ContextNodes) resultNodes);
             System.out.println("Result Nodes: " + resultNodes);
-
         } catch (Exception e) {
             System.err.println("Error in adopt handler: " + e.getMessage());
             throw new RuntimeException("Failed to adopt bot messages: " + e.getMessage(), e);

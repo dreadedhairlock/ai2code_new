@@ -48,83 +48,10 @@ public class StreamingChatController {
         this.botService = botService;
     }
 
-    // Use configuration instead of hardcoded API key
-    private String apiKey = "AIzaSyASQmgwGONMTa9kdAkGCoY-blWiE0a5A7U";
-
     /**
      * Streaming chat endpoint using Server-Sent Events (SSE)
      */
     @PostMapping(value = "/Streaming", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamChat(@RequestBody ChatRequest chatRequest) {
-
-        SseEmitter emitter = new SseEmitter(30000L);
-
-        // Validate request using Lombok-generated methods
-        try {
-            chatRequest.validate();
-            log.info("Starting streaming chat for bot: {}", chatRequest.getId());
-        } catch (IllegalArgumentException e) {
-            log.error("Validation failed: {}", e.getMessage());
-            emitter.completeWithError(e);
-            return emitter;
-        }
-
-        new Thread(() -> {
-            try {
-                HttpClient httpClient = HttpClient.newHttpClient();
-                String endpoint = String.format(
-                        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?key=%s",
-                        apiKey);
-
-                String requestBody = """
-                        {
-                          "contents": [
-                            {
-                              "parts": [
-                                { "text": "%s" }
-                              ]
-                            }
-                          ]
-                        }
-                        """.formatted(chatRequest.getContent().replace("\"", "\\\""));
-
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(endpoint))
-                        .header("Content-Type", "application/json")
-                        .header("Accept", "text/event-stream")
-                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                        .build();
-
-                HttpResponse<InputStream> response = httpClient.send(request,
-                        HttpResponse.BodyHandlers.ofInputStream());
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(response.body()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    line = line.trim();
-                    if (!line.isEmpty() && line.contains("\"text\":")) {
-                        emitter.send(SseEmitter.event()
-                                .name("chunk")
-                                .data(line));
-                    }
-                }
-
-                log.info("Streaming completed successfully for bot: {}", chatRequest.getId());
-                emitter.complete();
-
-            } catch (Exception e) {
-                log.error("Streaming failed for bot: {} - Error: {}", chatRequest.getId(), e.getMessage());
-                emitter.completeWithError(e);
-            }
-        }).start();
-
-        return emitter;
-    }
-
-    /**
-     * Streaming chat endpoint using Server-Sent Events (SSE)
-     */
-    @PostMapping(value = "/StreamingSAP", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamChatSAP(@RequestBody ChatRequest chatRequest) {
 
         // Validate request using Lombok-generated methods

@@ -6,6 +6,13 @@ import java.util.concurrent.CompletableFuture;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.sap.cap.ai2code.exception.BusinessException;
+import com.sap.cap.ai2code.model.ai.AIModel;
+import com.sap.cap.ai2code.model.ai.AIModelResolver;
+import com.sap.cap.ai2code.service.ai.AIService;
+import com.sap.cap.ai2code.service.common.GenericCqnService;
+import com.sap.cap.ai2code.service.prompt.PromptService;
+
 import cds.gen.configservice.BotTypes;
 import cds.gen.configservice.PromptTexts;
 import cds.gen.mainservice.BotInstances;
@@ -50,7 +57,8 @@ public class ChatBot implements Bot {
     @Override
     public ReturnType execute() {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'execute'");
+
+        return null;
     }
 
     @Override
@@ -92,7 +100,7 @@ public class ChatBot implements Bot {
             // 3. Check if this is the first chat call - if so, need to save prompt messages
             boolean isFirstCall = historyMessages.isEmpty();
             if (isFirstCall) {
-                prompts = promptService.getPrompts(botType.getId(), "", "");
+                prompts = promptService.getPrompts(botType.getId(), "");
                 if (prompts != null && !prompts.isEmpty()) {
                     savePromptMessages(prompts);
                     historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());
@@ -107,7 +115,30 @@ public class ChatBot implements Bot {
                     content,
                     aiModel,
                     null,
-                    null
+                    (completeResponse) -> {
+                        try {
+                            // Save messages when streaming completes
+                            // Save user message
+                            genericCqnService.createAndInsertBotMessage(
+                                    botInstance.getId(),
+                                    content,
+                                    "user"
+                            );
+                            // Small delay to ensure user message is saved first
+                            Thread.sleep(500);
+                            // Save assistant message
+                            genericCqnService.createAndInsertBotMessage(
+                                    botInstance.getId(),
+                                    completeResponse,
+                                    "assistant"
+                            );
+
+                        } catch (Exception e) {
+                            System.err.println("Failed to save conversation: " + e.getMessage());
+                            e.printStackTrace();
+                            // updateBotInstanceStatus("F"); // Uncomment if you have this method
+                        }
+                    }
             );
 
         } catch (Exception e) {
@@ -130,7 +161,7 @@ public class ChatBot implements Bot {
 
             // 3. Check if this is the first chat call - if so, need to save prompt messages
             if (historyMessages.isEmpty()) {
-                prompts = promptService.getPrompts(botType.getId(), "", "");
+                prompts = promptService.getPrompts(botType.getId(), "");
                 if (prompts != null && !prompts.isEmpty()) {
                     savePromptMessages(prompts);
                     historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());
@@ -167,6 +198,6 @@ public class ChatBot implements Bot {
 
     // @Override
     // public AIModel getAiModel() {
-    //     return this.aiModel;
+    // return this.aiModel;
     // }
 }

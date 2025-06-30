@@ -1,2 +1,7 @@
 code,name,descr
-CANCELLED,X,X
+CREATED,Created,Task has been created
+RUNNING,Running,Task is currently executing
+SUCCESS,Success,Task completed successfully
+FAILED,Failed,Task execution failed
+SKIPPED,Skipped,Task was skipped
+CANCELLED,Cancelled,Task was cancelled
