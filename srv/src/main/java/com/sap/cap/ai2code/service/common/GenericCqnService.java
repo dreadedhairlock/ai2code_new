@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import com.sap.cap.ai2code.exception.BusinessException;
 import com.sap.cds.ql.Select;
+import com.sap.cds.ql.cqn.AnalysisResult;
+import com.sap.cds.ql.cqn.CqnAnalyzer;
 import com.sap.cds.ql.cqn.CqnSelect;
 
 import cds.gen.configservice.BotTypes;
@@ -110,7 +112,7 @@ public class GenericCqnService {
     public Tasks getTaskByBotInstanceAndSequence(String botInstanceId, int sequence) {
         CqnSelect select = Select.from(Tasks_.class)
                 .where(t -> t.botInstance_ID().eq(botInstanceId)
-                .and(t.sequence().eq(sequence)));
+                        .and(t.sequence().eq(sequence)));
         return entityService.selectSingle(mainService, select, Tasks.class,
                 "Task not found for botInstance: " + botInstanceId + ", sequence: " + sequence);
     }
@@ -180,20 +182,6 @@ public class GenericCqnService {
         }
     }
 
-        public String extractBotInstanceIdFromContext(BotInstancesExecuteContext context) {
-        String result = context.getCqn().toString();
-        Pattern pattern = Pattern.compile("\"val\":\"([^\"]+)\"");
-        Matcher matcher = pattern.matcher(result);
-
-        if (matcher.find()) {
-            String botInstanceId = matcher.group(1);
-            return botInstanceId;
-        } else {
-            // Log the CQN string to help debug the pattern
-            throw new BusinessException("Could not extract bot instance ID from CQN: " + result);
-        }
-    }
-
     /**
      * Get bot instance by ID
      */
@@ -210,7 +198,7 @@ public class GenericCqnService {
     public BotInstances getBotInstanceByTaskAndSequence(String taskId, int sequence) {
         CqnSelect select = Select.from(BotInstances_.class)
                 .where(b -> b.task_ID().eq(taskId)
-                .and(b.sequence().eq(sequence)));
+                        .and(b.sequence().eq(sequence)));
         return entityService.selectSingle(mainService, select, BotInstances.class,
                 "BotInstance not found for task: " + taskId + ", sequence: " + sequence);
     }
@@ -287,7 +275,7 @@ public class GenericCqnService {
     public BotMessages getMessageById(String botInstanceId, String messageId) {
         CqnSelect select = Select.from(BotMessages_.class)
                 .where(m -> m.ID().eq(messageId)
-                .and(m.botInstance_ID().eq(botInstanceId)));
+                        .and(m.botInstance_ID().eq(botInstanceId)));
         return entityService.selectSingle(mainService, select, BotMessages.class,
                 String.format("Message %s not found in bot instance %s", messageId, botInstanceId));
     }
@@ -350,7 +338,7 @@ public class GenericCqnService {
     public ContextNodes getContextNodeByTaskAndPath(String taskId, String contextPath) {
         CqnSelect select = Select.from(ContextNodes_.class)
                 .where(c -> c.task_ID().eq(taskId)
-                .and(c.path().eq(contextPath)));
+                        .and(c.path().eq(contextPath)));
         return entityService.selectSingle(mainService, select, ContextNodes.class,
                 "ContextNode not found for task: " + taskId + ", path: " + contextPath);
     }
@@ -361,7 +349,7 @@ public class GenericCqnService {
     public Optional<ContextNodes> getContextNodeByTaskAndPathOptional(String taskId, String contextPath) {
         CqnSelect select = Select.from(ContextNodes_.class)
                 .where(c -> c.task_ID().eq(taskId)
-                .and(c.path().eq(contextPath)));
+                        .and(c.path().eq(contextPath)));
         return entityService.selectSingleOptional(mainService, select, ContextNodes.class);
     }
 

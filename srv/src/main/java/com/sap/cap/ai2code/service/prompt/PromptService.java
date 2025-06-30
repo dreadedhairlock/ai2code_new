@@ -8,6 +8,6 @@ public interface PromptService {
 
     public String parse(PromptTexts prompt, String mainTaskId, String botInstanceId);
 
-    public List<PromptTexts> getPrompts(String botTypeId, String mainTaskId, String botInstanceId);
+    public List<PromptTexts> getPrompts(String botTypeId, String botInstanceId);
 
 }

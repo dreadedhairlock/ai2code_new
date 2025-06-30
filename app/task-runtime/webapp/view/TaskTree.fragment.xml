@@ -11,15 +11,12 @@
             <Tree
                 id="taskAndBotTree"
                 mode="SingleSelectMaster"
-                items="{path: 'taskTree>/'}"
-                itemPress=".onTaskSelect"
-                selectionChange=".onTaskSelect"
+                items="{path: 'taskAndBotTree>/rootNodes', parameters: {arrayNames: ['nodes']}}"
+                itemPress=".onTaskAndBotPress"
+                selectionChange=".onTaskAndBotPress"
+                toggleOpenState=".onToggleOpenState"
             >
-                <StandardTreeItem
-                    title="{= ${taskTree>type} === 'bot' 
-            ? 'Bot : ' + (${taskTree>botTypeName} ? ${taskTree>botTypeName} + ' #' + ${taskTree>sequence} : 'Bot #' + ${taskTree>sequence})
-            : ${taskTree>type} + ' : ' + (${taskTree>name} ? ${taskTree>name} : ${taskTree>ID})}"
-                />
+                <StandardTreeItem title="{taskAndBotTree>name}" />
             </Tree>
         </ScrollContainer>
     </VBox>

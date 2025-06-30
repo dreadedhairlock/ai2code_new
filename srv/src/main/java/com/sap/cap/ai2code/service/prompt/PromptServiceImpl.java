@@ -24,7 +24,7 @@ public class PromptServiceImpl implements PromptService {
     }
 
     @Override
-    public List<PromptTexts> getPrompts(String botTypeId, String mainTaskId, String botInstanceId) {
+    public List<PromptTexts> getPrompts(String botTypeId, String botInstanceId) {
         return genericCqnService.getPromptTextsByBotType(botTypeId);
         // throw new UnsupportedOperationException("Unimplemented method 'getPrompts'");
     }

@@ -92,7 +92,7 @@ public class CodingBot implements Bot {
 
             // 3. Check if this is the first chat call - if so, need to save prompt messages
             if (historyMessages.isEmpty()) {
-                prompts = promptService.getPrompts(botType.getId(), "", "");
+                prompts = promptService.getPrompts(botType.getId(), "");
                 if (prompts != null && !prompts.isEmpty()) {
                     savePromptMessages(prompts);
                     historyMessages = genericCqnService.getBotMessagesByBotInstanceId(botInstance.getId());

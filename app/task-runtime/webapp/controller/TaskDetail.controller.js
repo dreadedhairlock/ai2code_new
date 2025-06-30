@@ -183,23 +183,23 @@ sap.ui.define(
           });
         }
 
-        const aBotMessages = oBotInstance.messages;
-        if (aBotMessages && aBotMessages.length > 0) {
-          if (!oBotItem.hasNodes) {
-            oBotItem.hasNodes = true;
-          }
-          aBotMessages.forEach((oBotMessage, index) => {
-            const oBotMessageItem = {
-              ID: `botmessage_${oBotMessage.ID}`,
-              name: `Message ${index + 1} (${oBotMessage.role || "unknown"})`,
-              hasNodes: false,
-              type: "BotMessage",
-              data: oBotMessage,
-              nodes: [],
-            };
-            oBotItem.nodes.push(oBotMessageItem);
-          });
-        }
+        // const aBotMessages = oBotInstance.messages;
+        // if (aBotMessages && aBotMessages.length > 0) {
+        // if (!oBotItem.hasNodes) {
+        // oBotItem.hasNodes = true;
+        // }
+        // aBotMessages.forEach((oBotMessage, index) => {
+        // const oBotMessageItem = {
+        // ID: `botmessage_${oBotMessage.ID}`,
+        // name: `Message ${index + 1} (${oBotMessage.role || "unknown"})`,
+        // hasNodes: false,
+        // type: "BotMessage",
+        // data: oBotMessage,
+        // nodes: [],
+        // };
+        // oBotItem.nodes.push(oBotMessageItem);
+        // });
+        // }
 
         return oBotItem;
       },
@@ -872,135 +872,32 @@ sap.ui.define(
       // ---------------------------------------Context Tree -------------------------------------
 
       // -----------------------------------------Task Tree --------------------------------------
-      // This is Detail page
-      onTaskSelect: function (oEvent) {
-        var oSelectedItem = oEvent.getParameter("listItem");
-        var oContext = oSelectedItem.getBindingContext("taskTree");
 
-        if (!oContext) {
-          console.error("No context found!");
-          return;
-        }
-
-        var sID = oContext.getProperty("ID");
-        var sType = oContext.getProperty("type");
-
-        var oTree = this.byId("taskAndBotTree");
-        var oBinding = oTree.getBinding("items");
-        var iItemIndex = oTree.indexOfItem(oSelectedItem);
-        var oSelectedContext = oBinding.getContextByIndex(iItemIndex);
-
-        if (!oSelectedContext) {
-          return;
-        }
-
-        var oSelectedNode = oSelectedContext.getProperty();
-
-        if (!oSelectedNode.nodes) {
-          oSelectedNode.nodes = [];
-        }
-
-        const oModel = this.getOwnerComponent().getModel();
-
-        if (sType === "task") {
-          oModel
-            .bindList("/Tasks('" + sID + "')/botInstances", null, null, null, {
-              $expand: "type",
-            })
-            .requestContexts()
-            .then(
-              function (aContexts) {
-                var aData = aContexts.map(function (oContext) {
-                  var oObj = oContext.getObject();
-                  // Simpan nama BotType ke property botTypeName
-                  if (oObj.type) {
-                    oObj.botTypeName = oObj.type.name;
-                  }
-                  // Set type ke 'bot' untuk keperluan tree
-                  oObj.type = "bot";
-                  oObj.nodes = [];
-                  return oObj;
-                });
-
-                aData.forEach(function (newItem) {
-                  var isDuplicate = oSelectedNode.nodes.some(function (
-                    existingItem
-                  ) {
-                    return existingItem.ID === newItem.ID;
-                  });
-
-                  if (!isDuplicate) {
-                    oSelectedNode.nodes.push(newItem);
-                  }
-                });
-
-                // Refresh tree
-                this.getOwnerComponent().getModel("taskTree").updateBindings();
-                oTree.expand(iItemIndex);
-              }.bind(this)
-            );
-        } else if (sType === "bot") {
-          this._selectedBotInstanceId = sID;
-
-          oModel
-            .bindList("/BotInstances('" + sID + "')/tasks")
-            .requestContexts()
-            .then(
-              function (aContexts) {
-                var aData = aContexts.map(function (oContext) {
-                  var oObj = oContext.getObject();
-                  oObj.type = "task";
-                  oObj.nodes = [];
-                  return oObj;
-                });
-
-                aData.forEach(function (newItem) {
-                  var isDuplicate = oSelectedNode.nodes.some(function (
-                    existingItem
-                  ) {
-                    return existingItem.ID === newItem.ID;
-                  });
-
-                  if (!isDuplicate) {
-                    oSelectedNode.nodes.push(newItem);
-                  }
-                });
-
-                // Refresh tree
-                this.getOwnerComponent().getModel("taskTree").updateBindings();
-                oTree.expand(iItemIndex);
-
-                this.oFlexibleColumnLayout.setLayout("ThreeColumnsEndExpanded");
-                this._loadChatHistory();
-              }.bind(this)
-            );
-        }
-      },
-
-      // -----------------------------------------Task Tree --------------------------------------
+      onTaskAndBotItemPress: function (oEvent) {},
 
       onCreateSubTask: function () {
         var oTree = this.byId("taskAndBotTree");
         var oSelectedItem = oTree.getSelectedItem();
-        console.log(oSelectedItem);
 
         if (!oSelectedItem) {
           MessageToast.show("Select the bot instance first");
           return;
         }
 
-        var oContext = oSelectedItem.getBindingContext("taskTree");
+        var oContext = oSelectedItem.getBindingContext("taskAndBotTree");
         var sNodeType = oContext.getProperty("type");
+        console.log("Selected node type:", sNodeType);
 
-        if (sNodeType !== "bot") {
+        if (sNodeType !== "BotInstance") {
           MessageToast.show(
             "New tasks can only be created under a Bot Instance"
           );
           return;
         }
 
-        this._selectedBotInstanceId = oContext.getProperty("ID");
-        console.log(this._selectedBotInstanceId);
+        this._selectedBotInstanceId = oContext
+          .getProperty("ID")
+          .replace("bot_", "");
 
         this._openCreateTaskDialog();
       },
@@ -1145,13 +1042,7 @@ sap.ui.define(
             .then(
               function () {
                 MessageToast.show("Sub Task successfully created");
-
-                var sBotId = this._selectedBotInstanceId;
-                this._selectedBotInstanceId = null;
-
-                this._refreshSelectedBotNode(sBotId);
-
-                this.getView().setBusy(false);
+                this._loadTaskTree(this._sTaskId);
               }.bind(this)
             )
             .catch(
@@ -1166,114 +1057,6 @@ sap.ui.define(
         }
       },
 
-      _refreshSelectedBotNode: function (sBotId) {
-        var oTree = this.byId("taskAndBotTree");
-        if (!oTree) {
-          MessageToast.show("Tree control not found");
-          return;
-        }
-
-        var oTreeModel = this.getOwnerComponent().getModel("taskTree");
-
-        this.getView().setBusy(true);
-
-        try {
-          var oModel = this.getOwnerComponent().getModel();
-
-          oModel
-            .bindList("/BotInstances('" + sBotId + "')/tasks")
-            .requestContexts()
-            .then(
-              function (aContexts) {
-                var aTasks = aContexts.map(function (oContext) {
-                  var oTask = oContext.getObject();
-                  oTask.type = "task";
-                  oTask.nodes = [];
-                  return oTask;
-                });
-
-                this._updateBotNodeChildren(
-                  oTreeModel.getData(),
-                  sBotId,
-                  aTasks
-                );
-
-                oTreeModel.refresh(true);
-
-                this._expandBotNode(sBotId);
-
-                this.getView().setBusy(false);
-              }.bind(this)
-            )
-            .catch(
-              function (oError) {
-                MessageToast.show(
-                  "Error refreshing bot node: " + oError.message
-                );
-                this.getView().setBusy(false);
-              }.bind(this)
-            );
-        } catch (oError) {
-          MessageToast.show("Error: " + oError.message);
-          this.getView().setBusy(false);
-        }
-      },
-
-      _updateBotNodeChildren: function (oNodes, sBotId, aNewChildren) {
-        var aNodes = Array.isArray(oNodes) ? oNodes : [oNodes];
-
-        for (var i = 0; i < aNodes.length; i++) {
-          var oNode = aNodes[i];
-
-          if (oNode.type === "bot" && oNode.ID === sBotId) {
-            oNode.nodes = aNewChildren;
-            return true;
-          }
-
-          if (oNode.nodes && oNode.nodes.length > 0) {
-            var bFound = this._updateBotNodeChildren(
-              oNode.nodes,
-              sBotId,
-              aNewChildren
-            );
-            if (bFound) {
-              return true;
-            }
-          }
-        }
-
-        return false;
-      },
-
-      _expandBotNode: function (sBotId) {
-        var oTree = this.byId("taskAndBotTree");
-        var aItems = oTree.getItems();
-
-        for (var i = 0; i < aItems.length; i++) {
-          var oItem = aItems[i];
-          var oContext = oItem.getBindingContext("taskTree");
-
-          if (
-            oContext &&
-            oContext.getProperty("type") === "bot" &&
-            oContext.getProperty("ID") === sBotId
-          ) {
-            oTree.expand(oTree.indexOfItem(oItem));
-            break;
-          }
-        }
-      },
-
-      onEditSubTask: function () {
-        const oTree = this.byId("taskAndBotTree");
-        const oSelected = oTree.getSelectedItem();
-
-        if (!oSelected || oSelected.getProperty("type") == "bot") {
-          MessageToast.show("Please select a task to edit!");
-          return;
-        }
-      },
-
       onDeleteSubTask: function () {
         const oTree = this.byId("taskAndBotTree");
         const oSelected = oTree.getSelectedItem();
@@ -1283,10 +1066,11 @@ sap.ui.define(
           return;
         }
 
-        const oJsonCtx = oSelected.getBindingContext("taskTree");
-        const sID = oJsonCtx.getProperty("ID");
+        const oJsonCtx = oSelected.getBindingContext("taskAndBotTree");
+        const sID = oJsonCtx.getProperty("ID").replace("task_", "");
+        const sType = oJsonCtx.getProperty("type");
 
-        if (!sID) {
+        if (!sID || sType !== "Task") {
           MessageToast.show("Select one task item first!");
           return;
         }
@@ -1310,7 +1094,7 @@ sap.ui.define(
                 if (oBoundContext) {
                   await oBoundContext.delete();
                   MessageToast.show("Task deleted successfully.");
-                  await this.getOwnerComponent()._loadMainTasks(this._sTaskId);
+                  this._loadTaskTree(this._sTaskId);
                 } else {
                   MessageToast.show("Could not find task with ID: " + sID);
                 }
@@ -1334,15 +1118,15 @@ sap.ui.define(
           return;
         }
 
-        var oContext = oSelectedItem.getBindingContext("taskTree");
+        var oContext = oSelectedItem.getBindingContext("taskAndBotTree");
         var sNodeType = oContext.getProperty("type");
 
-        if (sNodeType !== "task") {
+        if (sNodeType !== "Task") {
           MessageToast.show("Bot instance only created in the node Task");
           return;
         }
 
-        var sTaskId = oContext.getProperty("ID");
+        var sTaskId = oContext.getProperty("ID").replace("task_", "");
         var sTaskName = oContext.getProperty("name");
 
         if (this.oBotDialog) {
@@ -1442,7 +1226,7 @@ sap.ui.define(
           .then(
             function () {
               MessageToast.show("Bot created successfully");
-              this._refreshSelectedTaskNode(sTaskId);
+              this._loadTaskTree(this._sTaskId);
             }.bind(this)
           )
           .catch(
@@ -1461,10 +1245,11 @@ sap.ui.define(
           return;
         }
 
-        const oJsonCtx = oSelected.getBindingContext("taskTree");
-        const sID = oJsonCtx.getProperty("ID");
+        const oJsonCtx = oSelected.getBindingContext("taskAndBotTree");
+        const sID = oJsonCtx.getProperty("ID").replace("bot_", "");
+        const sType = oJsonCtx.getProperty("type");
 
-        if (!sID) {
+        if (!sID || sType !== "BotInstance") {
           MessageToast.show("Select one bot item first!");
           return;
         }
@@ -1490,9 +1275,7 @@ sap.ui.define(
                   if (oBoundContext) {
                     await oBoundContext.delete();
                     MessageToast.show("Bot Instances deleted successfully.");
-                    await this.getOwnerComponent()._loadMainTasks(
-                      this._sTaskId
-                    );
+                    this._loadTaskTree(this._sTaskId);
                   } else {
                     MessageToast.show("Could not find bot with ID: " + sID);
                   }
@@ -1506,250 +1289,23 @@ sap.ui.define(
         );
       },
 
-      _refreshSelectedTaskNode: function (sTaskId) {
-        var oTree = this.byId("taskAndBotTree");
-        if (!oTree) {
-          MessageToast.show("Tree control not found");
-          return;
-        }
-
-        var oTreeModel = this.getOwnerComponent().getModel("taskTree");
-        this.getView().setBusy(true);
-
-        try {
-          var oModel = this.getOwnerComponent().getModel();
-
-          // Tambahkan parameter $expand untuk mengambil data type (BotType)
-          oModel
-            .bindList(
-              "/Tasks('" + sTaskId + "')/botInstances",
-              null,
-              null,
-              null,
-              {
-                $expand: "type",
-              }
-            )
-            .requestContexts()
-            .then(
-              function (aContexts) {
-                var aBotInstances = aContexts.map(function (oContext) {
-                  var oBot = oContext.getObject();
-                  // Simpan nama BotType ke property botTypeName
-                  if (oBot.type) {
-                    oBot.botTypeName = oBot.type.name;
-                  }
-                  // Set type ke 'bot' untuk keperluan tree
-                  oBot.type = "bot";
-                  oBot.nodes = [];
-                  return oBot;
-                });
-
-                this._updateTaskNodeChildren(
-                  oTreeModel.getData(),
-                  sTaskId,
-                  aBotInstances
-                );
-
-                oTreeModel.refresh(true);
-                this._expandTaskNode(sTaskId);
-                this.getView().setBusy(false);
-              }.bind(this)
-            )
-            .catch(
-              function (oError) {
-                MessageToast.show(
-                  "Error refreshing task node: " + oError.message
-                );
-                this.getView().setBusy(false);
-              }.bind(this)
-            );
-        } catch (oError) {
-          MessageToast.show("Error: " + oError.message);
-          this.getView().setBusy(false);
-        }
-      },
-
-      _updateTaskNodeChildren: function (oNodes, sTaskId, aNewChildren) {
-        var aNodes = Array.isArray(oNodes) ? oNodes : [oNodes];
-
-        for (var i = 0; i < aNodes.length; i++) {
-          var oNode = aNodes[i];
-
-          if (oNode.type === "task" && oNode.ID === sTaskId) {
-            oNode.nodes = aNewChildren;
-            return true;
-          }
-
-          if (oNode.nodes && oNode.nodes.length > 0) {
-            var bFound = this._updateTaskNodeChildren(
-              oNode.nodes,
-              sTaskId,
-              aNewChildren
-            );
-            if (bFound) {
-              return true;
-            }
-          }
-        }
-
-        return false;
-      },
-
-      _expandTaskNode: function (sTaskId) {
-        var oTree = this.byId("taskAndBotTree");
-        var aItems = oTree.getItems();
-
-        for (var i = 0; i < aItems.length; i++) {
-          var oItem = aItems[i];
-          var oContext = oItem.getBindingContext("taskTree");
-
-          if (
-            oContext &&
-            oContext.getProperty("type") === "task" &&
-            oContext.getProperty("ID") === sTaskId
-          ) {
-            oTree.expand(oTree.indexOfItem(oItem));
-            break;
-          }
-        }
-      },
       // ---------------------------------------Chat Bot -------------------------------------
-      // conversationHistory: [],
-
-      // parseAIResponse: function (response) {
-      //   const parts = [];
-      //   const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```|`([^`]+)`/g;
-
-      //   let lastIndex = 0;
-      //   let match;
-      //   let partIndex = 0;
-
-      //   while ((match = codeBlockRegex.exec(response)) !== null) {
-      //     // Add text before the code block
-      //     if (match.index > lastIndex) {
-      //       const textBefore = response
-      //         .substring(lastIndex, match.index)
-      //         .trim();
-      //       if (textBefore) {
-      //         parts.push({
-      //           type: "text",
-      //           content: textBefore,
-      //           index: partIndex++,
-      //         });
-      //       }
-      //     }
-
-      //     // Add the code block
-      //     if (match[0].startsWith("```")) {
-      //       // Multi-line code block
-      //       parts.push({
-      //         type: "code_block",
-      //         language: match[1] || "text",
-      //         content: match[2] ? match[2].trim() : "",
-      //         raw: match[0],
-      //         index: partIndex++,
-      //       });
-      //     } else {
-      //       // Inline code
-      //       parts.push({
-      //         type: "inline_code",
-      //         content: match[3] || "",
-      //         raw: match[0],
-      //         index: partIndex++,
-      //       });
-      //     }
-
-      //     lastIndex = match.index + match[0].length;
-      //   }
-
-      //   // Add remaining text
-      //   if (lastIndex < response.length) {
-      //     const remainingText = response.substring(lastIndex).trim();
-      //     if (remainingText) {
-      //       parts.push({
-      //         type: "text",
-      //         content: remainingText,
-      //         index: partIndex++,
-      //       });
-      //     }
-      //   }
-
-      //   // If no matches found, return the entire response as text
-      //   if (parts.length === 0) {
-      //     parts.push({
-      //       type: "text",
-      //       content: response.trim(),
-      //       index: 0,
-      //     });
-      //   }
-
-      //   return parts;
-      // },
-
-      // // Helper function to convert parsed response back to plain text for history
-      // parsedResponseToText: function (parsedResponse) {
-      //   if (typeof parsedResponse === "string") {
-      //     return parsedResponse;
-      //   }
-
-      //   if (Array.isArray(parsedResponse)) {
-      //     return parsedResponse
-      //       .map((part) => {
-      //         if (part.type === "text") {
-      //           return part.content;
-      //         } else if (part.type === "code_block") {
-      //           return `\`\`\`${part.language || ""}\n${part.content}\n\`\`\``;
-      //         } else if (part.type === "inline_code") {
-      //           return `\`${part.content}\``;
-      //         }
-      //         return part.content || "";
-      //       })
-      //       .join("");
-      //   }
-
-      //   return String(parsedResponse);
-      // },
-
-      // // Function to manage conversation history
-      // addToHistory: function (role, content) {
-      //   // Convert parsed content to plain text for API
-      //   const textContent = this.parsedResponseToText(content);
-
-      //   this.conversationHistory.push({
-      //     role: role === "user" ? "user" : "model", // Gemini uses "model" instead of "assistant"
-      //     parts: [
-      //       {
-      //         text: textContent,
-      //       },
-      //     ],
-      //   });
-
-      //   // Optional: Limit history to prevent token overflow (keep last 20 exchanges)
-      //   const maxHistoryLength = 40; // 20 user + 20 AI messages
-      //   if (this.conversationHistory.length > maxHistoryLength) {
-      //     this.conversationHistory = this.conversationHistory.slice(
-      //       -maxHistoryLength
-      //     );
-      //   }
-      // },
-
-      // // Function to clear conversation history
-      // clearHistory: function () {
-      //   this.conversationHistory = [];
-      // },
 
       onSubmitQuery: async function () {
         var that = this;
         var oInput = this.byId("chatInput");
         var sMessage = oInput.getValue().trim();
         var sMessageDate = new Date().toISOString();
+        const oBotTree = this.byId("taskAndBotTree");
+        const oSelected = oBotTree.getSelectedItem();
 
-        if (!this._selectedBotInstanceId) {
+        const oJsonCtx = oSelected.getBindingContext("taskAndBotTree");
+        const sBotInstanceId = oJsonCtx.getProperty("ID").replace("bot_", "");
+
+        if (!sBotInstanceId) {
           MessageToast.show("Select bot instance first!");
           return;
         }
-        const botInstanceId = `'${this._selectedBotInstanceId}'`;
 
         if (sMessage) {
           try {
@@ -1759,10 +1315,7 @@ sap.ui.define(
 
             const oModel = this.getOwnerComponent().getModel();
 
-            const sPath =
-              "/BotInstances(" +
-              botInstanceId +
-              ")/MainService.chatCompletion(...)";
+            const sPath = `/BotInstances('${sBotInstanceId}')/MainService.chatCompletion(...)`;
 
             const oBinding = oModel.bindContext(sPath);
 
@@ -2043,327 +1596,77 @@ sap.ui.define(
         }
       },
 
-      // _onAdopt: function () {
-      //   // get odata model
-      //   const that = this;
-      //   var oModel = this.getOwnerComponent().getModel();
-      //   const sMessageId = "7e0fc434-7077-4c5a-b894-0a06a11ecfca";
+      /**
+       * Handles lazy loading of additional tree levels when a node is expanded.
+       * Only loads children if not already loaded, and ensures robust error handling.
+       * @param {sap.ui.base.Event} oEvent - The toggleOpenState event from sap.m.Tree
+       */
+      onToggleOpenState: function (oEvent) {
+        try {
+          var bExpanded = oEvent.getParameter("expanded");
+          var oCtx = oEvent.getParameter("itemContext");
+          if (!bExpanded || !oCtx) return;
+          var oNode = oCtx.getObject();
+          if (!oNode || oNode._childrenLoaded) return;
 
-      //   // Binding context for action
-      //   var sPath = "/BotMessages('" + sMessageId + "')/MainService.adopt(...)";
-      //   var oOperation = oModel.bindContext(sPath);
+          this._loadMoreTaskAndBotLevels(oNode)
+            .then(function (aNewChildren) {
+              oNode.nodes = aNewChildren;
+              oNode._childrenLoaded = true;
+              oCtx.getModel().refresh(true);
+            })
+            .catch(function (err) {
+              console.error("Error loading more tree levels:", err);
+            });
+        } catch (err) {
+          console.error("onToggleOpenState error:", err);
+        }
+      },
 
-      //   // execute action
-      //   oOperation
-      //     .execute()
-      //     .then(function (oResult) {
-      //       MessageToast.show("Message adopted successfully");
-      //       that._loadContextNodesTree();
-      //     })
-      //     .catch(function (oError) {
-      //       MessageToast.show("Error: " + oError.message);
-      //     });
-      // },
+      /**
+       * Loads the next 3 levels of children for a Task or BotInstance node using OData V4 $expand.
+       * Returns an array of child nodes, each marked for further lazy loading.
+       * @param {object} oNode - The node object (Task or BotInstance)
+       * @returns {Promise<Array>} - Promise resolving to array of child nodes
+       */
+      _loadMoreTaskAndBotLevels: async function (oNode) {
+        const oModel = this.getOwnerComponent().getModel();
+        let aChildren = [];
+        try {
+          if (oNode.type === "Task") {
+            // Fetch botInstances for this Task, expand 3 levels
+            const sTaskId = oNode.ID.replace("task_", "");
+            const sPath = `/Tasks('${sTaskId}')`;
+            const oContext = oModel.bindContext(sPath, null, {
+              $expand: "botInstances($expand=tasks,type)",
+            });
+            const oTask = await oContext.requestObject();
+            if (oTask && Array.isArray(oTask.botInstances)) {
+              aChildren = oTask.botInstances.map(
+                this._buildBotInstanceItem,
+                this
+              );
+            }
+          } else if (oNode.type === "BotInstance") {
+            // Fetch tasks for this BotInstance, expand 3 levels
+            const sBotId = oNode.ID.replace("bot_", "");
+            const sPath = `/BotInstances('${sBotId}')`;
+            const oContext = oModel.bindContext(sPath, null, {
+              $expand: "tasks($expand=botInstances)",
+            });
+            const oBot = await oContext.requestObject();
+            if (oBot && Array.isArray(oBot.tasks)) {
+              aChildren = oBot.tasks.map(this._buildTaskItemRecursively, this);
+            }
+          }
+          // Mark children as not loaded for further lazy loading
+          aChildren.forEach((child) => (child._childrenLoaded = false));
+        } catch (err) {
+          console.error("_loadMoreTaskAndBotLevels error:", err);
+        }
+        return aChildren;
+      },
 
-      // // Helper function to generate unique message IDs
-      // _generateMessageId: function () {
-      //   return (
-      //     "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
-      //   );
-      // },
-
-      // // Helper function to generate unique chat session IDs
-      // _generateChatId: function () {
-      //   return (
-      //     "chat_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
-      //   );
-      // },
-
-      // // Function to start a new chat session
-      // startNewChat: function () {
-      //   // Save current chat if it has messages
-      //   if (this._currentMessages.length > 0) {
-      //     this._saveChatSession();
-      //   }
-
-      //   // Clear current chat
-      //   this._currentChatId = this._generateChatId();
-      //   this._currentMessages = [];
-
-      //   // Clear chat UI
-      //   var oChatBox = this.byId("chatMessagesBox");
-      //   if (oChatBox) {
-      //     oChatBox.destroyItems();
-      //   }
-
-      //   // Clear code results
-      //   var oCodeResultText = this.byId("codeResultText");
-      //   if (oCodeResultText) {
-      //     oCodeResultText.setContent("");
-      //   }
-      // },
-
-      // // Function to save current chat session to history
-      // _saveChatSession: function () {
-      //   if (this._currentMessages.length === 0) return;
-
-      //   var oChatSession = {
-      //     id: this._currentChatId || this._generateChatId(),
-      //     title: this._generateChatTitle(),
-      //     messages: [...this._currentMessages],
-      //     createdAt: new Date().toISOString(),
-      //     lastUpdated: new Date().toISOString(),
-      //   };
-
-      //   // Find existing session or add new one
-      //   var existingIndex = this._chatHistory.findIndex(
-      //     (chat) => chat.id === oChatSession.id
-      //   );
-      //   if (existingIndex >= 0) {
-      //     this._chatHistory[existingIndex] = oChatSession;
-      //   } else {
-      //     this._chatHistory.unshift(oChatSession); // Add to beginning
-      //   }
-
-      //   // Limit history to last 50 chats
-      //   if (this._chatHistory.length > 50) {
-      //     this._chatHistory = this._chatHistory.slice(0, 50);
-      //   }
-
-      //   // Save to local storage for persistence
-      //   this._saveHistoryToStorage();
-      // },
-
-      // // Function to update current chat in history (called after each message)
-      // _updateCurrentChatInHistory: function () {
-      //   if (!this._currentChatId) {
-      //     this._currentChatId = this._generateChatId();
-      //   }
-      //   this._saveChatSession();
-      // },
-
-      // // Generate a chat title based on first user message
-      // _generateChatTitle: function () {
-      //   var firstUserMessage = this._currentMessages.find(
-      //     (msg) => msg.type === "user"
-      //   );
-      //   if (firstUserMessage) {
-      //     var title =
-      //       typeof firstUserMessage.message === "string"
-      //         ? firstUserMessage.message
-      //         : "Chat";
-      //     return title.length > 50 ? title.substring(0, 50) + "..." : title;
-      //   }
-      //   return "New Chat - " + new Date().toLocaleDateString();
-      // },
-
-      // // Load chat history from storage
-      // _loadHistoryFromStorage: function () {
-      //   try {
-      //     var storedHistory = localStorage.getItem("chatHistory");
-      //     if (storedHistory) {
-      //       this._chatHistory = JSON.parse(storedHistory);
-      //     }
-      //   } catch (error) {
-      //     console.error("Error loading chat history:", error);
-      //     this._chatHistory = [];
-      //   }
-      // },
-
-      // // Save chat history to storage
-      // _saveHistoryToStorage: function () {
-      //   try {
-      //     localStorage.setItem(
-      //       "chatHistory",
-      //       JSON.stringify(this._chatHistory)
-      //     );
-      //   } catch (error) {
-      //     console.error("Error saving chat history:", error);
-      //   }
-      // },
-
-      // // Function to load a specific chat session
-      // loadChatSession: function (sChatId) {
-      //   var oChatSession = this._chatHistory.find(
-      //     (chat) => chat.id === sChatId
-      //   );
-      //   if (!oChatSession) {
-      //     console.error("Chat session not found:", sChatId);
-      //     return;
-      //   }
-
-      //   // Save current chat before switching
-      //   if (this._currentMessages.length > 0) {
-      //     this._saveChatSession();
-      //   }
-
-      //   // Set current chat
-      //   this._currentChatId = oChatSession.id;
-      //   this._currentMessages = [...oChatSession.messages];
-
-      //   // Clear and rebuild chat UI
-      //   this._rebuildChatUI();
-
-      //   // Close history dialog
-      //   this.onCloseChatHistory();
-      // },
-
-      // // Function to rebuild chat UI from stored messages
-      // _rebuildChatUI: function () {
-      //   var oChatBox = this.byId("chatMessagesBox");
-      //   var oCodeResultText = this.byId("codeResultText");
-
-      //   // Clear existing content
-      //   if (oChatBox) {
-      //     oChatBox.destroyItems();
-      //   }
-      //   if (oCodeResultText) {
-      //     oCodeResultText.setContent("");
-      //   }
-
-      //   // Rebuild messages
-      //   this._currentMessages.forEach((oMessage) => {
-      //     this._recreateMessageUI(oMessage);
-      //   });
-
-      //   // Scroll to bottom
-      //   setTimeout(() => {
-      //     var oScrollContainer = this.byId("chatMessagesContainer");
-      //     if (oScrollContainer && oScrollContainer.getDomRef("scroll")) {
-      //       oScrollContainer.scrollTo(
-      //         0,
-      //         oScrollContainer.getDomRef("scroll").scrollHeight
-      //       );
-      //     }
-      //   }, 100);
-      // },
-
-      // // Function to recreate message UI from stored data
-      // _recreateMessageUI: function (oMessage) {
-      //   var oChatBox = this.byId("chatMessagesBox");
-      //   var sType = oMessage.type;
-      //   var sTimestamp = oMessage.timestamp;
-
-      //   if (sType === "ai" && oMessage.processedText !== undefined) {
-      //     // Handle parsed AI responses
-      //     if (oMessage.processedText) {
-      //       var oHTML = new sap.ui.core.HTML({
-      //         content: `
-      //               <div class="chatBubbleContainer ${sType}">
-      //                   <div class="chatBubble ${sType}">
-      //                       <div>${oMessage.processedText}</div>
-      //                       <div class="chatTimestamp">${sTimestamp}</div>
-      //                   </div>
-      //               </div>
-      //           `,
-      //       });
-      //       oChatBox.addItem(oHTML);
-      //     }
-
-      //     // Recreate code blocks
-      //     if (oMessage.codeBlocks && oMessage.codeBlocks.length > 0) {
-      //       var oCodeResultText = this.byId("codeResultText");
-      //       if (oCodeResultText) {
-      //         const codeSections = oMessage.codeBlocks.map((block) => {
-      //           const language = block.language || "code";
-      //           const langLabel = `<div class="codeLangLabel">${language.toUpperCase()}</div>`;
-      //           const codeBlock = `
-      //                   <div class="codeBlockWrapper">
-      //                       ${langLabel}
-      //                       <pre><code class="language-${language}">${this.escapeHtml(
-      //             block.content
-      //           )}</code></pre>
-      //                   </div>
-      //               `;
-      //           return codeBlock;
-      //         });
-      //         oCodeResultText.setContent(codeSections.join("<br/>"));
-      //       }
-      //     }
-      //   } else {
-      //     // Handle regular messages
-      //     const messageContent =
-      //       typeof oMessage.message === "string"
-      //         ? oMessage.message
-      //         : JSON.stringify(oMessage.message);
-
-      //     var oHTML = new sap.ui.core.HTML({
-      //       content: `
-      //           <div class="chatBubbleContainer ${sType}">
-      //               <div class="chatBubble ${sType}">
-      //                   <div>${messageContent}</div>
-      //                   <div class="chatTimestamp">${sTimestamp}</div>
-      //               </div>
-      //           </div>
-      //       `,
-      //     });
-      //     oChatBox.addItem(oHTML);
-      //   }
-      // },
-
-      // // Enhanced onHistoryPress function
-      // onHistoryPress: async function () {
-      //   // Load history from storage
-      //   this._loadHistoryFromStorage();
-
-      //   if (!this._oHistoryDialog) {
-      //     this._oHistoryDialog = await Fragment.load({
-      //       id: this.getView().getId(),
-      //       name: "task-runtime.view.ChatHistory",
-      //       controller: this,
-      //     });
-      //   }
-
-      //   // Bind history data to the dialog
-      //   this._bindHistoryData();
-      //   this._oHistoryDialog.open();
-      // },
-
-      // // Function to bind history data to the dialog
-      // _bindHistoryData: function () {
-      //   var oHistoryList = this.byId("chatHistoryList");
-      //   if (oHistoryList && this._chatHistory.length > 0) {
-      //     var oModel = new sap.ui.model.json.JSONModel({
-      //       chatHistory: this._chatHistory,
-      //     });
-      //     oHistoryList.setModel(oModel);
-      //     oHistoryList.bindItems({
-      //       path: "/chatHistory",
-      //       template: new sap.m.StandardListItem({
-      //         title: "{title}",
-      //         description: "Messages: {/messages/length} • {createdAt}",
-      //         type: "Active",
-      //         press: this.onHistoryItemPress.bind(this),
-      //       }),
-      //     });
-      //   }
-      // },
-
-      // // Function to handle history item press
-      // onHistoryItemPress: function (oEvent) {
-      //   var oItem = oEvent.getSource();
-      //   var oContext = oItem.getBindingContext();
-      //   var oChatData = oContext.getObject();
-
-      //   // Load the selected chat session
-      //   this.loadChatSession(oChatData.id);
-      // },
-
-      // // Helper function to escape HTML (keeping your existing function)
-      // escapeHtml: function (text) {
-      //   const div = document.createElement("div");
-      //   div.textContent = text;
-      //   return div.innerHTML;
-      // },
-
-      // // Enhanced onCloseChatHistory function
-      // onCloseChatHistory: function () {
-      //   if (this._oHistoryDialog) {
-      //     this._oHistoryDialog.close();
-      //     this._oHistoryDialog.destroy();
-      //     this._oHistoryDialog = null;
-      //   }
-      // },
       // ---------------------------------------Chat Bot -------------------------------------
     });
   }
